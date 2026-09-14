@@ -22,9 +22,9 @@ Aktueller freigegebener Stand:
 - CLAB-v1-Projektdokumente
 - gemeinsame musikalische Basis mit Composition Lab Native
 
-## Technische Besonderheit
+## Audio-Wiedergabe
 
-Der aktuelle Player verwendet `Soundfont.instrument(...)` für FluidR3-GM-Klänge. In `index.html` besteht derzeit noch ein historischer externer Script-Verweis auf `wibem1/Composer-Lab/soundfont-player.js`. Diese Abhängigkeit soll durch eine direkte Soundfont-Player-Abhängigkeit ersetzt werden; bis dahin darf die Zeile nicht ersatzlos entfernt werden.
+Der Player verwendet `soundfont-player` direkt über dessen Browser-Build und lädt FluidR3-GM-Klänge über `Soundfont.instrument(...)`. Es besteht keine Laufzeit-Abhängigkeit mehr vom ehemaligen `Composer-Lab`-Repository.
 
 ## Entwicklungsregel
 
