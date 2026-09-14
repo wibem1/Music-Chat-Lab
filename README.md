@@ -1,29 +1,29 @@
-# Music Chat Lab Pages
+# Music Chat Lab
 
-Dieses Repository ist ausschließlich das **öffentliche Deployment-/GitHub-Pages-Ziel von Music Chat Lab**.
+Music Chat Lab ist die aktive Web-Anwendung für den dialogorientierten Kompositionsworkflow.
 
-## Source of Truth
+## Rolle
 
-Die einzige aktive Entwicklungsquelle ist:
+Dieses Repository ist die **einzige aktive Entwicklungsquelle** von Music Chat Lab und zugleich die Basis für das GitHub-Pages-Deployment.
 
-`wibem1/Music-Chat-Lab`
-
-Aktueller freigegebener Stand:
+Aktueller freigegebener Kern:
 
 - Music Chat Lab **v1.0.17**
 - Kompositionskern: **Engine Build 14**
 - gemeinsames Projektformat: **CLAB v1**
 
-## Deployment-Snapshot
+## Schwerpunkte
 
-Weil das Quell-Repository `Music-Chat-Lab` privat ist, kann der normale `GITHUB_TOKEN` dieses öffentlichen Pages-Repositories es nicht direkt auschecken. Deshalb enthält dieses Repository einen **gespiegelten Laufzeit-Snapshot** des jeweils freigegebenen Stands.
+- Komponieren im Dialog mit der KI
+- Fortsetzen, Variieren und gezieltes Bearbeiten bestehender Kompositionen
+- MIDI-Import, -Export und Wiedergabe
+- mehrere Kompositions-Slots zum Vergleichen und Weiterarbeiten
+- Verlauf, Wiederaufnahme und Backup
+- CLAB-v1-Projektdokumente
+- gemeinsame musikalische Basis mit Composition Lab Native
 
-Dieser Snapshot ist ausdrücklich **keine zweite Entwicklungsquelle**. Änderungen am Produkt werden ausschließlich in `wibem1/Music-Chat-Lab` vorgenommen und anschließend als freigegebener Deployment-Snapshot hierher gespiegelt.
+## Entwicklungsregel
 
-Der Pages-Workflow veröffentlicht nur diesen Snapshot. Dadurch sind keine zusätzlichen privaten Tokens oder Secrets für das Deployment nötig.
+Neue Funktionen und Reparaturen werden direkt in diesem Repository konsolidiert. Historische Patch-Module dürfen erst entfernt werden, wenn ihre Funktion vollständig in den aktuellen Kern übernommen wurde und keine aktive Referenz mehr besteht.
 
-## Regel
-
-In diesem Repository findet keine eigenständige Funktionsentwicklung statt. Änderungen an MIDI-/MusicXML-Semantik, Engine-Pfaden, CLAB oder Bedienung werden ausschließlich zuerst im Source-Repository vorgenommen.
-
-Systemweite Architektur: `wibem1/Composer-Lab/SYSTEM-ARCHITECTURE.md`.
+`Composer-Lab` ist keine aktive Abhängigkeit mehr. Gemeinsame Formate und Verträge sollen künftig lokal dokumentiert oder mit den verbleibenden aktiven Projekten abgestimmt werden.
