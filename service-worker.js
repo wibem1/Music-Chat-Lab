@@ -1,16 +1,12 @@
-const CACHE_NAME = "music-chat-lab-v1-3-13";
+const CACHE_NAME = "music-chat-lab-v1-3-14-clean";
 const APP_SHELL = [
   "./","./index.html",
-  "./styles.css?v=1.0.20","./ui-fixes.css?v=1.1.18","./explicit-mode-v133.css?v=1.3.5","./composition-idea-field-v1312.css?v=1.3.12","./app.js?v=1.1.13","./composition-state-fix.js?v=1.3.12","./concept-display-v139.js?v=1.3.12","./usage-costs.js?v=1.1.18",
-  "./music-file-processing.js?v=1.0.20","./download-compat.js?v=1.0.20",
-  "./api-usage.js?v=1.1.16","./composition-engine14.js?v=1.1.5","./request-control.js?v=1.1.35","./explicit-mode-v134.js?v=1.3.12","./session-orchestrator-v132.js?v=1.3.2","./variant-player-fixes-v137.js?v=1.3.13",
-  "./midi-player.js?v=1.3.5","./midi-stop-reset.js?v=1.0.20",
-  "./midi-slot-restore.js?v=1.0.20","./midi-input-sync.js?v=1.1.10",
-  "./midi-playback-scheduler.js?v=1.0.22","./midi-context.js?v=1.1.20",
-  "./clab-document-v1.js?v=1.3.12","./composition-idea-field-v1312.js?v=1.3.12","./clab-concept-v138.js?v=1.3.10","./clab-assignment-fix.js?v=1.1.23",
-  "./chat-delete.js?v=1.0.20","./chat-titles.js?v=1.0.20",
-  "./midi-memory.js?v=1.1.8","./midi-slot-delete.js?v=1.1.12",
-  "./midi-export.js?v=1.0.20","./backup-manager.js?v=1.1.31","./ui-enhancements.js?v=1.1.31","./diagnostic-enhancer.js?v=1.1.31",
+  "./styles.css?v=1.0.20","./ui-fixes.css?v=1.1.18","./execution-mode.css?v=1.0.0","./composition-idea-field.css?v=1.0.0",
+  "./music-file-processing.js?v=1.0.20","./download-compat.js?v=1.0.20","./api-usage.js?v=1.1.16","./composition-engine14.js?v=1.1.5","./request-control.js?v=1.1.35",
+  "./execution-mode.js?v=1.0.0","./session-orchestrator.js?v=1.0.0","./player-variants.js?v=1.0.0","./midi-player.js?v=1.3.5","./midi-input-sync.js?v=1.1.10",
+  "./midi-playback-scheduler.js?v=1.0.23","./midi-context.js?v=1.1.20","./clab-document-v1.js?v=1.3.12","./composition-idea-field.js?v=1.0.0","./runtime-compat.js?v=1.1.0",
+  "./app.js?v=1.1.13","./composition-state.js?v=1.3.14","./usage-costs.js?v=1.1.18","./chat-delete.js?v=1.0.20","./chat-titles.js?v=1.0.20",
+  "./midi-memory.js?v=1.1.8","./midi-slot-delete.js?v=1.0.20","./midi-export.js?v=1.0.20","./backup-manager.js?v=1.1.31","./ui-enhancements.js?v=1.1.31","./diagnostic-enhancer.js?v=1.1.31",
   "./manifest.webmanifest?v=1.0.20","./icon.svg?v=1.0.20"
 ];
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)));self.skipWaiting();});
