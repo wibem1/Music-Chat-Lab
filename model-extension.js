@@ -21,18 +21,29 @@ const models=document.getElementById('modelSelect');
 if(!provider||!models)return;
 let applying=false;
 function activeChat(){try{const chats=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]')||[];const id=localStorage.getItem(ACTIVE_KEY);return chats.find(x=>x.id===id)||chats[0]||null}catch{return null}}
+function matches(list){
+  const options=[...models.options];
+  return options.length===list.length&&options.every((o,i)=>o.value===list[i].id&&o.textContent===list[i].label);
+}
 function apply(){
   if(applying)return;
   const list=MODEL_SETS[provider.value];if(!list)return;
-  applying=true;
   const current=models.value,c=activeChat();
   const preferred=(current&&list.some(x=>x.id===current))?current:(c?.provider===provider.value?c.model:null);
-  models.innerHTML='';
-  for(const m of list){const o=document.createElement('option');o.value=m.id;o.textContent=m.label;models.appendChild(o)}
-  if(preferred&&list.some(x=>x.id===preferred))models.value=preferred;
-  applying=false;
+  if(matches(list)){
+    if(preferred&&list.some(x=>x.id===preferred)&&models.value!==preferred)models.value=preferred;
+    return;
+  }
+  applying=true;
+  try{
+    models.replaceChildren(...list.map(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.label;return o}));
+    if(preferred&&list.some(x=>x.id===preferred))models.value=preferred;
+  }finally{applying=false}
 }
 provider.addEventListener('change',()=>queueMicrotask(apply));
-new MutationObserver(()=>queueMicrotask(apply)).observe(models,{childList:true});
+new MutationObserver(()=>{
+  const list=MODEL_SETS[provider.value];
+  if(list&&!matches(list))queueMicrotask(apply);
+}).observe(models,{childList:true});
 apply();
 })();
