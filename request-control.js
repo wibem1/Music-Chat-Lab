@@ -1,10 +1,12 @@
 (() => {
-  // v1.1.35 — abort control plus robust Anthropic Claude-5 output/thinking policy.
+  // v1.1.36 — abort control plus model-aware Anthropic output/thinking policy.
   const activeFetchControllers = new Set();
   const activeXhrs = new Set();
   const isProviderUrl = u => /api\.anthropic\.com\/v1\/messages|api\.openai\.com\/v1\/responses|generativelanguage\.googleapis\.com\/.*:generateContent/i.test(String(u || ''));
   const isAnthropicUrl = u => /api\.anthropic\.com\/v1\/messages/i.test(String(u || ''));
   const isClaude5 = model => /^claude-(?:sonnet|opus)-5(?:$|-)/i.test(String(model || ''));
+  const isClaudeFable5 = model => /^claude-fable-5(?:$|-)/i.test(String(model || ''));
+  const usesAdaptiveThinking = model => isClaude5(model) || isClaudeFable5(model);
 
   function messageText(m) {
     if (typeof m?.content === 'string') return m.content;
@@ -20,23 +22,32 @@
       const lastUser = [...messages].reverse().find(m => m?.role === 'user');
       const prompt = messageText(lastUser).trim();
       const isFinalComposition = /^VERBINDLICHER TECHNISCHER MODUS:\s*(?:PATCH|REPLACE_SCORE|NEW_SCORE)/i.test(prompt);
-      const isVisibleChat = !body.system && isClaude5(body.model);
-      return { body, prompt, isFinalComposition, isVisibleChat };
+      const isVisibleChat = !body.system && usesAdaptiveThinking(body.model);
+      return { body, prompt, isFinalComposition, isVisibleChat, isFable5: isClaudeFable5(body.model) };
     } catch {
       return null;
     }
   }
 
+  function setAdaptiveThinking(body, effort = 'medium') {
+    body.thinking = { type: 'adaptive' };
+    body.output_config = { ...(body.output_config || {}), effort };
+  }
+
   function applyAnthropicOutputPolicy(url, init) {
     const info = classifyAnthropicRequest(url, init);
     if (!info) return init;
-    const { body, prompt, isFinalComposition, isVisibleChat } = info;
+    const { body, prompt, isFinalComposition, isVisibleChat, isFable5 } = info;
 
     if (isFinalComposition) {
-      // The musical decisions already exist in the approved proposal. The final score/patch
-      // is a serialization task, so Claude 5 must not spend output tokens on adaptive thinking.
-      body.thinking = { type: 'disabled' };
-      delete body.output_config;
+      // Final score/patch generation is primarily serialization. Older Claude models can
+      // disable thinking here, but Fable 5 only accepts adaptive thinking. Keep its effort
+      // low instead of sending the invalid thinking.type=disabled configuration.
+      if (isFable5) setAdaptiveThinking(body, 'low');
+      else {
+        body.thinking = { type: 'disabled' };
+        delete body.output_config;
+      }
       if (/^VERBINDLICHER TECHNISCHER MODUS:\s*PATCH/i.test(prompt) && Number(body.max_tokens) > 12000) {
         body.max_tokens = 12000;
       }
@@ -44,8 +55,7 @@
     }
 
     if (isVisibleChat) {
-      body.thinking = { type: 'adaptive' };
-      body.output_config = { ...(body.output_config || {}), effort: 'medium' };
+      setAdaptiveThinking(body, 'medium');
       const current = Number(body.max_tokens) || 4096;
       body.max_tokens = Math.min(12000, Math.max(8192, current));
       return { ...init, body: JSON.stringify(body) };
@@ -73,8 +83,11 @@
     const info = classifyAnthropicRequest(url, init);
     if (!info) return init;
     const body = info.body;
-    body.thinking = { type: 'disabled' };
-    delete body.output_config;
+    if (info.isFable5) setAdaptiveThinking(body, 'low');
+    else {
+      body.thinking = { type: 'disabled' };
+      delete body.output_config;
+    }
     body.max_tokens = Math.min(8192, Math.max(4096, Number(body.max_tokens) || 4096));
     return { ...init, body: JSON.stringify(body) };
   }
