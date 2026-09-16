@@ -2,7 +2,7 @@
 'use strict';
 const CHAT_KEY='music-chat-lab.chats.v1';
 const ACTIVE_KEY='music-chat-lab.active-chat.v1';
-function price(model,inputTokens=0){let i=0,o=0,c=null;switch(String(model||'')){case'gpt-5.6-sol':i=4;o=20;c=.4;break;case'gpt-5.6-terra':i=2;o=12;c=.2;break;case'gpt-5.6-luna':i=.2;o=1.2;c=.02;break;case'claude-sonnet-5':i=2;o=10;c=.2;break;case'claude-opus-5':i=5;o=25;c=.5;break;case'claude-sonnet-4-6':i=3;o=15;c=.3;break;case'gemini-3.8-flash':case'gemini-3.7-flash':i=.75;o=3.75;c=.1875;break;case'gemini-3.1-pro-preview':i=inputTokens>200000?4:2;o=inputTokens>200000?18:12;c=i/4;break;default:i=4;o=20;c=.4}if(/^gpt-5\.6-/.test(String(model||''))&&inputTokens>272000){i*=2;o*=1.5;c*=2}return{i,o,c}}
+function price(model,inputTokens=0){let i=0,o=0,c=null;switch(String(model||'')){case'gpt-6-astra':i=10;o=50;c=1;break;case'gpt-5.6-sol':i=4;o=20;c=.4;break;case'gpt-5.6-terra':i=2;o=12;c=.2;break;case'gpt-5.6-luna':i=.2;o=1.2;c=.02;break;case'claude-sonnet-5':i=2;o=10;c=.2;break;case'claude-opus-5':i=5;o=25;c=.5;break;case'claude-sonnet-4-6':i=3;o=15;c=.3;break;case'gemini-3.8-flash':case'gemini-3.7-flash':i=.75;o=3.75;c=.1875;break;case'gemini-3.1-pro-preview':i=inputTokens>200000?4:2;o=inputTokens>200000?18:12;c=i/4;break;default:i=4;o=20;c=.4}if((model==='gpt-6-astra'||/^gpt-5\.6-/.test(String(model||'')))&&inputTokens>272000){i*=2;o*=1.5;c*=2}return{i,o,c}}
 function fmt(n){return Math.round(Number(n)||0).toLocaleString('de-DE')}
 function money(n){return Number(n||0).toLocaleString('de-DE',{minimumFractionDigits:3,maximumFractionDigits:4})+' US$'}
 function chats(){try{return JSON.parse(localStorage.getItem(CHAT_KEY)||'[]')||[]}catch{return[]}}
