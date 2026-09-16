@@ -80,6 +80,13 @@ Die Korrektur bleibt in der bestehenden Sidebar-Architektur: Der Schließen-Butt
 
 Der veröffentlichte Pages-Artefaktstand v1.3.22 wurde nach erfolgreichem Deployment heruntergeladen. Sämtliche JavaScript-Dateien bestanden erneut `node --check`. Der betroffene Sidebar-Zustandsweg wurde zusätzlich mit einem isolierten DOM-/Event-Test geprüft: Desktop-Schließen setzt den Collapse-Zustand, der Menübutton hebt ihn wieder auf, und der Tablet-Schließen-Pfad entfernt weiterhin `open`/`sidebar-open`. Der Versuch, den vollständigen Chromium-Smoke-Test in dieser Ausführungsumgebung erneut gegen localhost bzw. `file:` zu starten, wurde durch die Laufzeitumgebung selbst mit `ERR_BLOCKED_BY_ADMINISTRATOR` blockiert; dies ist daher ausdrücklich nicht als bestandener Browser-End-to-End-Test dokumentiert. Die unveränderten übrigen Kernpfade waren bereits mit v1.3.21 im Browser-Smoke-Test geprüft.
 
+### v1.3.23 – Claude Fable 5 Thinking-Konfiguration korrigiert
+Eine Diagnose aus v1.3.22 zeigte beim Komponieren mit `claude-fable-5-1` einen Anthropic-Fehler, weil `request-control.js` im finalen technischen Kompositionsschritt `thinking: {type: "disabled"}` setzte. Fable 5 akzeptiert diesen Modus nicht; nach Anthropic-Dokumentation arbeitet Fable 5 ausschließlich mit adaptivem Thinking. Die bisherige Modellklassifikation erfasste nur Sonnet/Opus 5 und behandelte Fable deshalb fälschlich wie ein älteres Claude-Modell.
+
+`request-control.js` erkennt Fable 5 nun ausdrücklich. Sichtbare Fable-Anfragen verwenden adaptives Thinking mit mittlerem Effort. Der technische finale Score-/Patch-Schritt verwendet bei Fable adaptives Thinking mit niedrigem Effort statt `disabled`; der Fallback darf Fable ebenfalls nicht mehr auf `disabled` umschalten. Das bisherige Verhalten älterer Claude-Modelle bleibt unverändert.
+
+Der veröffentlichte GitHub-Pages-Artefaktstand v1.3.23 wurde nach erfolgreichem Deployment heruntergeladen. Sämtliche JavaScript-Dateien bestanden `node --check`; außerdem wurden sichtbare Fable-Anfrage, finaler Fable-Kompositionsschritt und der bisherige ältere-Claude-Pfad mit einem isolierten Request-Policy-Test geprüft. Fable erhielt dabei ausschließlich `thinking.type=adaptive` mit dem vorgesehenen Effort; der ältere Pfad blieb auf `disabled`. Diese Tests bestanden. Ein echter Anthropic-Netzaufruf mit dem API-Schlüssel des Anwenders ist aus der Testumgebung nicht möglich und bleibt Anwenderprüfung.
+
 ## Offene Konsolidierungsaufgaben
 - Modellkatalog an einer eindeutigen Stelle pflegen.
 - Versionsverwaltung zentralisieren.
