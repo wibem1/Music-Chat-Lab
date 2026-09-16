@@ -115,7 +115,7 @@ Die Modellpflege soll künftig als regulärer Bestandteil der Provider-/Modellar
 
 **Diagnose:** Damit waren Repository- und Deployment-Stand als primäre Ursache ausgeschlossen. Das Problem lag im Lebenszyklus der installierten PWA: Eine bereits installierte App kann einen älteren App-Shell-/Service-Worker-Stand weiterverwenden, wenn die Aktualisierung nicht aktiv und eindeutig gesteuert wird. Nur den Cache-Namen bei einem Release zu ändern ist dafür nicht ausreichend zuverlässig.
 
-**Maßnahme:** Die Update-Logik wurde in die bestehende PWA-Start- und Service-Worker-Architektur eingearbeitet, nicht als nachträglicher Patch. Die App registriert den Service Worker nun ausdrücklich mit `updateViaCache: 'none'`, fordert beim Start ein Update an und übernimmt einen wartenden Worker über `skipWaiting`. Bei `controllerchange` wird einmalig neu geladen. Der Service Worker verwendet für Navigationen `cache: 'no-store'`, für statische Ressourcen `cache: 'no-cache'`, übernimmt Clients nach Aktivierung und entfernt alte App-Caches. Der Installations-Cache wird mit `cache: 'reload'` aufgebaut. Release-Stand ist v1.3.18.
+**Maßnahme:** Die Update-Logik wurde in die bestehende PWA-Start- und Service-Worker-Architektur eingearbeitet. Der Service Worker verwendet für Navigationen `cache: 'no-store'`, für statische Ressourcen `cache: 'no-cache'`, übernimmt Clients nach Aktivierung und entfernt alte App-Caches. Der Installations-Cache wird mit `cache: 'reload'` aufgebaut. Release-Stand ist v1.3.18.
 
 **Lehre:** Bei installierten PWAs müssen Deployment und Client-Aktualisierung als zwei getrennte Stufen behandelt werden. Ein erfolgreicher Pages-Deploy beweist nicht, dass eine bereits installierte PWA den neuen App-Shell-Stand übernommen hat. Der Update-Lebenszyklus muss Bestandteil der App-Architektur sein und bei künftigen Releases mitgetestet werden.
 
@@ -125,7 +125,17 @@ Die Modellpflege soll künftig als regulärer Bestandteil der Provider-/Modellar
 
 **Maßnahme:** Für diesen Altbestand wurde ein bewusst getrenntes Wartungswerkzeug `pwa-recover.html` angelegt. Es ist **kein dauerhaft in die App geladener Patch**. Beim gezielten Aufruf deregistriert es ausschließlich Service Worker im Scope `/Music-Chat-Lab/`, löscht ausschließlich Caches mit dem Präfix `music-chat-lab-` und lädt anschließend `index.html` mit einem einmaligen Cache-Buster neu. Lokale Chats, MIDI-Arbeitsdaten und API-Einstellungen im Local Storage werden dabei nicht gelöscht.
 
-**Lehre:** Eine neue Update-Architektur kann einen bereits festhängenden alten Client nicht rückwirkend ausführen. Für solche einmaligen Migrationen ist ein expliziter, isolierter Recovery-Einstieg sauberer als weitere Laufzeit-Patches im normalen App-Code. Nach erfolgreicher Migration soll der reguläre v1.3.18-Update-Lebenszyklus zukünftige Releases übernehmen.
+**Lehre:** Eine neue Update-Architektur kann einen bereits festhängenden alten Client nicht rückwirkend ausführen. Für solche einmaligen Migrationen ist ein expliziter, isolierter Recovery-Einstieg sauberer als weitere Laufzeit-Patches im normalen App-Code.
+
+### v1.3.18 – Oberfläche sichtbar, aber Bedienung nach Migration tot
+
+**Beobachtung:** Nach erfolgreichem Übergang zeigte die installierte App v1.3.18, reagierte aber auf keinerlei Bedienung.
+
+**Diagnose:** Der einzige funktionale Unterschied in `index.html` zwischen dem zuletzt bedienbaren v1.3.17-Stand und v1.3.18 war der neu eingefügte Inline-Code zur aktiven Service-Worker-Registrierung, `registration.update()`, `skipWaiting` und automatischem Reload bei `controllerchange`. Damit war dieser neue Startpfad der unmittelbar verdächtige Regressionsbereich; die eigentlichen App-Skripte und ihre Reihenfolge waren unverändert.
+
+**Maßnahme:** Der v1.3.18-Startcode wurde auf den zuletzt funktionierenden v1.3.17-Startpfad zurückgesetzt, während Versionsanzeige, Manifest-Release und der v1.3.18-Service-Worker erhalten bleiben. Damit wird die Update-Logik nicht mehr während der normalen UI-Initialisierung erzwungen. Kein neuer Patch wurde hinzugefügt.
+
+**Lehre:** Service-Worker-Aktualisierung darf den normalen App-Start nicht kontrollieren oder durch Reload-/Controller-Wechsel beeinflussen. Zuerst muss die Anwendung vollständig bedienbar starten; Update-Mechanik muss davon entkoppelt und anschließend separat getestet werden.
 
 ## Offene Konsolidierungsaufgaben
 
@@ -136,6 +146,7 @@ Die Modellpflege soll künftig als regulärer Bestandteil der Provider-/Modellar
 - Bei Änderungen regelmäßig prüfen, ob ältere Kompatibilitäts- oder Patchmodule inzwischen in Kernmodule übernommen und entfernt werden können.
 - PWA-Updates künftig nicht nur im Pages-Workflow, sondern auch hinsichtlich des installierten Client-Lebenszyklus prüfen.
 - `pwa-recover.html` nach erfolgreicher Migration des Altbestands als Wartungswerkzeug bewerten; es darf nicht als reguläre Patch-Schicht in die App eingebunden werden.
+- Update-Mechanik nach Wiederherstellung der Bedienbarkeit isoliert testen, ohne den normalen App-Start erneut mit erzwungenem Reload zu koppeln.
 
 ## Vorgehen bei zukünftigen Änderungen
 
