@@ -109,6 +109,16 @@ Die Modellauswahl wurde für neuere OpenAI- und Anthropic-Modelle erweitert, dar
 
 Die Modellpflege soll künftig als regulärer Bestandteil der Provider-/Modellarchitektur erfolgen und nicht als dauerhafte Folge von UI-Patches.
 
+### v1.3.18 – installierte PWA blieb nach erfolgreichem Deployment auf v1.3.15
+
+**Beobachtung:** Nach vollständigem Schließen und erneutem Öffnen der installierten App zeigte das Gerät weiterhin v1.3.15, obwohl `index.html` und Service Worker im Repository bereits v1.3.17 enthielten und GitHub Pages erfolgreich deployt hatte.
+
+**Diagnose:** Damit waren Repository- und Deployment-Stand als primäre Ursache ausgeschlossen. Das Problem lag im Lebenszyklus der installierten PWA: Eine bereits installierte App kann einen älteren App-Shell-/Service-Worker-Stand weiterverwenden, wenn die Aktualisierung nicht aktiv und eindeutig gesteuert wird. Nur den Cache-Namen bei einem Release zu ändern ist dafür nicht ausreichend zuverlässig.
+
+**Maßnahme:** Die Update-Logik wurde in die bestehende PWA-Start- und Service-Worker-Architektur eingearbeitet, nicht als nachträglicher Patch. Die App registriert den Service Worker nun ausdrücklich mit `updateViaCache: 'none'`, fordert beim Start ein Update an und übernimmt einen wartenden Worker über `skipWaiting`. Bei `controllerchange` wird einmalig neu geladen. Der Service Worker verwendet für Navigationen `cache: 'no-store'`, für statische Ressourcen `cache: 'no-cache'`, übernimmt Clients nach Aktivierung und entfernt alte App-Caches. Der Installations-Cache wird mit `cache: 'reload'` aufgebaut. Release-Stand ist v1.3.18.
+
+**Lehre:** Bei installierten PWAs müssen Deployment und Client-Aktualisierung als zwei getrennte Stufen behandelt werden. Ein erfolgreicher Pages-Deploy beweist nicht, dass eine bereits installierte PWA den neuen App-Shell-Stand übernommen hat. Der Update-Lebenszyklus muss Bestandteil der App-Architektur sein und bei künftigen Releases mitgetestet werden.
+
 ## Offene Konsolidierungsaufgaben
 
 - Modellkatalog langfristig an einer fachlich eindeutigen Stelle pflegen und provisorische Erweiterungslogik gegebenenfalls in die Provider-Architektur integrieren.
@@ -116,6 +126,7 @@ Die Modellpflege soll künftig als regulärer Bestandteil der Provider-/Modellar
 - API-Key-Persistenz über Neustarts/PWA-Lebenszyklus zuverlässig prüfen und gegebenenfalls mit einer robusteren persistenten Speicherung absichern.
 - Backup auf Mobilgeräten, insbesondere iPad/iOS, hinsichtlich auffindbarer Speicherung, Dateiname und Wiederherstellung weiter verbessern.
 - Bei Änderungen regelmäßig prüfen, ob ältere Kompatibilitäts- oder Patchmodule inzwischen in Kernmodule übernommen und entfernt werden können.
+- PWA-Updates künftig nicht nur im Pages-Workflow, sondern auch hinsichtlich des installierten Client-Lebenszyklus prüfen.
 
 ## Vorgehen bei zukünftigen Änderungen
 
