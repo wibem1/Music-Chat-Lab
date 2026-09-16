@@ -73,6 +73,13 @@ Die Korrektur macht die Modellaktualisierung idempotent: Vor einer DOM-Änderung
 
 Für v1.3.21 wurde erstmals der veröffentlichte GitHub-Pages-Artefaktstand selbst heruntergeladen und geprüft. Alle JavaScript-Dateien bestanden `node --check`. Zusätzlich wurde der komplette Script-Satz in der realen Reihenfolge in Chromium geladen; es traten keine JavaScript-Laufzeitfehler auf. Der Smoke-Test prüfte Texteingabe, Öffnen des API-Einstellungsdialogs, Anlegen eines neuen Chats, Wechsel zwischen OpenAI/Anthropic einschließlich Modelllisten sowie anschließende Reaktionsfähigkeit der Oberfläche. Diese Prüfungen bestanden. Der GitHub-Pages-Deploy für v1.3.21 war ebenfalls erfolgreich. Der installierte iPad-PWA-Lebenszyklus bleibt eine gerätespezifische Restprüfung und kann nicht als lokal simuliert ausgegeben werden.
 
+### v1.3.22 – Verlaufsfenster auch auf breiten Fenstern schließbar
+Nach Wiederherstellung der Bedienbarkeit zeigte der Desktop-/breite Fenstermodus einen eigenen UI-Fehler: Der bereits vorhandene Schließen-Button des Verlaufs war in `ui-fixes.css` standardmäßig mit `display:none` verborgen und wurde erst unterhalb von 1180 px eingeblendet. Dadurch ließ sich der dauerhaft links angezeigte Verlauf bei breiteren Fenstern nicht schließen.
+
+Die Korrektur bleibt in der bestehenden Sidebar-Architektur: Der Schließen-Button ist nun auch im Desktopmodus sichtbar. `ui-enhancements.js` unterscheidet zwischen Desktop und Tablet/Mobil. Auf dem Desktop setzt Schließen den Zustand `sidebar-collapsed`; dadurch verschwindet die Sidebar und der Menübutton wird gezielt als Wiederöffner sichtbar. Auf kleineren Fenstern bleibt das bisherige Overlay-/`open`-Verhalten erhalten. Beim Wechsel der Fensterbreite werden die Zustände bereinigt.
+
+Der veröffentlichte Pages-Artefaktstand v1.3.22 wurde nach erfolgreichem Deployment heruntergeladen. Sämtliche JavaScript-Dateien bestanden erneut `node --check`. Der betroffene Sidebar-Zustandsweg wurde zusätzlich mit einem isolierten DOM-/Event-Test geprüft: Desktop-Schließen setzt den Collapse-Zustand, der Menübutton hebt ihn wieder auf, und der Tablet-Schließen-Pfad entfernt weiterhin `open`/`sidebar-open`. Der Versuch, den vollständigen Chromium-Smoke-Test in dieser Ausführungsumgebung erneut gegen localhost bzw. `file:` zu starten, wurde durch die Laufzeitumgebung selbst mit `ERR_BLOCKED_BY_ADMINISTRATOR` blockiert; dies ist daher ausdrücklich nicht als bestandener Browser-End-to-End-Test dokumentiert. Die unveränderten übrigen Kernpfade waren bereits mit v1.3.21 im Browser-Smoke-Test geprüft.
+
 ## Offene Konsolidierungsaufgaben
 - Modellkatalog an einer eindeutigen Stelle pflegen.
 - Versionsverwaltung zentralisieren.
