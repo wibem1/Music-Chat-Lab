@@ -2,14 +2,14 @@
 'use strict';
 if(window.MCLModelCatalog)return;
 
-// One authoritative in-app catalog. Technical provider capabilities belong here
-// as data; request serialization belongs exclusively to provider-gateway.js.
+// One authoritative in-app catalog. Model IDs in this catalog are the API IDs
+// sent by provider-gateway.js; display/product version labels must not be used here.
 const CATALOG={
   anthropic:[
-    {id:'claude-fable-5-1',label:'Claude Fable 5.1',capabilities:{thinking:'adaptive'}},
+    {id:'claude-fable-5',label:'Claude Fable 5',capabilities:{thinking:'adaptive'}},
     {id:'claude-opus-5',label:'Claude Opus 5',capabilities:{thinking:'adaptive'}},
     {id:'claude-sonnet-5',label:'Claude Sonnet 5',capabilities:{thinking:'adaptive'}},
-    {id:'claude-sonnet-4-6',label:'Claude Sonnet 4.6',capabilities:{thinking:'legacy'}}
+    {id:'claude-sonnet-4-6',label:'Claude Sonnet 4.6',capabilities:{thinking:'adaptive'}}
   ],
   openai:[
     {id:'gpt-6-astra',label:'GPT-6 Astra'},
@@ -25,5 +25,5 @@ const CATALOG={
 };
 function list(provider){return(CATALOG[provider]||[]).map(x=>JSON.parse(JSON.stringify(x)))}
 function get(provider,id){const x=(CATALOG[provider]||[]).find(m=>m.id===id);return x?JSON.parse(JSON.stringify(x)):null}
-window.MCLModelCatalog={version:'0.1.0',list,get};
+window.MCLModelCatalog={version:'0.2.0',list,get};
 })();
