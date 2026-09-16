@@ -7,13 +7,44 @@ const backdrop=document.getElementById('sidebarBackdrop');
 const infoButton=document.getElementById('infoButton');
 const infoDialog=document.getElementById('infoDialog');
 const infoClose=document.getElementById('infoCloseButton');
-function closeSidebar(){sidebar?.classList.remove('open');document.body.classList.remove('sidebar-open')}
+const menu=document.getElementById('menuButton');
+function isDesktopSidebar(){return window.innerWidth>TABLET_BREAKPOINT}
+function closeSidebar(){
+  if(isDesktopSidebar()){
+    document.body.classList.add('sidebar-collapsed');
+    sidebar?.classList.remove('open');
+    document.body.classList.remove('sidebar-open');
+  }else{
+    sidebar?.classList.remove('open');
+    document.body.classList.remove('sidebar-open');
+  }
+}
+function openSidebar(){
+  if(isDesktopSidebar()){
+    document.body.classList.remove('sidebar-collapsed');
+  }else{
+    sidebar?.classList.add('open');
+    document.body.classList.add('sidebar-open');
+  }
+}
 closeButton?.addEventListener('click',closeSidebar);
 backdrop?.addEventListener('click',closeSidebar);
-const menu=document.getElementById('menuButton');
-menu?.addEventListener('click',()=>{requestAnimationFrame(()=>{sidebar?.classList.contains('open')?document.body.classList.add('sidebar-open'):document.body.classList.remove('sidebar-open')})});
+menu?.addEventListener('click',()=>{
+  if(isDesktopSidebar()){
+    openSidebar();
+    return;
+  }
+  requestAnimationFrame(()=>{sidebar?.classList.contains('open')?document.body.classList.add('sidebar-open'):document.body.classList.remove('sidebar-open')});
+});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSidebar();if(infoDialog?.open)infoDialog.close()}});
-window.addEventListener('resize',()=>{if(window.innerWidth>TABLET_BREAKPOINT)closeSidebar()});
+window.addEventListener('resize',()=>{
+  if(isDesktopSidebar()){
+    sidebar?.classList.remove('open');
+    document.body.classList.remove('sidebar-open');
+  }else{
+    document.body.classList.remove('sidebar-collapsed');
+  }
+});
 infoButton?.addEventListener('click',()=>{try{infoDialog?.showModal()}catch(_){infoDialog?.setAttribute('open','')}});
 infoClose?.addEventListener('click',()=>{try{infoDialog?.close()}catch(_){infoDialog?.removeAttribute('open')}});
 infoDialog?.addEventListener('click',e=>{if(e.target===infoDialog){try{infoDialog.close()}catch(_){infoDialog.removeAttribute('open')}}});
