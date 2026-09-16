@@ -2,7 +2,7 @@ name: Architecture tests
 
 on:
   push:
-    branches: [architecture-consolidation]
+    branches: [main, architecture-consolidation]
   pull_request:
     branches: [main]
 
