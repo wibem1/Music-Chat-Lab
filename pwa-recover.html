@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <title>MusicChatLab aktualisieren</title>
+  <style>
+    body{font-family:system-ui,-apple-system,sans-serif;margin:0;background:#f5f5f5;color:#263746;display:grid;min-height:100vh;place-items:center}
+    main{max-width:34rem;margin:2rem;padding:2rem;background:#fff;border:1px solid #d9e0e5;border-radius:18px;box-shadow:0 8px 28px #00000012}
+    h1{margin-top:0;font-size:1.4rem}p{line-height:1.5}.status{font-weight:600}
+  </style>
+</head>
+<body>
+<main>
+  <h1>MusicChatLab wird aktualisiert</h1>
+  <p class="status" id="status">Alter PWA-Zustand wird bereinigt …</p>
+  <p>Die App öffnet sich anschließend automatisch neu.</p>
+</main>
+<script>
+(async()=>{
+  const status=document.getElementById('status');
+  try{
+    if('serviceWorker' in navigator){
+      const registrations=await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations
+        .filter(reg=>reg.scope.includes('/Music-Chat-Lab/'))
+        .map(reg=>reg.unregister()));
+    }
+    if('caches' in window){
+      const names=await caches.keys();
+      await Promise.all(names
+        .filter(name=>name.startsWith('music-chat-lab-'))
+        .map(name=>caches.delete(name)));
+    }
+    status.textContent='Bereinigung abgeschlossen. MusicChatLab wird neu geladen …';
+  }catch(error){
+    console.warn('MusicChatLab recovery cleanup',error);
+    status.textContent='MusicChatLab wird mit einem frischen Abruf neu geladen …';
+  }
+  const target=new URL('./index.html',location.href);
+  target.searchParams.set('mcl-recover',Date.now().toString());
+  setTimeout(()=>location.replace(target.href),250);
+})();
+</script>
+</body>
+</html>
