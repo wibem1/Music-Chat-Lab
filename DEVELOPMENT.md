@@ -119,6 +119,14 @@ Die Modellpflege soll künftig als regulärer Bestandteil der Provider-/Modellar
 
 **Lehre:** Bei installierten PWAs müssen Deployment und Client-Aktualisierung als zwei getrennte Stufen behandelt werden. Ein erfolgreicher Pages-Deploy beweist nicht, dass eine bereits installierte PWA den neuen App-Shell-Stand übernommen hat. Der Update-Lebenszyklus muss Bestandteil der App-Architektur sein und bei künftigen Releases mitgetestet werden.
 
+### Übergang v1.3.17 → v1.3.18 – Recovery für bereits festhängende Installationen
+
+**Beobachtung:** Die installierte iPad-PWA wechselte nach mehreren Neustarts von v1.3.15 auf v1.3.17, blieb anschließend jedoch auf v1.3.17. Der neue Update-Code aus v1.3.18 kann naturgemäß erst wirken, nachdem der Client v1.3.18 wenigstens einmal geladen hat.
+
+**Maßnahme:** Für diesen Altbestand wurde ein bewusst getrenntes Wartungswerkzeug `pwa-recover.html` angelegt. Es ist **kein dauerhaft in die App geladener Patch**. Beim gezielten Aufruf deregistriert es ausschließlich Service Worker im Scope `/Music-Chat-Lab/`, löscht ausschließlich Caches mit dem Präfix `music-chat-lab-` und lädt anschließend `index.html` mit einem einmaligen Cache-Buster neu. Lokale Chats, MIDI-Arbeitsdaten und API-Einstellungen im Local Storage werden dabei nicht gelöscht.
+
+**Lehre:** Eine neue Update-Architektur kann einen bereits festhängenden alten Client nicht rückwirkend ausführen. Für solche einmaligen Migrationen ist ein expliziter, isolierter Recovery-Einstieg sauberer als weitere Laufzeit-Patches im normalen App-Code. Nach erfolgreicher Migration soll der reguläre v1.3.18-Update-Lebenszyklus zukünftige Releases übernehmen.
+
 ## Offene Konsolidierungsaufgaben
 
 - Modellkatalog langfristig an einer fachlich eindeutigen Stelle pflegen und provisorische Erweiterungslogik gegebenenfalls in die Provider-Architektur integrieren.
@@ -127,6 +135,7 @@ Die Modellpflege soll künftig als regulärer Bestandteil der Provider-/Modellar
 - Backup auf Mobilgeräten, insbesondere iPad/iOS, hinsichtlich auffindbarer Speicherung, Dateiname und Wiederherstellung weiter verbessern.
 - Bei Änderungen regelmäßig prüfen, ob ältere Kompatibilitäts- oder Patchmodule inzwischen in Kernmodule übernommen und entfernt werden können.
 - PWA-Updates künftig nicht nur im Pages-Workflow, sondern auch hinsichtlich des installierten Client-Lebenszyklus prüfen.
+- `pwa-recover.html` nach erfolgreicher Migration des Altbestands als Wartungswerkzeug bewerten; es darf nicht als reguläre Patch-Schicht in die App eingebunden werden.
 
 ## Vorgehen bei zukünftigen Änderungen
 
