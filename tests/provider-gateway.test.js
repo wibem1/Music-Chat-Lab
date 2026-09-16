@@ -1,0 +1,17 @@
+const fs=require('fs');
+const vm=require('vm');
+const assert=require('assert');
+const source=fs.readFileSync(require('path').join(__dirname,'..','provider-gateway.js'),'utf8');
+const sandbox={window:{},console,fetch:async()=>{throw new Error('network not expected')}};
+vm.createContext(sandbox);vm.runInContext(source,sandbox);
+const g=sandbox.window.MCLProviderGateway;
+assert(g,'gateway exported');
+const messages=[{role:'user',text:'Hallo'},{role:'assistant',text:'Guten Tag'}];
+let b=g.build('anthropic',{model:'claude-test',messages,system:'SYS',maxOutputTokens:16000,technical:{thinking:{type:'adaptive'},outputConfig:{effort:'low'}}});
+assert.equal(b.model,'claude-test');assert.equal(b.system,'SYS');assert.equal(b.max_tokens,16000);assert.deepEqual(b.thinking,{type:'adaptive'});assert.deepEqual(b.output_config,{effort:'low'});assert.equal(b.messages.length,2);
+b=g.build('openai',{model:'gpt-test',messages,system:'SYS'});assert.equal(b.input[0].role,'system');assert.equal(b.input[1].role,'user');assert.equal(b.store,false);
+b=g.build('google',{model:'gemini-test',messages,system:'SYS',maxOutputTokens:32768});assert.equal(b.systemInstruction.parts[0].text,'SYS');assert.equal(b.contents[1].role,'model');assert.equal(b.generationConfig.maxOutputTokens,32768);
+assert.equal(g.responseText('anthropic',{content:[{type:'text',text:'A'}]}),'A');
+assert.equal(g.responseText('openai',{output_text:'O'}),'O');
+assert.equal(g.responseText('google',{candidates:[{content:{parts:[{text:'G'}]}}]}),'G');
+console.log('PROVIDER_GATEWAY_CONTRACT_OK');
