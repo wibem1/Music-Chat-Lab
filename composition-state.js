@@ -4,9 +4,6 @@ if(window.__mclCompositionStateFixV119)return;
 window.__mclCompositionStateFixV119=true;
 const CHAT_KEY='music-chat-lab.chats.v1',ACTIVE_KEY='music-chat-lab.active-chat.v1',APPLE_EPOCH=978307200;
 const clone=x=>x==null?x:JSON.parse(JSON.stringify(x)),clean=s=>String(s||'').trim();
-
-const previousSend=XMLHttpRequest.prototype.send;
-XMLHttpRequest.prototype.send=function(body){let out=body;if(typeof body==='string'){try{const d=JSON.parse(body),guard='\n\nWICHTIG: Die neue Komposition muss im JSON-Feld "ti" einen eigenen, nichtleeren musikalischen Titel erhalten. Übernimm nicht einfach den Titel einer vorhandenen Quelle oder einer früheren Komposition.',patch=t=>{t=String(t||'');return t.includes('Gib jetzt die fertige JSON-Partitur aus.')&&!t.includes('Die neue Komposition muss im JSON-Feld "ti"')?t+guard:t};if(Array.isArray(d.messages))d.messages=d.messages.map(m=>typeof m?.content==='string'?{...m,content:patch(m.content)}:m);if(Array.isArray(d.contents))d.contents=d.contents.map(c=>({...c,parts:Array.isArray(c.parts)?c.parts.map(p=>typeof p?.text==='string'?{...p,text:patch(p.text)}:p):c.parts}));out=JSON.stringify(d)}catch(_){}}return previousSend.call(this,out)};
 function currentChat(){try{const chats=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]'),id=localStorage.getItem(ACTIVE_KEY);return chats.find(c=>c.id===id)||chats[0]||null}catch{return null}}
 function currentIdea(){return clean(window.MCLCompositionIdea?.get?.()||document.getElementById('compositionIdeaInput')?.value||'')}
 function parseScore(text){let s=String(text||'').trim();const f=s.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);if(f)s=f[1].trim();const a=s.indexOf('{'),b=s.lastIndexOf('}');if(a<0||b<=a)return null;try{const x=JSON.parse(s.slice(a,b+1));return x&&Array.isArray(x.tr)&&x.tr.some(t=>Array.isArray(t.nt))?x:null}catch{return null}}

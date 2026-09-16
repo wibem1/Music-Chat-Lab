@@ -1,37 +1,6 @@
-const CACHE_NAME = 'music-chat-lab-v1.3.24';
-const APP_SHELL = [
-  './', './index.html', './styles.css', './app.js', './music-file-processing.js',
-  './midi-player.js', './midi-export.js', './midi-context.js', './midi-memory.js',
-  './composition-engine14.js', './composition-state.js', './session-orchestrator.js',
-  './session-output-guard.js', './request-control.js', './runtime-compat.js',
-  './api-usage.js', './usage-costs.js', './backup-manager.js', './chat-delete.js',
-  './chat-titles.js', './clab-document-v1.js', './composition-idea-field.css',
-  './composition-idea-field.js', './diagnostic-enhancer.js', './download-compat.js',
-  './execution-mode.css', './execution-mode.js', './midi-input-sync.js',
-  './midi-playback-scheduler.js', './midi-slot-delete.js', './player-variants.js',
-  './ui-enhancements.js', './ui-fixes.css', './icon.svg', './manifest.webmanifest',
-  './model-extension.js'
-];
-
-self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
-      .then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(
-    fetch(event.request).then(response => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-      return response;
-    }).catch(() => caches.match(event.request).then(cached => cached || caches.match('./index.html')))
-  );
-});
+const CACHE_NAME='music-chat-lab-v1.3.25';
+const APP_SHELL=['./','./index.html','./styles.css','./ui-fixes.css','./execution-mode.css','./composition-idea-field.css','./icon.svg','./manifest.webmanifest','./music-file-processing.js','./download-compat.js','./model-catalog.js','./provider-policy.js','./provider-usage.js','./provider-gateway.js','./session-request.js','./session-core.js','./action-domain.js','./request-runtime.js','./api-usage.js','./composition-engine14.js','./request-control.js','./execution-mode.js','./session-orchestrator.js','./session-output-guard.js','./player-variants.js','./midi-player.js','./midi-input-sync.js','./midi-playback-scheduler.js','./midi-context.js','./clab-document-v1.js','./composition-idea-field.js','./runtime-compat.js','./app.js','./action-consumer.js','./composition-state.js','./usage-costs.js','./chat-delete.js','./chat-titles.js','./midi-memory.js','./midi-slot-delete.js','./midi-export.js','./backup-manager.js','./ui-enhancements.js','./diagnostic-enhancer.js','./model-extension.js'];
+self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)));self.skipWaiting()});
+self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('music-chat-lab-')&&k!==CACHE_NAME).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+function canonicalRequest(request){const u=new URL(request.url);u.search='';return new Request(u.toString(),{method:'GET',headers:request.headers,mode:request.mode,credentials:request.credentials,redirect:request.redirect})}
+self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;const url=new URL(event.request.url),sameOrigin=url.origin===self.location.origin,isNavigation=event.request.mode==='navigate';event.respondWith(fetch(event.request).then(response=>{if(sameOrigin&&response.ok){const copy=response.clone(),key=canonicalRequest(event.request);caches.open(CACHE_NAME).then(cache=>cache.put(key,copy))}return response}).catch(async()=>{if(!sameOrigin)throw new Error('offline');const cache=await caches.open(CACHE_NAME),cached=await cache.match(canonicalRequest(event.request));if(cached)return cached;if(isNavigation)return cache.match('./index.html');return Response.error()}))});

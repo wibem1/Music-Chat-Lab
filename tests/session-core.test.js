@@ -1,0 +1,10 @@
+const fs=require('fs'),vm=require('vm'),path=require('path'),assert=require('assert');
+const store=new Map();store.set('music-chat-lab.active-chat.v1','c1');store.set('music-chat-lab.session-memory.v3',JSON.stringify({c1:'alte Entscheidung'}));
+const localStorage={getItem:k=>store.has(k)?store.get(k):null,setItem:(k,v)=>store.set(k,String(v))};
+const sandbox={window:{},document:{querySelector:()=>({dataset:{slot:'0'}})},localStorage,console};sandbox.window.window=sandbox.window;sandbox.window.MCLMidiWorkspaceSources=()=>[{slot:1,name:'Basis',kind:'midi',score:{ti:'Basis',bpm:72,ts:{n:4,d:4},k:'C major',tr:[{nm:'Piano',nt:[[0,1,60,80,0,1]],ct:[]}]}}];
+vm.createContext(sandbox);vm.runInContext(fs.readFileSync(path.join(__dirname,'..','session-core.js'),'utf8'),sandbox);
+const c=sandbox.window.MCLSessionCore;assert.equal(c.getMemory(),'alte Entscheidung');
+const chat=c.buildTurn({messages:[{role:'user',text:'Analysiere das Stück'}],mode:'chat'});assert(chat.system.includes('AUSFÜHRUNGSMODUS: CHAT'));assert(chat.system.includes('Speicher 1 [AKTIV]'));assert(!chat.messages[0].text.includes('<MCL_SCORE'));
+const compose=c.buildTurn({messages:[{role:'user',text:'Mach eine Variation'}],mode:'compose',idea:'Ruhige Gegenbewegung',providedSlots:[1]});assert(compose.system.includes('AUSFÜHRUNGSMODUS: KOMPONIERE'));assert(compose.system.includes('Ruhige Gegenbewegung'));assert(compose.messages[0].text.includes('<MCL_SCORE slot="1"'));
+c.saveMemory(' neue  Entscheidung ');assert.equal(c.getMemory(),'neue Entscheidung');
+console.log('SESSION_CORE_OK');

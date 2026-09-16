@@ -1,111 +1,82 @@
 # MusicChatLab – Entwicklungsdokumentation
 
-> **VERBINDLICHE ARBEITSREGEL:** Vor **jeder** zukünftigen Entwicklungsarbeit an MusicChatLab muss diese Datei (`DEVELOPMENT.md`) zuerst vollständig gelesen werden. Erst danach dürfen Code, Konfiguration, Workflow, Service Worker oder andere Bestandteile der App geändert werden. Diese Regel gilt auch für kleine Fehlerbehebungen, Modellupdates und scheinbar triviale Änderungen. Nach wesentlichen Änderungen ist die Dokumentation im selben Arbeitsgang zu aktualisieren.
+> **VERBINDLICHE ARBEITSREGEL:** Vor jeder zukünftigen Entwicklungsarbeit an MusicChatLab muss diese Datei vollständig gelesen werden. Danach ist zusätzlich `ARCHITECTURE.md` zu beachten. Erst dann dürfen Code, Konfiguration, Workflow, Service Worker oder andere App-Bestandteile geändert werden.
 
-> **VERBINDLICHE FREIGABEREGEL:** Jeder neue Teststand erhält eine neue, eindeutig sichtbare Buildnummer. Kein Build darf dem Anwender zur Abnahme oder zum Funktionstest herausgegeben werden, bevor er selbst technisch geprüft wurde. Ein erfolgreicher Commit oder GitHub-Pages-Deploy ist ausdrücklich **kein** Funktionstest. Vor Freigabe sind mindestens das Laden aller lokalen JavaScript-/CSS-Ressourcen, JavaScript-Syntax, App-Initialisierung, zentrale Button-/Event-Handler, Chat-/Komponier-Eingabe, Dialoge sowie der grundlegende PWA-Startpfad zu prüfen. Nur ein bestandener technischer Teststand darf als Testbuild bezeichnet und zur Abnahme freigegeben werden. Nicht automatisierbare geräte- oder iPad-spezifische Aspekte müssen ausdrücklich als solche benannt werden und dürfen nicht als selbst getestet ausgegeben werden.
-
-Diese Datei ist das fortlaufende technische Entwicklungsprotokoll der MusicChatLab-App. Sie soll nicht nur neue Funktionen festhalten, sondern insbesondere Fehlerursachen, Architekturentscheidungen und daraus abgeleitete Regeln dokumentieren. Sie ist bei wesentlichen Änderungen künftig mitzuführen.
+> **VERBINDLICHE FREIGABEREGEL:** Jeder neue Teststand erhält eine neue sichtbare Buildnummer. Kein Build wird zur Anwenderprüfung freigegeben, bevor Syntax, lokale Ressourcen, Initialisierung, zentrale Bedienwege und der PWA-Grundpfad technisch geprüft wurden. Commit oder Deployment allein sind kein Funktionstest. Gerätespezifische Restprüfungen müssen als solche benannt werden.
 
 ## Verbindlicher Arbeitsablauf
-
-Jede zukünftige Arbeit an diesem Repository beginnt in dieser Reihenfolge:
-
-1. `DEVELOPMENT.md` aus dem aktuellen Stand des GitHub-Repository vollständig lesen.
-2. Die dort festgehaltenen Architekturentscheidungen, bekannten Problemfälle, offenen Konsolidierungsaufgaben und Entwicklungsgrundsätze auf die geplante Änderung anwenden.
-3. Erst danach die betroffenen Quelldateien untersuchen und Änderungen vornehmen.
-4. Neue Funktionen und Fehlerbehebungen möglichst in den bestehenden zuständigen Code einarbeiten statt weitere Patch-Schichten anzuhängen.
-5. Nach der Änderung Build/Deployment und den betroffenen Funktionsweg **selbst technisch testen**. Deployment-Erfolg allein genügt nicht.
-6. **Jeder neue Teststand erhält eine neue Buildnummer.** Erst nach bestandenem technischen Test darf dieser Build dem Anwender zur Abnahme/Funktionserprobung genannt werden.
-7. Wenn die Änderung eine neue Funktion, einen relevanten Fehler, eine neue Ursache, eine Architekturentscheidung oder eine wichtige Erfahrung betrifft, `DEVELOPMENT.md` im selben Arbeitsgang ergänzen.
-
-Ein Entwicklungsauftrag an MusicChatLab ist daher **nicht vollständig ausgeführt**, wenn diese Dokumentation vorher nicht gelesen, der neue Stand vor Freigabe nicht technisch getestet und bei relevanten Erkenntnissen anschließend nicht aktualisiert wurde.
+1. `DEVELOPMENT.md` vollständig lesen.
+2. `ARCHITECTURE.md` und offene Architekturregeln berücksichtigen.
+3. Ursache und zuständigen Codepfad bestimmen.
+4. Änderungen in die zuständige Schicht integrieren; keine neuen Patch-Ketten.
+5. Automatisierte Tests und Syntaxchecks ausführen.
+6. Für einen freizugebenden Stand eine neue Buildnummer vergeben.
+7. Deployment und veröffentlichten Stand prüfen.
+8. Wesentliche Änderungen und Erkenntnisse hier dokumentieren.
 
 ## Entwicklungsgrundsätze
+- **Eine Funktion – eine zuständige Schicht.** Keine übereinanderliegenden `fetch`-/XHR-Wrapper.
+- **Eine Information – eine maßgebliche Quelle.** Versionen, Modelle und technische Providerregeln nicht mehrfach unabhängig pflegen.
+- **Ursachen statt Symptome beheben.** Cache, Deployment, Laufzeit und gespeicherte Daten getrennt diagnostizieren.
+- **Musikalische Freiheit erhalten.** Technisches Protokoll darf robust sein; musikalische Entscheidungen werden nicht unnötig festgeschrieben.
+- **Daten erhalten.** PWA-/Cache-Reparaturen dürfen nicht leichtfertig lokale Chats oder API-Einstellungen löschen.
 
-### 1. Funktionen einarbeiten statt Patch-Ketten aufbauen
-Neue Funktionen und Fehlerbehebungen sollen möglichst in die bestehende Architektur und die zuständigen Module eingearbeitet werden. Es soll **nicht** für jede Korrektur ein weiteres nachträglich geladenes Patch-Skript an die App angehängt werden.
+## Wichtige historische Erkenntnisse
+- v1.3.15–v1.3.17: Mehrere Versionsquellen führten zu widersprüchlichen Anzeigen; Versionierung muss zentralisiert werden.
+- v1.3.18–v1.3.20: Ein erfolgreicher Pages-Deploy garantierte keine bedienbare App. Daraus entstand die verbindliche technische Freigabeprüfung.
+- v1.3.21: Eine selbst auslösende `MutationObserver`-Schleife in `model-extension.js` blockierte die gesamte Oberfläche. Seitdem müssen DOM-Patches idempotent sein. Der vollständige Script-Satz wurde in Chromium erfolgreich als Smoke-Test geladen.
+- v1.3.22: Sidebar-Zustände wurden für Desktop und Mobil getrennt korrigiert.
+- v1.3.23: Ein provider-spezifischer Request-Umbau in `request-control.js` zur Behebung eines Claude-Thinking-Problems verursachte eine allgemeine Chat-Regression. Die damalige Dokumentation stellte Modellannahmen zu sicher dar. Lehre: Providerfähigkeiten nur in der Provider-Schicht behandeln und Modell-/API-Annahmen vor produktiver Verwendung verifizieren.
+- v1.3.24: Rücknahme des invasiven Request-Control-Umbaus. Der alte mehrfache Transport-Wrapper-Aufbau blieb jedoch grundsätzlich fragil und wurde deshalb nicht weiter gepatcht.
 
-### 2. Eine Information – eine maßgebliche Quelle
-Globale Zustände wie App-Version, Modellkatalog, Konfigurationswerte oder Dateiformat-Versionen dürfen nicht unabhängig an mehreren Stellen gepflegt werden.
+## v1.3.25 – Architektur-Konsolidierung
+Die Requestarchitektur wurde auf dem isolierten Branch `architecture-consolidation` neu geordnet.
 
-### 3. Fehlerursache beheben, nicht nur Symptom überdecken
-Vor einer Korrektur soll geprüft werden, warum ein Fehler entsteht. Cache, Deployment, Laufzeitcode und gespeicherte Zustände sind getrennt zu betrachten.
+### Neuer Requestpfad
+`app.js` → `MCLSessionCore` → `MCLRequestRuntime` → `MCLProviderGateway` → Provider → normalisierte Antwort → Maschinenblock-Auswertung → Domain/UI.
 
-### 4. Deployment gehört zum Test, ersetzt ihn aber nicht
-Eine Änderung gilt bei der WebApp nicht allein deshalb als fertig, weil sie im Repository committed oder erfolgreich über GitHub Pages veröffentlicht wurde. Nach erfolgreichem Deployment muss der veröffentlichte Stand technisch auf Ladefähigkeit, Initialisierung und die betroffenen Funktionswege geprüft werden. Erst danach ist eine Freigabe zulässig.
+### Zuständigkeiten
+- `model-catalog.js`: zentraler Modellkatalog für die App-Oberfläche.
+- `provider-policy.js`: technische provider-/modellabhängige Requestoptionen und Tokenbudgets.
+- `provider-gateway.js`: einzige Stelle für Provider-Endpunkte, Header, Bodies, Fetch und Response-Normalisierung.
+- `session-core.js`: Gesprächskontext, Session-Gedächtnis, MIDI-Arbeitstisch, Chat-/Komponier-Direktive.
+- `session-request.js`: neutraler Requestdatentyp und Parser für `MCL_ACTION`, `MCL_NEED`, `MCL_MEMORY`, `MCL_CONCEPT`.
+- `request-runtime.js`: expliziter Requestlauf, Abort, Usage-Weitergabe und Maschinenblock-Verarbeitung.
+- `action-domain.js`: lokale Materialisierung von `NEW_SCORE`, `REPLACE_SCORE`, `PATCH` und `MERGE`.
+- `action-consumer.js`: übernimmt materialisierte Kompositionen in den MIDI-Arbeitstisch.
+- `api-usage.js`/`provider-usage.js`: Usage wird beobachtet, ohne Providerrequests zu verändern.
 
-### 5. Musikalische Freiheit erhalten
-Technische Protokolle, strukturierte Aktionen, Validierung und Fehlerbehandlung dürfen robuster gemacht werden. Der musikalische Kompositionsauftrag an die KI soll dadurch aber nicht unnötig mit zusätzlichen musikalischen Detailvorgaben eingeengt werden.
+### Entfernte Fehlerquelle
+Alle globalen Überschreibungen von `window.fetch`, `XMLHttpRequest.open` und `XMLHttpRequest.send` wurden aus dem Laufzeitpfad entfernt. Der Architekturtest verlangt ab v1.3.25 ausdrücklich **null globale Transport-Patches**.
 
-## Architektur – Leitgedanke
-MusicChatLab ist eine dialogorientierte musikalische Arbeitsumgebung mit Chat-/Kompositionsmodus, direkter Provider-Anbindung, MIDI-/MusicXML-Verarbeitung, CLAB-Dokumenten, MIDI-Speicherplätzen, Wiedergabe, strukturierten Kompositionsaktionen, Diagnose/Kosten sowie Backup und PWA-Betrieb.
+### Wiederhergestellte MIDI-Aktionsausführung
+Beim Umbau wurde vor der Freigabe erkannt, dass der alte `session-orchestrator.js` neben dem Transportpatch auch die lokale Materialisierung von `MCL_ACTION` erledigt hatte. Diese Funktion durfte beim Entfernen des Wrappers nicht verloren gehen. Sie wurde deshalb als eigene Domain-Schicht (`action-domain.js`) wiederhergestellt und mit Tests für NEW_SCORE, PATCH, MERGE und Fehlerfälle abgesichert.
 
-## Entwicklungsprotokoll
+### PWA-Korrektur
+Der Service Worker v1.3.24 cachete nackte Dateinamen, während `index.html` versionierte URLs mit Querystring lud. Im Offline-Fall konnte dadurch eine versionierte JS-Datei am Cache vorbeilaufen und fälschlich `index.html` als Fallback erhalten. v1.3.25 normalisiert lokale statische Requests auf queryfreie Cache-Keys und verwendet den HTML-Fallback ausschließlich für Navigationen.
 
-### Bis v1.3.14 – Konsolidierung
-Die App wurde schrittweise um expliziten Chat-/Komponiermodus, MIDI-Arbeitsbereich, sechs MIDI-Speicherplätze, CLAB-Unterstützung, Diagnosefunktionen, Kostenanzeige und Backup-Funktionen erweitert. Die strukturierte Kommunikation zwischen KI-Antwort und musikalischer Aktion verwendet interne `MCL_ACTION`-Daten.
+### Automatisierte Prüfungen des Release Candidates
+Der Testlauf umfasst:
+- Provider-Gateway-Verträge für Anthropic/OpenAI/Google,
+- Provider-Policy,
+- Session-Request und Maschinenblock-Parser,
+- Session-Core inklusive Chat-/Komponiermodus, Gedächtnis und MIDI-Kontext,
+- MIDI-Action-Domain,
+- Request-Runtime,
+- Architekturwächter gegen neue Transportpatches,
+- explizites Inventar mit 0 globalen Transportpatches,
+- Release-Shell-Test: sichtbare Buildnummer, lokale Ressourcen vorhanden, neue Module in korrekter Reihenfolge, `app.js` ohne direkte Provider-Endpunkte, Service-Worker-Version und Offline-Strategie,
+- `node --check` über alle JavaScript-Dateien.
 
-### September 2026 – unvollständige strukturierte Gemini-Aktion
-Gemini konnte eine musikalische Änderung planen, aber der `MCL_ACTION`-Block wurde am Ausgabelimit abgeschnitten. Die Prüfung bleibt fail-closed. Technische Zuverlässigkeit soll über Validierung bzw. gezielte technische Wiederholung entstehen, nicht über stärkere musikalische Reglementierung.
+Der GitHub-Actions-Lauf für RC v1.3.25 bestand `npm test` und sämtliche JavaScript-Syntaxchecks. Ein echter API-Aufruf mit den privaten Schlüsseln des Anwenders sowie der installierte iPad-PWA-Lebenszyklus können in CI nicht ausgeführt werden und bleiben gerätespezifische Anwenderprüfung.
 
-### September 2026 – GitHub Pages blieb auf v1.3.14
-Der Pages-Workflow prüfte auf nicht mehr vorhandene Dateien und brach ab. Lehre: Bei Versionsunterschieden zuerst Deployment prüfen.
+## Weiter offene Konsolidierungsaufgaben
+- Öffentliche/aktuelle Provider-Modell-IDs vor künftigen Modelländerungen anhand offizieller Providerdokumentation verifizieren.
+- Versionsverwaltung weiter auf eine einzige technische Quelle reduzieren.
+- API-Key-Persistenz und Backup-Roundtrip zusätzlich automatisiert testen.
+- Vollständigen Browser-Smoke-Test dauerhaft in CI integrieren.
+- `model-extension.js` vollständig durch den zentralen Modellkatalog ersetzen, sobald die aktuelle Modellliste verifiziert ist.
+- `pwa-recover.html` nur als isoliertes Wartungswerkzeug behalten und nicht in normalen Updatepfad einbauen.
 
-### v1.3.15–v1.3.17 – widersprüchliche Versionsanzeigen
-Mehrere unabhängige Versionsquellen führten zu widersprüchlichen Anzeigen. Sichtbare Version, Erweiterungsskript und Service-Worker-Cache wurden vereinheitlicht. Versionsverwaltung soll weiter zentralisiert werden.
-
-### v1.3.16/v1.3.17 – Erweiterung der KI-Modelle
-Die Modellauswahl wurde erweitert. Die Modellpflege soll künftig regulärer Bestandteil der Provider-/Modellarchitektur sein und nicht dauerhaft über UI-Patches erfolgen.
-
-### v1.3.18 – Migration der installierten PWA
-Die installierte iPad-PWA blieb trotz erfolgreichem Deployment zunächst auf älteren Ständen. Für den einmaligen Altbestand wurde `pwa-recover.html` als isoliertes Wartungswerkzeug angelegt; es löscht nur MusicChatLab-Service-Worker und MusicChatLab-Caches, nicht Local-Storage-Daten.
-
-### v1.3.18 – Oberfläche sichtbar, aber Bedienung nach Migration tot
-Nach dem Übergang zeigte die installierte App v1.3.18, reagierte aber auf keinerlei Bedienung. Der neu eingeführte Inline-Update-/Reload-Code wurde zurückgenommen; anschließend wurde auch der Service Worker auf das zuvor bewährte Verhalten zurückgeführt. Die Regression zeigte, dass Repository-/Deployment-Prüfung allein eine funktionsfähige App nicht garantiert.
-
-### v1.3.19/v1.3.20 – Konsequenz aus den toten Testständen
-Mehrere veröffentlichte Stände zeigten zwar die neue Versionsnummer, waren auf dem Zielgerät aber nicht bedienbar. Daraus folgt die verbindliche Freigaberegel am Anfang dieses Dokuments: **keine Herausgabe ohne vorherigen technischen Funktionstest und keine Wiederverwendung derselben Buildnummer für einen veränderten Teststand.** Automatisierbare Prüfungen müssen vor der Anwenderprüfung erfolgen; gerätespezifische Restprüfungen werden klar davon getrennt.
-
-### v1.3.21 – Ursache der vollständig blockierten Oberfläche gefunden
-Die Ursache lag nicht im Service Worker, sondern in `model-extension.js`. Ein `MutationObserver` beobachtete Änderungen am Modell-Auswahlfeld und rief `apply()` auf. `apply()` leerte und erzeugte die Optionen jedes Mal neu. Diese Änderung löste denselben Observer erneut aus; nach Rücksetzen des `applying`-Flags entstand dadurch eine endlose Microtask-/Mutation-Schleife. Der Browser bekam praktisch keine Gelegenheit mehr, Benutzerereignisse zu verarbeiten – die Oberfläche war sichtbar, aber vollständig tot.
-
-Die Korrektur macht die Modellaktualisierung idempotent: Vor einer DOM-Änderung wird geprüft, ob die vorhandenen Optionen bereits dem gewünschten Modellset entsprechen. Der Observer plant `apply()` nur noch bei einer tatsächlichen Abweichung. Damit kann er seine eigene Änderung nicht mehr endlos erneut auslösen.
-
-Für v1.3.21 wurde erstmals der veröffentlichte GitHub-Pages-Artefaktstand selbst heruntergeladen und geprüft. Alle JavaScript-Dateien bestanden `node --check`. Zusätzlich wurde der komplette Script-Satz in der realen Reihenfolge in Chromium geladen; es traten keine JavaScript-Laufzeitfehler auf. Der Smoke-Test prüfte Texteingabe, Öffnen des API-Einstellungsdialogs, Anlegen eines neuen Chats, Wechsel zwischen OpenAI/Anthropic einschließlich Modelllisten sowie anschließende Reaktionsfähigkeit der Oberfläche. Diese Prüfungen bestanden. Der GitHub-Pages-Deploy für v1.3.21 war ebenfalls erfolgreich. Der installierte iPad-PWA-Lebenszyklus bleibt eine gerätespezifische Restprüfung und kann nicht als lokal simuliert ausgegeben werden.
-
-### v1.3.22 – Verlaufsfenster auch auf breiten Fenstern schließbar
-Nach Wiederherstellung der Bedienbarkeit zeigte der Desktop-/breite Fenstermodus einen eigenen UI-Fehler: Der bereits vorhandene Schließen-Button des Verlaufs war in `ui-fixes.css` standardmäßig mit `display:none` verborgen und wurde erst unterhalb von 1180 px eingeblendet. Dadurch ließ sich der dauerhaft links angezeigte Verlauf bei breiteren Fenstern nicht schließen.
-
-Die Korrektur bleibt in der bestehenden Sidebar-Architektur: Der Schließen-Button ist nun auch im Desktopmodus sichtbar. `ui-enhancements.js` unterscheidet zwischen Desktop und Tablet/Mobil. Auf dem Desktop setzt Schließen den Zustand `sidebar-collapsed`; dadurch verschwindet die Sidebar und der Menübutton wird gezielt als Wiederöffner sichtbar. Auf kleineren Fenstern bleibt das bisherige Overlay-/`open`-Verhalten erhalten. Beim Wechsel der Fensterbreite werden die Zustände bereinigt.
-
-Der veröffentlichte Pages-Artefaktstand v1.3.22 wurde nach erfolgreichem Deployment heruntergeladen. Sämtliche JavaScript-Dateien bestanden erneut `node --check`. Der betroffene Sidebar-Zustandsweg wurde zusätzlich mit einem isolierten DOM-/Event-Test geprüft: Desktop-Schließen setzt den Collapse-Zustand, der Menübutton hebt ihn wieder auf, und der Tablet-Schließen-Pfad entfernt weiterhin `open`/`sidebar-open`. Der Versuch, den vollständigen Chromium-Smoke-Test in dieser Ausführungsumgebung erneut gegen localhost bzw. `file:` zu starten, wurde durch die Laufzeitumgebung selbst mit `ERR_BLOCKED_BY_ADMINISTRATOR` blockiert; dies ist daher ausdrücklich nicht als bestandener Browser-End-to-End-Test dokumentiert. Die unveränderten übrigen Kernpfade waren bereits mit v1.3.21 im Browser-Smoke-Test geprüft.
-
-### v1.3.23 – Claude Fable 5 Thinking-Konfiguration korrigiert
-Eine Diagnose aus v1.3.22 zeigte beim Komponieren mit `claude-fable-5-1` einen Anthropic-Fehler, weil `request-control.js` im finalen technischen Kompositionsschritt `thinking: {type: "disabled"}` setzte. Fable 5 akzeptiert diesen Modus nicht; nach Anthropic-Dokumentation arbeitet Fable 5 ausschließlich mit adaptivem Thinking. Die bisherige Modellklassifikation erfasste nur Sonnet/Opus 5 und behandelte Fable deshalb fälschlich wie ein älteres Claude-Modell.
-
-`request-control.js` erkennt Fable 5 nun ausdrücklich. Sichtbare Fable-Anfragen verwenden adaptives Thinking mit mittlerem Effort. Der technische finale Score-/Patch-Schritt verwendet bei Fable adaptives Thinking mit niedrigem Effort statt `disabled`; der Fallback darf Fable ebenfalls nicht mehr auf `disabled` umschalten. Das bisherige Verhalten älterer Claude-Modelle bleibt unverändert.
-
-Der veröffentlichte GitHub-Pages-Artefaktstand v1.3.23 wurde nach erfolgreichem Deployment heruntergeladen. Sämtliche JavaScript-Dateien bestanden `node --check`; außerdem wurden sichtbare Fable-Anfrage, finaler Fable-Kompositionsschritt und der bisherige ältere-Claude-Pfad mit einem isolierten Request-Policy-Test geprüft. Fable erhielt dabei ausschließlich `thinking.type=adaptive` mit dem vorgesehenen Effort; der ältere Pfad blieb auf `disabled`. Diese Tests bestanden. Ein echter Anthropic-Netzaufruf mit dem API-Schlüssel des Anwenders ist aus der Testumgebung nicht möglich und bleibt Anwenderprüfung.
-
-## Offene Konsolidierungsaufgaben
-- Modellkatalog an einer eindeutigen Stelle pflegen.
-- Versionsverwaltung zentralisieren.
-- API-Key-Persistenz zuverlässig prüfen und absichern.
-- Backup auf Mobilgeräten verbessern.
-- ältere Patch-/Kompatibilitätsmodule konsolidieren.
-- PWA-Updates inklusive installiertem Client-Lebenszyklus testen.
-- `pwa-recover.html` nach erfolgreicher Migration als Wartungswerkzeug bewerten.
-- Eine zukünftige Update-Architektur isoliert entwickeln und testen; bis dahin den bewährten Service-Worker-Pfad nicht erneut umbauen.
-- Den jetzt verwendeten reproduzierbaren Chromium-Smoke-Test dauerhaft in den Entwicklungs-/Deployment-Prozess integrieren.
-
-## Vorgehen bei zukünftigen Änderungen
-1. `DEVELOPMENT.md` vollständig lesen,
-2. bestehenden zuständigen Code und Datenfluss bestimmen,
-3. Ursache bzw. gewünschte Architektur festhalten,
-4. Änderung möglichst im zuständigen Modul integrieren,
-5. keine neue Patch-Datei anlegen, wenn eine saubere Integration möglich ist,
-6. neue Buildnummer vergeben,
-7. Syntax, Ressourcen, Initialisierung und Kernbedienung technisch testen,
-8. Deployment prüfen und veröffentlichten Stand erneut testen,
-9. **erst danach** den Build zur Anwenderprüfung freigeben,
-10. wesentliche Änderung, Problemursache und Lehre hier dokumentieren.
+## Freigaberegel für v1.3.25
+Nur der getestete Commit des Release Candidates darf nach `main` übernommen werden. Nach dem Pages-Deploy ist der veröffentlichte Stand erneut auf Version und Ressourcenauslieferung zu prüfen. Erst danach wird der WebApp-Link zur Anwenderprüfung genannt.

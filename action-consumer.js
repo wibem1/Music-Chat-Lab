@@ -1,0 +1,8 @@
+(()=>{
+'use strict';
+if(window.__mclActionConsumerV100)return;window.__mclActionConsumerV100=true;
+const clone=x=>x==null?x:JSON.parse(JSON.stringify(x));
+function installScore(score){const api=window.MCLMidiSlots;if(!api?.all||!api?.restoreState)throw new Error('MIDI-Arbeitstisch ist nicht verfügbar.');const items=(api.all()||[]).map(clone),used=new Set(items.map(x=>Number(x.slot))),free=[1,2,3,4,5,6].find(n=>!used.has(n));const active=document.querySelector('.mcl-midi-slot.active'),preferred=active?Number(active.dataset.slot)+1:null;let slot=free||preferred||6;const ix=items.findIndex(x=>Number(x.slot)===slot);const item={slot,name:String(score.ti||'Neue Komposition'),kind:'KI',score:clone(score)};if(ix>=0)items[ix]=item;else items.push(item);api.restoreState(items,slot);return slot}
+window.addEventListener('mcl-request-result',e=>{const action=e.detail?.action;if(!action)return;const sources=window.MCLSessionCore?.workspaceSources?.()||[];const score=window.MCLActionDomain?.materialize?.(action,sources);const note=document.getElementById('composerNote');if(!score){if(note)note.textContent='Die MIDI-Aktion konnte technisch nicht ausgeführt werden. Es wurde keine Datei verändert.';return}try{const slot=installScore(score);if(note)note.textContent=`Komposition in Speicher ${slot} übernommen.`;window.dispatchEvent(new CustomEvent('mcl-score-materialized',{detail:{slot,score}}))}catch(err){if(note)note.textContent=err?.message||String(err)}});
+window.MCLActionConsumer={version:'1.0.0',installScore};
+})();
