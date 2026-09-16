@@ -1,6 +1,5 @@
 (()=>{
 'use strict';
-const VERSION='v1.3.17';
 const MODEL_SETS={
   openai:[
     {id:'gpt-6-astra',label:'GPT-6 Astra'},
@@ -19,7 +18,6 @@ const CHAT_KEY='music-chat-lab.chats.v1';
 const ACTIVE_KEY='music-chat-lab.active-chat.v1';
 const provider=document.getElementById('providerSelect');
 const models=document.getElementById('modelSelect');
-document.querySelectorAll('[data-app-version],.version-badge.mobile-only,.about-version span').forEach(el=>el.textContent=VERSION);
 if(!provider||!models)return;
 let applying=false;
 function activeChat(){try{const chats=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]')||[];const id=localStorage.getItem(ACTIVE_KEY);return chats.find(x=>x.id===id)||chats[0]||null}catch{return null}}
