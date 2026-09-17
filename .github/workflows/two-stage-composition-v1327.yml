@@ -17,10 +17,11 @@ jobs:
           new="""async function requestAssistant(c){const key=apiKeyFor(c.provider);if(!key)throw new Error(`Für ${providerLabel(c.provider)} ist noch kein API-Schlüssel eingetragen.`);if(!window.MCLSessionCore||!window.MCLRequestRuntime)throw new Error('Die neue Request-Architektur ist nicht vollständig geladen.');const base=requestSpec(c,key);if(base.mode!=='compose'){let result=await window.MCLRequestRuntime.run(base);if(result.need?.slots?.length)result=await window.MCLRequestRuntime.run(requestSpec(c,key,result.need.slots));return result}const userText=[...base.messages].reverse().find(m=>m.role==='user')?.text||'';const draftSystem='Du bist ausschließlich Komponist. Komponiere musikalisch frei und eigenständig. Konzentriere dich auf musikalische Gestalt, Verlauf, Stimmen, Rhythmus, Harmonik, Artikulation und Charakter. Denke noch NICHT an MIDI-Codierung, Beat-Werte, MCL_ACTION oder ein technisches Ausgabeformat. Schreibe einen vollständigen, konkret ausnotierbaren musikalischen Entwurf. Gib in der ersten Zeile einen kurzen passenden Werktitel als „Titel: …“ an. Mache keine Erläuterung über deine Arbeitsweise.';composerNote.textContent='KI komponiert musikalischen Entwurf …';const draft=await window.MCLRequestRuntime.run({...base,mode:'chat',system:draftSystem,messages:[{role:'user',text:userText}]});const musicalDraft=String(draft.visible||draft.text||'').trim();if(!musicalDraft)throw new Error('Die musikalische Kompositionsstufe lieferte keinen Entwurf.');composerNote.textContent='MIDI wird werkgetreu erzeugt …';const translateSystem=`Du bist ausschließlich Notations- und MIDI-Übersetzer. Übertrage den bereits fertigen musikalischen Entwurf so vollständig und werkgetreu wie möglich in Music Chat Labs MIDI-Aktionsformat. Komponiere NICHT neu, vereinfache NICHT, regularisiere NICHT den Rhythmus und ersetze keine ungewöhnlichen musikalischen Entscheidungen durch Standards. Bewahre insbesondere rhythmische Vielfalt, Pausen, Stimmführung, Phrasierung, Artikulation und Dynamik. Die endgültige Antwort muss genau eine gültige <MCL_ACTION> enthalten. Nutze NEW_SCORE für neue Musik; bei ausdrücklich verlangter Bearbeitung vorhandenen Materials die passende PATCH/REPLACE_SCORE/MERGE-Aktion. Notenformat nt=[StartBeat,Dauer,Pitch,Velocity,Staff,Gate], Controller ct=[Beat,CC,Wert]. Antworte ohne zusätzliche musikalische Neuschöpfung.`;const translateUser=`URSPRÜNGLICHER AUFTRAG:\n${userText}\n\nFERTIGER MUSIKALISCHER ENTWURF:\n${musicalDraft}`;return await window.MCLRequestRuntime.run({...base,system:translateSystem,messages:[{role:'user',text:translateUser}]})}"""
           if old not in s: raise SystemExit('requestAssistant anchor not found')
           p.write_text(s.replace(old,new))
-          # Version every published resource consistently.
           for name in ['index.html','service-worker.js','manifest.webmanifest']:
             q=Path(name)
             if q.exists(): q.write_text(q.read_text().replace('1.3.26','1.3.27'))
+          for q in Path('tests').glob('*.js'):
+            q.write_text(q.read_text().replace('1.3.26','1.3.27'))
           PY
       - name: Document architecture change
         run: |
@@ -37,12 +38,12 @@ jobs:
           grep -q 'Komponiere NICHT neu' app.js
           grep -q 'FERTIGER MUSIKALISCHER ENTWURF' app.js
           grep -q 'v1.3.27' index.html
-          if [ -f package.json ]; then npm test; fi
+          npm test
       - name: Commit tested migration
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add app.js index.html service-worker.js manifest.webmanifest DEVELOPMENT.md
+          git add app.js index.html service-worker.js manifest.webmanifest DEVELOPMENT.md tests
           git diff --cached --quiet && exit 0
           git commit -m 'MusicChat Lab v1.3.27: two-stage composition architecture'
           git push
