@@ -127,6 +127,17 @@
       {t:0,o:0,b:[0xff,0x51,0x03,(mpqn>>>16)&255,(mpqn>>>8)&255,mpqn&255]},
       {t:0,o:1,b:[0xff,0x58,0x04,Math.max(1,Number(ts.n)||4),Math.max(0,Math.round(Math.log2(Math.max(1,Number(ts.d)||4)))),24,8]}
     ];
+    (Array.isArray(score.tm)?score.tm:[]).forEach((m,i)=>{
+      const beat=Number(m?.[0]),value=Number(m?.[1]);
+      if(!Number.isFinite(beat)||beat<=0||!Number.isFinite(value)||value<20||value>300)return;
+      const us=Math.round(60000000/value);
+      conductor.push({t:Math.max(0,Math.round(beat*PPQ)),o:10+i,b:[0xff,0x51,0x03,(us>>>16)&255,(us>>>8)&255,us&255]});
+    });
+    (Array.isArray(score.tsm)?score.tsm:[]).forEach((m,i)=>{
+      const beat=Number(m?.[0]),n=Number(m?.[1]),d=Number(m?.[2]);
+      if(!Number.isFinite(beat)||beat<=0||!Number.isFinite(n)||n<1||!Number.isFinite(d)||d<1)return;
+      conductor.push({t:Math.max(0,Math.round(beat*PPQ)),o:100+i,b:[0xff,0x58,0x04,Math.round(n),Math.max(0,Math.round(Math.log2(d))),24,8]});
+    });
     const key=parseKeySignature(score.k);
     if(key) conductor.push({t:0,o:2,b:[0xff,0x59,0x02,key.fifths&0xff,key.minor?1:0]});
     chunks.push(mtrk(conductor));
