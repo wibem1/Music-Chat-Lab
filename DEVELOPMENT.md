@@ -80,3 +80,5 @@ Der GitHub-Actions-Lauf für RC v1.3.25 bestand `npm test` und sämtliche JavaSc
 
 ## Freigaberegel für v1.3.25
 Nur der getestete Commit des Release Candidates darf nach `main` übernommen werden. Nach dem Pages-Deploy ist der veröffentlichte Stand erneut auf Version und Ressourcenauslieferung zu prüfen. Erst danach wird der WebApp-Link zur Anwenderprüfung genannt.
+## v1.3.27 – Zweistufige Kompositionsarchitektur
+Der in Composition Studio praktisch bestätigte Kompositionsweg wurde in den expliziten Komponiermodus übernommen: Stufe 1 erzeugt ausschließlich einen freien musikalischen Entwurf ohne MIDI-/Aktionsformat; Stufe 2 übersetzt diesen fertigen Entwurf werkgetreu in MCL_ACTION/MIDI. Die Übersetzungsstufe darf nicht neu komponieren, vereinfachen oder rhythmisch regularisieren. Der normale Chatmodus und die Provider-Gateway-Architektur bleiben unverändert.
