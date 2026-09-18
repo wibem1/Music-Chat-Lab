@@ -140,7 +140,8 @@
       (tr.nt||[]).forEach((n,i)=>{
         const start=Math.max(0,Math.round(Number(n[0])*PPQ));
         const dur=Math.max(1,Math.round(Number(n[1])*PPQ));
-        const gate=Number.isFinite(Number(n[5]))?Number(n[5]):0.95;
+        const rawGate=Number(n[5]);
+        const gate=Number.isFinite(rawGate)&&rawGate>0&&rawGate<=2?rawGate:1.0;
         const end=Math.max(start+1,Math.round(start+dur*gate));
         const p=Math.max(0,Math.min(127,Math.round(Number(n[2]))));
         const v=Math.max(1,Math.min(127,Math.round(Number(n[3])||80)));
