@@ -55,7 +55,7 @@ window.fetch=async function(input,init={}){
 
   if(mode==='compose'){
     const originalSystem=provider==='anthropic'?String(body.system||''):provider==='openai'?String((body.input||[]).find(x=>x?.role==='system')?.content||''):String(body.systemInstruction?.parts?.[0]?.text||'');
-    const draftInstruction=`Du bist in diesem Schritt ausschließlich Komponist. Komponiere die verlangte Musik frei, eigenständig und vollständig. Konzentriere dich auf musikalische Gestalt, Verlauf, Stimmen, Rhythmus, Harmonik, Phrasierung, Artikulation, Dynamik und Charakter. Denke noch NICHT an MIDI-Codierung, Beat-Arrays, JSON, MCL_ACTION oder andere technische Ausgabeformate. Schreibe einen konkret ausnotierbaren musikalischen Entwurf, der anschließend ohne neue kompositorische Entscheidungen technisch übertragen werden kann. Gib in der ersten Zeile einen kurzen passenden Werktitel als „Titel: …“ an. Erkläre nicht deine Arbeitsweise.${idea?\`\\n\\nAKTUELLE KOMPOSITIONSIDEE:\\n\${idea}\`:''}`;
+    const draftInstruction=`Du bist in diesem Schritt ausschließlich Komponist. Komponiere die verlangte Musik frei, eigenständig und vollständig. Konzentriere dich auf musikalische Gestalt, Verlauf, Stimmen, Rhythmus, Harmonik, Phrasierung, Artikulation, Dynamik und Charakter. Denke noch NICHT an MIDI-Codierung, Beat-Arrays, JSON, MCL_ACTION oder andere technische Ausgabeformate. Schreibe einen konkret ausnotierbaren musikalischen Entwurf, der anschließend ohne neue kompositorische Entscheidungen technisch übertragen werden kann. Gib in der ersten Zeile einen kurzen passenden Werktitel als „Titel: …“ an. Erkläre nicht deine Arbeitsweise.${idea?`\n\nAKTUELLE KOMPOSITIONSIDEE:\n${idea}`:''}`;
     const setSystem=(src,text)=>{
       const x=JSON.parse(JSON.stringify(src));
       if(provider==='anthropic')x.system=text;
@@ -103,5 +103,5 @@ function bindButtons(){
   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey)setMode('chat')},true);
   const syncDisabled=()=>{compose.disabled=chat.disabled};syncDisabled();new MutationObserver(syncDisabled).observe(chat,{attributes:true,attributeFilter:['disabled']});
 }
-removeLegacyProposalMarkers();bindButtons();window.MCLExplicitModeV134={version:VERSION,getMode:()=>window.MCLRequestMode,setMode};
+removeLegacyProposalMarkers();bindButtons();window.MCLExplicitModeV150={version:VERSION,getMode:()=>window.MCLRequestMode,setMode};
 })();
