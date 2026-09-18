@@ -1,7 +1,7 @@
-name: V1.5 Branch Smoke Test
+name: V1.5.1 Branch Smoke Test
 on:
   push:
-    branches: [v1.5-two-stage-composition]
+    branches: [v1.5.1-compose-quality-fix]
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,8 +19,8 @@ jobs:
           test -f app.js
           test -f execution-mode.js
           test -f service-worker.js
-          grep -q 'data-app-version>v1.5.0<' index.html
-          grep -q "music-chat-lab-v1.5.0" service-worker.js
+          grep -q 'data-app-version>v1.5.1<' index.html
+          grep -q "music-chat-lab-v1.5.1" service-worker.js
           for f in *.js; do node --check "$f"; done
           python3 - <<'PY'
           import re, pathlib
@@ -38,8 +38,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q "ausschließlich Komponist" execution-mode.js
-          grep -q "MCL_ACTION oder andere technische Ausgabeformate" execution-mode.js
+          grep -q "Komponiere den Auftrag des Nutzers als eigenständige, vollständige Musik" execution-mode.js
+          grep -q "Erzeuge noch kein MIDI, JSON oder MCL_ACTION" execution-mode.js
           grep -q "ausschließlich Notations- und MIDI-Übersetzer" execution-mode.js
           grep -q "Komponiere NICHT neu" execution-mode.js
           grep -q "NEW_SCORE" execution-mode.js
@@ -68,4 +68,4 @@ jobs:
           timeout 20s "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --dump-dom http://127.0.0.1:8765/index.html >/tmp/mcl-dom.html
           grep -q 'composeButton' /tmp/mcl-dom.html
           grep -q 'sendButton' /tmp/mcl-dom.html
-          grep -q 'v1.5.0' /tmp/mcl-dom.html
+          grep -q 'v1.5.1' /tmp/mcl-dom.html
