@@ -57,6 +57,7 @@ window.fetch=async function(input,init={}){
   if(mode==='compose'){
     const originalSystem=provider==='anthropic'?String(body.system||''):provider==='openai'?String((body.input||[]).find(x=>x?.role==='system')?.content||''):String(body.systemInstruction?.parts?.[0]?.text||'');
     const activeIdea=composeUsesIdea?idea:'';
+    composeUsesIdea=false;
     const draftInstruction=`Komponiere den Auftrag des Nutzers als eigenständige, vollständige Musik. Arbeite musikalisch frei. Erzeuge noch kein MIDI, JSON oder MCL_ACTION. Formuliere die fertige Komposition so konkret, dass sie anschließend technisch in MIDI übertragen werden kann. Erkläre nicht deine Arbeitsweise.${activeIdea?`\n\nVerwende dabei diese vom Nutzer gewählte Kompositionsidee:\n${activeIdea}`:''}`;
     const setSystem=(src,text)=>{
       const x=JSON.parse(JSON.stringify(src));
@@ -103,7 +104,6 @@ function bindButtons(){
     if(input.value.trim()&&!composeUsesIdea)composeUsesIdea=false;
     setMode('compose');forwardingCompose=true;try{chat.click()}finally{forwardingCompose=false}
   });
-  input.addEventListener('input',()=>{if(!forwardingCompose)composeUsesIdea=false},true);
   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){composeUsesIdea=false;setMode('chat')}},true);
   const syncDisabled=()=>{compose.disabled=chat.disabled};syncDisabled();new MutationObserver(syncDisabled).observe(chat,{attributes:true,attributeFilter:['disabled']});
 }
