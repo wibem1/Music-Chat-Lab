@@ -1,0 +1,11 @@
+const fs=require('fs'),vm=require('vm'),path=require('path'),assert=require('assert');
+const sandbox={window:{}};sandbox.window.window=sandbox.window;vm.createContext(sandbox);vm.runInContext(fs.readFileSync(path.join(__dirname,'..','composition-intent.js'),'utf8'),sandbox);
+const i=sandbox.window.MCLCompositionIntent;
+assert(i.requiresNew({text:'Komponiere ein neues eigenständiges Klavierstück.',message:{files:[]}}));
+assert(!i.requiresNew({text:'Mache eine Variation von Speicher 1.',message:{files:[]}}));
+assert(!i.requiresNew({text:'Komponiere ein neues Stück aus dieser Datei.',message:{files:[{kind:'midi'}]}}));
+assert(i.accepts({type:'NEW_SCORE',score:{}},true));
+assert(!i.accepts({type:'PATCH',baseSlot:3,ops:[]},true));
+assert(!i.accepts({type:'NEW_SCORE',baseSlot:3,score:{}},true));
+assert(i.accepts({type:'PATCH',baseSlot:3},false));
+console.log('COMPOSITION_INTENT_V201_OK');
