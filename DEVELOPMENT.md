@@ -73,6 +73,14 @@ Die Korrektur macht die Modellaktualisierung idempotent: Vor einer DOM-Änderung
 
 Für v1.3.21 wurde erstmals der veröffentlichte GitHub-Pages-Artefaktstand selbst heruntergeladen und geprüft. Alle JavaScript-Dateien bestanden `node --check`. Zusätzlich wurde der komplette Script-Satz in der realen Reihenfolge in Chromium geladen; es traten keine JavaScript-Laufzeitfehler auf. Der Smoke-Test prüfte Texteingabe, Öffnen des API-Einstellungsdialogs, Anlegen eines neuen Chats, Wechsel zwischen OpenAI/Anthropic einschließlich Modelllisten sowie anschließende Reaktionsfähigkeit der Oberfläche. Diese Prüfungen bestanden. Der GitHub-Pages-Deploy für v1.3.21 war ebenfalls erfolgreich. Der installierte iPad-PWA-Lebenszyklus bleibt eine gerätespezifische Restprüfung und kann nicht als lokal simuliert ausgegeben werden.
 
+
+### 18. September 2026 – Rollback-Test und PWA-Zustand
+Nach Problemen der 2.x-Entwicklung wurde `main` auf historische 1.3.x-Stände zurückgesetzt. v1.3.20 und anschließend v1.3.21 erschienen auf dem bereits verwendeten Client zunächst vollständig sichtbar, reagierten aber auf keinerlei Bedienung. Daraus durfte nicht geschlossen werden, dass der historische Quellstand selbst defekt war.
+
+Der entscheidende Kontrolltest erfolgte mit `pwa-recover.html`: Es deregistriert ausschließlich Service Worker mit MusicChatLab-Scope und löscht ausschließlich Caches mit dem Präfix `music-chat-lab-`; LocalStorage mit Chats und API-Einstellungen bleibt unangetastet. Nach dieser Bereinigung und frischem Abruf war **v1.3.21 auf dem Anwendergerät wieder bedienbar**.
+
+Damit ist v1.3.21 der bestätigte Wiederherstellungs-/Referenzstand. Er wurde zusätzlich als Branch `stable-v1.3.21-recovered` gesichert. Lehre: Bei Rollbacks einer installierten PWA müssen **Repository-Stand, veröffentlichter Pages-Artefaktstand und persistenter Client-/Service-Worker-/Cache-Zustand getrennt geprüft werden**. Ein historischer Commit reproduziert auf einem bereits weiterentwickelten PWA-Client nicht automatisch den damaligen Laufzeitzustand. Vor der Bewertung eines Rollbacks ist deshalb bei Symptomen einer vollständig toten Oberfläche zunächst der isolierte PWA-Recovery-Pfad zu prüfen, ohne LocalStorage leichtfertig zu löschen.
+
 ## Offene Konsolidierungsaufgaben
 - Modellkatalog an einer eindeutigen Stelle pflegen.
 - Versionsverwaltung zentralisieren.
