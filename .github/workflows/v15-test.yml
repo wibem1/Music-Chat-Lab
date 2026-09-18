@@ -34,6 +34,27 @@ jobs:
           if missing: raise SystemExit('Missing local resources: '+', '.join(missing))
           print('All local index resources exist.')
           PY
+      - name: Two-stage composition contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "ausschließlich Komponist" execution-mode.js
+          grep -q "MCL_ACTION oder andere technische Ausgabeformate" execution-mode.js
+          grep -q "ausschließlich Notations- und MIDI-Übersetzer" execution-mode.js
+          grep -q "Komponiere NICHT neu" execution-mode.js
+          grep -q "NEW_SCORE" execution-mode.js
+          grep -q "ti, bpm, ts, k, sm, tr" execution-mode.js
+          python3 - <<'PY'
+          import pathlib
+          s=pathlib.Path('execution-mode.js').read_text()
+          assert s.count("nativeFetch(input,{...init,body:JSON.stringify") >= 3
+          compose=s[s.index("if(mode==='compose')"):s.index("function bindButtons()")]
+          assert "draftResponse=await nativeFetch" in compose
+          assert "musicalDraft=responseText" in compose
+          assert "FERTIGE MUSIKALISCHE KOMPOSITION" in compose
+          assert compose.index("draftResponse=await nativeFetch") < compose.index("FERTIGE MUSIKALISCHE KOMPOSITION")
+          print("Two-stage composition contract present.")
+          PY
       - name: Headless browser smoke
         shell: bash
         run: |
