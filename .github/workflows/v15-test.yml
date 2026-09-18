@@ -1,0 +1,50 @@
+name: V1.5 Branch Smoke Test
+on:
+  push:
+    branches: [v1.5-two-stage-composition]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static resource and syntax checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f index.html
+          test -f styles.css
+          test -f app.js
+          test -f execution-mode.js
+          test -f service-worker.js
+          grep -q 'data-app-version>v1.5.0<' index.html
+          grep -q "music-chat-lab-v1.5.0" service-worker.js
+          for f in *.js; do node --check "$f"; done
+          python3 - <<'PY'
+          import re, pathlib
+          html=pathlib.Path('index.html').read_text()
+          refs=re.findall(r'(?:src|href)="([^"]+)"',html)
+          missing=[]
+          for r in refs:
+              p=r.split('?')[0]
+              if p.startswith(('http:','https:','#','data:')): continue
+              if p and not pathlib.Path(p).exists(): missing.append(p)
+          if missing: raise SystemExit('Missing local resources: '+', '.join(missing))
+          print('All local index resources exist.')
+          PY
+      - name: Headless browser smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8765 >/tmp/mcl-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 1
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          timeout 20s "$CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --dump-dom http://127.0.0.1:8765/index.html >/tmp/mcl-dom.html
+          grep -q 'composeButton' /tmp/mcl-dom.html
+          grep -q 'sendButton' /tmp/mcl-dom.html
+          grep -q 'v1.5.0' /tmp/mcl-dom.html
