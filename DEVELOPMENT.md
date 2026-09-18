@@ -100,6 +100,14 @@ Der zweistufige Komponierweg wurde auf dem isolierten Entwicklungszweig `v1.5-tw
 
 Vor der Veröffentlichung wurden zwei GitHub-Actions-Prüfläufe erfolgreich abgeschlossen. Der erste prüfte JavaScript-Syntax, lokale Ressourcen, Versions-/Cache-Konsistenz und den grundlegenden Start der App in Headless Chromium. Der zweite ergänzte einen expliziten Vertragscheck für die Reihenfolge der beiden Kompositionsstufen und die technischen Zielvorgaben der Übersetzungsstufe. Diese automatisierten Prüfungen ersetzen nicht die noch folgende Anwenderprüfung mit echten Provider-Antworten, sichern aber den freizugebenden technischen Teststand ab.
 
+
+### v1.5.1 – Kompositionsfreiheit und technische Gate-Validierung
+Nach dem Anwendervergleich von Sol und Sonnet in v1.5.0 wurden zwei voneinander unabhängige Ursachen korrigiert. Ein ausdrücklich neuer Kompositionsauftrag übernimmt nicht mehr automatisch eine noch gespeicherte frühere Kompositionsidee; die Idee wird nur verwendet, wenn der Nutzer den dafür vorgesehenen Komponierweg auf Grundlage dieser Idee auslöst. Der Prompt der ersten Stufe wurde außerdem bewusst auf einen kurzen freien Kompositionsauftrag reduziert, statt musikalische Teilaspekte als Checkliste vorzugeben.
+
+In der technischen MIDI-Stufe wurden fehlerhafte Gate-Multiplikatoren als Ursache extrem verlängerter Dateien identifiziert. Gate-Werte außerhalb des für die Engine vorgesehenen positiven Bereichs bis 2 werden bei der Materialisierung und zusätzlich defensiv im MIDI-Builder auf 1.0 normalisiert. Damit können Werte wie 88, 120 oder 180 nicht mehr die Dateidauer künstlich vervielfachen.
+
+Der isolierte Branch `v1.5.1-compose-quality-fix` bestand den allgemeinen V1.5.1-Smoke-Test und anschließend den erweiterten Regressionstest einschließlich Versions-/Cache-Prüfung, zweistufigem Kompositionsvertrag, Idea-Scope und Gate-Schutz. Die musikalische Qualitätsbewertung mit echten Provider-Antworten bleibt eine Anwenderprüfung nach Veröffentlichung.
+
 ## Offene Konsolidierungsaufgaben
 - Modellkatalog an einer eindeutigen Stelle pflegen.
 - Versionsverwaltung zentralisieren.
