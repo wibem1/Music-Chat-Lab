@@ -2,7 +2,7 @@
 'use strict';
 if(window.__mclExplicitModeV200)return;
 window.__mclExplicitModeV200=true;
-const VERSION='2.0.0';
+const VERSION='2.0.1';
 let forwardingCompose=false;
 window.MCLRequestMode=window.MCLRequestMode==='compose'?'compose':'chat';
 function setMode(mode){window.MCLRequestMode=mode==='compose'?'compose':'chat'}
