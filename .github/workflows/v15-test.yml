@@ -44,6 +44,9 @@ jobs:
           grep -q "Komponiere NICHT neu" execution-mode.js
           grep -q "NEW_SCORE" execution-mode.js
           grep -q "ti, bpm, ts, k, sm, tr" execution-mode.js
+          grep -q "composeUsesIdea" execution-mode.js
+          grep -q "g>0&&g<=2?g:1.0" session-orchestrator.js
+          grep -q "rawGate>0&&rawGate<=2?rawGate:1.0" composition-engine14.js
           python3 - <<'PY'
           import pathlib
           s=pathlib.Path('execution-mode.js').read_text()
