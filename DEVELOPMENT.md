@@ -81,6 +81,25 @@ Der entscheidende Kontrolltest erfolgte mit `pwa-recover.html`: Es deregistriert
 
 Damit ist v1.3.21 der bestätigte Wiederherstellungs-/Referenzstand. Er wurde zusätzlich als Branch `stable-v1.3.21-recovered` gesichert. Lehre: Bei Rollbacks einer installierten PWA müssen **Repository-Stand, veröffentlichter Pages-Artefaktstand und persistenter Client-/Service-Worker-/Cache-Zustand getrennt geprüft werden**. Ein historischer Commit reproduziert auf einem bereits weiterentwickelten PWA-Client nicht automatisch den damaligen Laufzeitzustand. Vor der Bewertung eines Rollbacks ist deshalb bei Symptomen einer vollständig toten Oberfläche zunächst der isolierte PWA-Recovery-Pfad zu prüfen, ohne LocalStorage leichtfertig zu löschen.
 
+
+### V1.5 – verbindliches Ziel: Idee → Komposition → MIDI-Aufbereitung
+V1.5 startet vom bestätigten Referenzstand v1.3.21 und übernimmt aus den Composition-Studio-Versuchen ausschließlich den zweistufigen Kompositionsweg. Es findet keine allgemeine Architektur-Konsolidierung nach Art des gescheiterten 2.x-Zweigs statt.
+
+Der vorhandene MusicChat-Workflow bleibt erhalten: Im normalen **Chat** kann der Nutzer gemeinsam mit der gewählten KI eine Kompositionsidee entwickeln. Diese Idee kann in das vorhandene Feld „Kompositionsidee“ übernommen und weiter verändert werden. Dabei wird noch keine Komposition und keine MIDI-Datei erzeugt. Eine vorherige Ideenphase ist optional; ein Nutzer darf auch direkt einen Kompositionsauftrag geben und „Komponiere“ drücken.
+
+Beim Drücken auf **„Komponiere“** beginnt der neue V1.5-Ablauf:
+
+1. **Kompositionsstufe:** Aus Kompositionsidee und/oder aktuellem Auftrag entsteht zunächst die eigentliche Musik. Diese Stufe soll musikalisch frei arbeiten und nicht gleichzeitig das interne MIDI-/JSON-/MCL-Aktionsformat bedienen müssen.
+2. **MIDI-Aufbereitungsstufe:** Die fertige Komposition wird anschließend möglichst werkgetreu in das bereits in v1.3.21 verwendete Engine-14-Scoreformat und daraus in MIDI übertragen. Diese Stufe darf nicht neu komponieren, vereinfachen, verbessern oder rhythmisch regularisieren; sie hat eine technische Übersetzungsaufgabe.
+
+Verbindlicher Gesamtweg: **Idee entwickeln (optional) → Musik komponieren → MIDI aufbereiten.** Chat, sechs Speicherplätze, Player, CLAB, Providerwahl und PWA-Verhalten von v1.3.21 bleiben zunächst unverändert. Das bestehende interne Scoreformat (`ti`, `bpm`, `ts`, `tr`, `nm`, `pg`, `nt` usw.) bleibt die technische Zielsprache, damit kein zweites inkompatibles Scoreschema entsteht.
+
+
+### v1.5.0 – Implementierung und technische Vorprüfung
+Der zweistufige Komponierweg wurde auf dem isolierten Entwicklungszweig `v1.5-two-stage-composition` implementiert. Im Komponiermodus erfolgt zuerst ein freier musikalischer Provider-Aufruf; dessen musikalischer Entwurf wird anschließend in einem zweiten Provider-Aufruf ausschließlich technisch in das bestehende Engine-14-/MCL-Aktionsformat übertragen. Der normale Chatmodus bleibt einstufig und die optionale Kompositionsidee bleibt als musikalischer Kontext erhalten.
+
+Vor der Veröffentlichung wurden zwei GitHub-Actions-Prüfläufe erfolgreich abgeschlossen. Der erste prüfte JavaScript-Syntax, lokale Ressourcen, Versions-/Cache-Konsistenz und den grundlegenden Start der App in Headless Chromium. Der zweite ergänzte einen expliziten Vertragscheck für die Reihenfolge der beiden Kompositionsstufen und die technischen Zielvorgaben der Übersetzungsstufe. Diese automatisierten Prüfungen ersetzen nicht die noch folgende Anwenderprüfung mit echten Provider-Antworten, sichern aber den freizugebenden technischen Teststand ab.
+
 ## Offene Konsolidierungsaufgaben
 - Modellkatalog an einer eindeutigen Stelle pflegen.
 - Versionsverwaltung zentralisieren.
