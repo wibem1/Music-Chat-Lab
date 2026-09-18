@@ -89,3 +89,10 @@ MusicChat Lab 2.0 konsolidiert das in Composition Studio bewährte zweistufige M
 
 ## v2.0.1 – Neukomposition darf keinen alten PATCH-Zustand erben
 Bei einer eindeutigen Neukomposition ohne im aktuellen Zug bereitgestelltes Ausgangsmaterial wird der technische Übersetzungsschritt nun ausdrücklich auf `NEW_SCORE` festgelegt. Ein alter aktiver Speicherplatz oder früherer Bearbeitungszustand darf dabei weder `PATCH`, `REPLACE_SCORE`, `MERGE` noch `baseSlot` in den neuen Zug hineintragen. Die Regel liegt in `composition-intent.js`; `app.js` prüft die erzeugte Aktion vor der Materialisierung. Liefert die KI dennoch eine alte Bearbeitungsaktion, erfolgt genau ein korrigierender Übersetzungsversuch. Bleibt die Aktion danach ungültig, wird sie verworfen statt auf altes Material angewendet. Ein Regressionstest deckt NEW_SCORE, PATCH/baseSlot, Bearbeitungsauftrag und aktuell angehängtes Ausgangsmaterial ab.
+
+
+## v2.0.2 – Frische Komposition wird vor der Übersetzung isoliert
+
+Diagnose 2026-09-18: Ein neuer Chat mit einem einfachen Kompositionsauftrag konnte trotz fehlenden Ausgangsmaterials noch einen alten PATCH/baseSlot-Zustand aus dem Arbeitstisch übernehmen. v2.0.1 blockierte zwar das Anwenden eines solchen PATCH, klassifizierte aber nur ausdrücklich mit „neu/eigenständig“ formulierte Aufträge als frische Komposition.
+
+Ab v2.0.2 gilt deshalb: Im Modus „Komponiere“ ist ein Auftrag ohne aktuelle Quelldatei und ohne ausdrücklichen Bezug auf vorhandenes Material grundsätzlich eine frische Komposition. Er muss als NEW_SCORE übersetzt werden und darf keinen baseSlot übernehmen. Bearbeitungsaufträge mit aktuellem MIDI/MusicXML/CLAB, „Speicher 1–6“ oder eindeutigem Bezug auf vorhandenes Material bleiben PATCH/REPLACE/MERGE-fähig. Regressionstests decken nun auch schlichte Aufträge wie „Erstelle ein Klavierstück“ und „Komponiere ein Stück für Cello und Klavier“ ab.
