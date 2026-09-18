@@ -185,6 +185,19 @@ function safeIncompleteText(raw,kind){
 }
 
 function isScore(x){return !!x&&Array.isArray(x.tr)&&x.tr.some(t=>Array.isArray(t?.nt))}
+function normalizeTechnicalScore(score){
+  const s=clone(score);if(!s||!Array.isArray(s.tr))return s;
+  for(const tr of s.tr){
+    if(!Array.isArray(tr?.nt))continue;
+    tr.nt=tr.nt.map(n=>{
+      if(!Array.isArray(n))return n;
+      const x=n.slice(),g=Number(x[5]);
+      x[5]=Number.isFinite(g)&&g>0&&g<=2?g:1.0;
+      return x;
+    });
+  }
+  return s;
+}
 function validTrack(t){return !!t&&typeof t==='object'&&Array.isArray(t.nt)}
 function trackIndex(score,op){
   if(Number.isInteger(op?.index))return op.index;
@@ -256,6 +269,7 @@ function materializeAction(action,sources,prefix){
   else if(type==='new_score'&&isScore(action.score))score=clone(action.score);
   else if(type==='replace_score'&&isScore(action.score))score=clone(action.score);
   if(!isScore(score))return null;
+  score=normalizeTechnicalScore(score);
   if(!String(score.ti||'').trim())score.ti=String(action.title||'Neue Komposition').trim()||'Neue Komposition';
   if(!String(score.sm||'').trim())score.sm=String(action.summary||prefix||'MIDI-Komposition wurde erzeugt.').replace(/\s+/g,' ').trim().slice(0,500);
   return score;
