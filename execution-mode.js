@@ -1,12 +1,13 @@
 (()=>{
 'use strict';
-if(window.__mclExplicitModeV150)return;
-window.__mclExplicitModeV150=true;
+if(window.__mclExplicitModeV151)return;
+window.__mclExplicitModeV151=true;
 
-const VERSION='1.5.0';
+const VERSION='1.5.1';
 const nativeFetch=window.fetch.bind(window);
 const CONCEPT_RE=/<MCL_CONCEPT>\s*([\s\S]*?)\s*<\/MCL_CONCEPT>/i;
 let forwardingCompose=false;
+let composeUsesIdea=false;
 window.MCLRequestMode='chat';
 
 function setMode(mode){window.MCLRequestMode=mode==='compose'?'compose':'chat'}
@@ -51,11 +52,12 @@ function jsonResponse(data,r){const h=new Headers(r.headers||{});h.set('content-
 window.fetch=async function(input,init={}){
   const url=typeof input==='string'?input:input?.url||'',provider=providerFor(url);if(!provider||typeof init.body!=='string')return nativeFetch(input,init);
   let body;try{body=JSON.parse(init.body)}catch{return nativeFetch(input,init)}
-  const mode=window.MCLRequestMode==='compose'?'compose':'chat',idea=currentIdea();
+  const mode=window.MCLRequestMode==='compose'?'compose':'chat',idea=mode==='compose'&&composeUsesIdea?currentIdea():currentIdea();
 
   if(mode==='compose'){
     const originalSystem=provider==='anthropic'?String(body.system||''):provider==='openai'?String((body.input||[]).find(x=>x?.role==='system')?.content||''):String(body.systemInstruction?.parts?.[0]?.text||'');
-    const draftInstruction=`Du bist in diesem Schritt ausschließlich Komponist. Komponiere die verlangte Musik frei, eigenständig und vollständig. Konzentriere dich auf musikalische Gestalt, Verlauf, Stimmen, Rhythmus, Harmonik, Phrasierung, Artikulation, Dynamik und Charakter. Denke noch NICHT an MIDI-Codierung, Beat-Arrays, JSON, MCL_ACTION oder andere technische Ausgabeformate. Schreibe einen konkret ausnotierbaren musikalischen Entwurf, der anschließend ohne neue kompositorische Entscheidungen technisch übertragen werden kann. Gib in der ersten Zeile einen kurzen passenden Werktitel als „Titel: …“ an. Erkläre nicht deine Arbeitsweise.${idea?`\n\nAKTUELLE KOMPOSITIONSIDEE:\n${idea}`:''}`;
+    const activeIdea=composeUsesIdea?idea:'';
+    const draftInstruction=`Komponiere den Auftrag des Nutzers als eigenständige, vollständige Musik. Arbeite musikalisch frei. Erzeuge noch kein MIDI, JSON oder MCL_ACTION. Formuliere die fertige Komposition so konkret, dass sie anschließend technisch in MIDI übertragen werden kann. Erkläre nicht deine Arbeitsweise.${activeIdea?`\n\nVerwende dabei diese vom Nutzer gewählte Kompositionsidee:\n${activeIdea}`:''}`;
     const setSystem=(src,text)=>{
       const x=JSON.parse(JSON.stringify(src));
       if(provider==='anthropic')x.system=text;
@@ -89,19 +91,22 @@ window.fetch=async function(input,init={}){
 
 function bindButtons(){
   const chat=document.getElementById('sendButton'),compose=document.getElementById('composeButton'),input=document.getElementById('messageInput');if(!chat||!compose||!input)return;
-  chat.addEventListener('click',()=>{if(!forwardingCompose)setMode('chat')},true);
+  chat.addEventListener('click',()=>{if(!forwardingCompose){composeUsesIdea=false;setMode('chat')}},true);
   compose.addEventListener('click',()=>{
     if(chat.disabled)return;
     if(!input.value.trim()){
-      if(currentIdea())input.value='Komponiere eine neue Fassung auf Grundlage der aktuellen Kompositionsidee.';
-      else if(hasAssistantContext())input.value='Setze den zuletzt im Chat entwickelten Kompositionsvorschlag jetzt als MIDI um.';
+      if(currentIdea()){input.value='Komponiere eine neue Fassung auf Grundlage der aktuellen Kompositionsidee.';composeUsesIdea=true;}
+      else if(hasAssistantContext()){input.value='Setze den zuletzt im Chat entwickelten Kompositionsvorschlag jetzt als MIDI um.';composeUsesIdea=false;}
       else{const note=document.getElementById('composerNote');if(note)note.textContent='Bitte zuerst einen Kompositionsauftrag eingeben oder eine Kompositionsidee formulieren.';return}
       input.dispatchEvent(new Event('input',{bubbles:true}));
     }
+    if(input.value.trim()&&!composeUsesIdea)composeUsesIdea=false;
     setMode('compose');forwardingCompose=true;try{chat.click()}finally{forwardingCompose=false}
   });
-  input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey)setMode('chat')},true);
+  input.addEventListener('input',()=>{if(!forwardingCompose)composeUsesIdea=false},true);
+  input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){composeUsesIdea=false;setMode('chat')}},true);
   const syncDisabled=()=>{compose.disabled=chat.disabled};syncDisabled();new MutationObserver(syncDisabled).observe(chat,{attributes:true,attributeFilter:['disabled']});
 }
-removeLegacyProposalMarkers();bindButtons();window.MCLExplicitModeV150={version:VERSION,getMode:()=>window.MCLRequestMode,setMode};
+removeLegacyProposalMarkers();bindButtons();window.MCLExplicitModeV151={version:VERSION,getMode:()=>window.MCLRequestMode,setMode};
+window.MCLExplicitModeV150=window.MCLExplicitModeV151;
 })();
