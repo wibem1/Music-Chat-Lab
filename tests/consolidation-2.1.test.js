@@ -1,0 +1,12 @@
+const fs=require('fs'),path=require('path'),assert=require('assert');
+const root=path.join(__dirname,'..');
+const app=fs.readFileSync(path.join(root,'app.js'),'utf8');
+const diag=fs.readFileSync(path.join(root,'diagnostic-enhancer.js'),'utf8');
+const midi=fs.readFileSync(path.join(root,'midi-export.js'),'utf8');
+assert(!app.includes('const providerModels='),'app.js darf keinen zweiten Modellkatalog enthalten');
+assert(!diag.includes('last-diagnostic.v1'),'Diagnose darf keinen alten Fehlerzustand als aktuelle Diagnose übernehmen');
+assert(!diag.includes('model-extension.js'),'Diagnose darf kein Legacy-Modellmodul nachladen');
+assert(diag.includes('MCLRequestRuntime?.lastDiagnostic'),'Diagnose muss den aktuellen Runtime-Request verwenden');
+assert(midi.includes('score?.tm||[]'),'MIDI-Export muss Tempowechsel exportieren');
+assert(midi.includes('score?.tsm||[]'),'MIDI-Export muss Taktwechsel exportieren');
+console.log('CONSOLIDATION_210_OK');
