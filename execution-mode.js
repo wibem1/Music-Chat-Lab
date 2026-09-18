@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-if(window.__mclExplicitModeV134)return;
-window.__mclExplicitModeV134=true;
+if(window.__mclExplicitModeV150)return;
+window.__mclExplicitModeV150=true;
 
-const VERSION='1.3.12';
+const VERSION='1.5.0';
 const nativeFetch=window.fetch.bind(window);
 const CONCEPT_RE=/<MCL_CONCEPT>\s*([\s\S]*?)\s*<\/MCL_CONCEPT>/i;
 let forwardingCompose=false;
@@ -52,8 +52,37 @@ window.fetch=async function(input,init={}){
   const url=typeof input==='string'?input:input?.url||'',provider=providerFor(url);if(!provider||typeof init.body!=='string')return nativeFetch(input,init);
   let body;try{body=JSON.parse(init.body)}catch{return nativeFetch(input,init)}
   const mode=window.MCLRequestMode==='compose'?'compose':'chat',idea=currentIdea();
-  const response=await nativeFetch(input,{...init,body:JSON.stringify(patchBody(provider,body,mode,idea))});
-  if(mode!=='chat'||!response.ok)return response;
+
+  if(mode==='compose'){
+    const originalSystem=provider==='anthropic'?String(body.system||''):provider==='openai'?String((body.input||[]).find(x=>x?.role==='system')?.content||''):String(body.systemInstruction?.parts?.[0]?.text||'');
+    const draftInstruction=`Du bist in diesem Schritt ausschließlich Komponist. Komponiere die verlangte Musik frei, eigenständig und vollständig. Konzentriere dich auf musikalische Gestalt, Verlauf, Stimmen, Rhythmus, Harmonik, Phrasierung, Artikulation, Dynamik und Charakter. Denke noch NICHT an MIDI-Codierung, Beat-Arrays, JSON, MCL_ACTION oder andere technische Ausgabeformate. Schreibe einen konkret ausnotierbaren musikalischen Entwurf, der anschließend ohne neue kompositorische Entscheidungen technisch übertragen werden kann. Gib in der ersten Zeile einen kurzen passenden Werktitel als „Titel: …“ an. Erkläre nicht deine Arbeitsweise.${idea?\`\\n\\nAKTUELLE KOMPOSITIONSIDEE:\\n\${idea}\`:''}`;
+    const setSystem=(src,text)=>{
+      const x=JSON.parse(JSON.stringify(src));
+      if(provider==='anthropic')x.system=text;
+      else if(provider==='openai'){x.input=(Array.isArray(x.input)?x.input:[]).filter(m=>m?.role!=='system');x.input.unshift({role:'system',content:text})}
+      else x.systemInstruction={parts:[{text}]};
+      return x;
+    };
+    const appendLastUser=(src,extra)=>{
+      const x=JSON.parse(JSON.stringify(src));
+      const arr=provider==='anthropic'?x.messages:provider==='openai'?x.input:x.contents;
+      if(Array.isArray(arr))for(let i=arr.length-1;i>=0;i--){const m=arr[i],isUser=provider==='google'?m?.role==='user':m?.role==='user';if(!isUser)continue;if(provider==='google'){const parts=Array.isArray(m.parts)?m.parts:[];parts.push({text:extra});m.parts=parts}else if(typeof m.content==='string')m.content+=extra;else if(Array.isArray(m.content))m.content.push({type:'text',text:extra});break}
+      return x;
+    };
+    const draftResponse=await nativeFetch(input,{...init,body:JSON.stringify(setSystem(body,draftInstruction))});
+    if(!draftResponse.ok)return draftResponse;
+    const draftData=await draftResponse.clone().json().catch(()=>null);if(!draftData)return draftResponse;
+    const musicalDraft=responseText(provider,draftData).trim();
+    if(!musicalDraft)return draftResponse;
+    const note=document.getElementById('composerNote');if(note)note.textContent='MIDI wird werkgetreu aufbereitet …';
+    const translateInstruction=`Du bist in diesem Schritt ausschließlich Notations- und MIDI-Übersetzer. Die musikalische Komposition ist bereits abgeschlossen. Übertrage den beigefügten fertigen musikalischen Entwurf so vollständig und werkgetreu wie möglich in das vorhandene Music-Chat-Lab-Aktions- und Scoreformat. Komponiere NICHT neu, vereinfache NICHT, verbessere NICHT und regularisiere NICHT den Rhythmus. Bewahre auch ungewöhnliche Entscheidungen, Pausen, Stimmführung, Phrasierung, Artikulation und Dynamik. Nutze exakt das bestehende interne Scoreformat mit ti, bpm, ts, k, sm, tr sowie pro Spur nm, ch, pg, nt und ct. Notenformat nt=[StartBeat,Dauer,Pitch,Velocity,Staff,Gate], Controller ct=[Beat,CC,Wert]. Die endgültige Antwort muss genau eine gültige <MCL_ACTION> enthalten. Für eine neue Komposition verwende NEW_SCORE. Diese Stufe hat ausschließlich eine technische Übersetzungsaufgabe.\n\n${removeDecisionLayer(originalSystem)}`;
+    let translateBody=setSystem(body,translateInstruction);
+    translateBody=appendLastUser(translateBody,`\n\nFERTIGE MUSIKALISCHE KOMPOSITION – NUR TECHNISCH ÜBERTRAGEN:\n${musicalDraft}`);
+    return nativeFetch(input,{...init,body:JSON.stringify(translateBody)});
+  }
+
+  const response=await nativeFetch(input,{...init,body:JSON.stringify(patchBody(provider,body,'chat',idea))});
+  if(!response.ok)return response;
   const d=await response.clone().json().catch(()=>null);if(!d)return response;const raw=responseText(provider,d),m=raw.match(CONCEPT_RE);if(!m)return response;
   setIdea(m[1]);const cleaned=raw.replace(CONCEPT_RE,'').replace(/\n{3,}/g,'\n\n').trim();return jsonResponse(replaceResponseText(provider,d,cleaned),response);
 };
