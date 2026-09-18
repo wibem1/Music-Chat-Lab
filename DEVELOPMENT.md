@@ -94,6 +94,12 @@ Beim Drücken auf **„Komponiere“** beginnt der neue V1.5-Ablauf:
 
 Verbindlicher Gesamtweg: **Idee entwickeln (optional) → Musik komponieren → MIDI aufbereiten.** Chat, sechs Speicherplätze, Player, CLAB, Providerwahl und PWA-Verhalten von v1.3.21 bleiben zunächst unverändert. Das bestehende interne Scoreformat (`ti`, `bpm`, `ts`, `tr`, `nm`, `pg`, `nt` usw.) bleibt die technische Zielsprache, damit kein zweites inkompatibles Scoreschema entsteht.
 
+
+### v1.5.0 – Implementierung und technische Vorprüfung
+Der zweistufige Komponierweg wurde auf dem isolierten Entwicklungszweig `v1.5-two-stage-composition` implementiert. Im Komponiermodus erfolgt zuerst ein freier musikalischer Provider-Aufruf; dessen musikalischer Entwurf wird anschließend in einem zweiten Provider-Aufruf ausschließlich technisch in das bestehende Engine-14-/MCL-Aktionsformat übertragen. Der normale Chatmodus bleibt einstufig und die optionale Kompositionsidee bleibt als musikalischer Kontext erhalten.
+
+Vor der Veröffentlichung wurden zwei GitHub-Actions-Prüfläufe erfolgreich abgeschlossen. Der erste prüfte JavaScript-Syntax, lokale Ressourcen, Versions-/Cache-Konsistenz und den grundlegenden Start der App in Headless Chromium. Der zweite ergänzte einen expliziten Vertragscheck für die Reihenfolge der beiden Kompositionsstufen und die technischen Zielvorgaben der Übersetzungsstufe. Diese automatisierten Prüfungen ersetzen nicht die noch folgende Anwenderprüfung mit echten Provider-Antworten, sichern aber den freizugebenden technischen Teststand ab.
+
 ## Offene Konsolidierungsaufgaben
 - Modellkatalog an einer eindeutigen Stelle pflegen.
 - Versionsverwaltung zentralisieren.
