@@ -27,8 +27,6 @@ test('core ui', async ({ page }) => {
   await expect(page.locator('#compositionDescriptionDetails')).not.toHaveAttribute('open','');
   await page.locator('#compositionDescriptionDetails summary').click();
   await expect(page.locator('#compositionDescriptionText')).toHaveText('Beschreibung des Ergebnisses');
-  const generatedDescription=await page.evaluate(async()=>{const chats=JSON.parse(localStorage.getItem('music-chat-lab.chats.v1')||'[]'),id=localStorage.getItem('music-chat-lab.active-chat.v1'),chat=chats.find(c=>c.id===id)||chats[0];window.__mclLastMusicalComposition={provider:'openai',model:chat.model,draft:'Titel: Testentwurf\nTakt 1–4: freie musikalische Beschreibung.'};chat.messages.push({id:'generated-description-test',role:'assistant',provider:'openai',model:chat.model,text:JSON.stringify({ti:'Teststück',bpm:90,ts:{n:4,d:4},k:'C',sm:'alter Platzhalter',tr:[{nm:'Piano',ch:0,pg:0,nt:[[0,1,60,80,0,.9]],ct:[]}]}) ,createdAt:Date.now()});localStorage.setItem('music-chat-lab.chats.v1',JSON.stringify(chats));document.getElementById('messages').appendChild(document.createElement('i'));await new Promise(r=>setTimeout(r,500));const item=window.MCLMidiSlots.all().find(x=>x.score?.ti==='Teststück');return item?.score?.sm||''});
-  expect(generatedDescription).toContain('Takt 1–4: freie musikalische Beschreibung.');
   const clabSeparation=await page.evaluate(()=>{const d=window.MCLCLAB.makeDocument();return {assignment:d.assignment,concept:d.concept,scoreSummary:d.score.sm}});
   expect(clabSeparation).toEqual({assignment:'Variiere das Thema frei für Klavier.',concept:'Beschreibung des Ergebnisses',scoreSummary:'Beschreibung des Ergebnisses'});
   await page.evaluate(()=>window.MCLCompositionIdea.set('Eigener Auftrag',{generated:false,source:'test'}));
@@ -41,6 +39,9 @@ test('core ui', async ({ page }) => {
   await page.locator('#compositionHistoryButton').click();
   await expect(page.locator('#compositionHistoryDialog')).toHaveJSProperty('open',true);
   await expect(page.locator('#compositionHistoryList')).toContainText('noch keine gespeicherte Kompositionsfassung');
+  await page.locator('#compositionHistoryCloseButton').click();
+  const generatedDescription=await page.evaluate(async()=>{const chats=JSON.parse(localStorage.getItem('music-chat-lab.chats.v1')||'[]'),id=localStorage.getItem('music-chat-lab.active-chat.v1'),chat=chats.find(c=>c.id===id)||chats[0];window.__mclLastMusicalComposition={provider:'openai',model:chat.model,draft:'Titel: Testentwurf\nTakt 1–4: freie musikalische Beschreibung.'};chat.messages.push({id:'generated-description-test',role:'assistant',provider:'openai',model:chat.model,text:JSON.stringify({ti:'Teststück',bpm:90,ts:{n:4,d:4},k:'C',sm:'alter Platzhalter',tr:[{nm:'Piano',ch:0,pg:0,nt:[[0,1,60,80,0,.9]],ct:[]}]}) ,createdAt:Date.now()});localStorage.setItem('music-chat-lab.chats.v1',JSON.stringify(chats));document.getElementById('messages').appendChild(document.createElement('i'));await new Promise(r=>setTimeout(r,500));const item=window.MCLMidiSlots.all().find(x=>x.score?.ti==='Teststück');return item?.score?.sm||''});
+  expect(generatedDescription).toContain('Takt 1–4: freie musikalische Beschreibung.');
   const minimalEngine = await page.evaluate(() => {
     const api=window.MCLSessionV145;
     const claudeDraft=api.minimalStageBody('anthropic',{model:'claude-sonnet-5',max_tokens:4096},'ENTWURF','musical_draft');
