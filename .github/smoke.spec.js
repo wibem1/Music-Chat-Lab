@@ -60,7 +60,7 @@ test('core ui', async ({ page }) => {
   expect(promptArchitecture.composeExisting).not.toContain('MCL_ACTION');
   expect(promptArchitecture.materialize).toContain('TECHNISCHE MATERIALISIERUNG');
   expect(promptArchitecture.materialize).toContain('MCL_ACTION');
-  expect(promptArchitecture.materialize).toContain('NEW_SCORE');
+  expect(promptArchitecture.materialize).toContain('"type":"new_score"');
   const ideaContract=await page.evaluate(()=>({
     chatDirective:window.MCLExplicitModeV139.directive('chat',''),
     noRef:window.MCLSessionV143.referencesWorkbench('Komponiere ein Klavierstück.',[{slot:1,name:'Stilles Wiegen',score:{ti:'Stilles Wiegen'}}]),
