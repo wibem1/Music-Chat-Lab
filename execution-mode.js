@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-if(window.__mclExplicitModeV135)return;
-window.__mclExplicitModeV135=true;
+if(window.__mclExplicitModeV136)return;
+window.__mclExplicitModeV136=true;
 
-const VERSION='1.4.1';
+const VERSION='1.4.2';
 const PENDING_KEY='music-chat-lab.pending-composition-idea.v1';
 const nativeFetch=window.fetch.bind(window);
 const CONCEPT_RE=/<MCL_CONCEPT>\s*([\s\S]*?)\s*<\/MCL_CONCEPT>/i;
@@ -60,7 +60,13 @@ window.fetch=async function(input,init={}){
   const url=typeof input==='string'?input:input?.url||'',provider=providerFor(url);if(!provider||typeof init.body!=='string')return nativeFetch(input,init);
   let body;try{body=JSON.parse(init.body)}catch{return nativeFetch(input,init)}
   const mode=window.MCLRequestMode==='compose'?'compose':'chat',idea=currentIdea();
-  const response=await nativeFetch(input,{...init,body:JSON.stringify(patchBody(provider,body,mode,idea))});
+  const finalBody=patchBody(provider,body,mode,idea);
+  const traceStage=String(init.__mclTraceStage||'provider_call');
+  const cleanInit={...init,body:JSON.stringify(finalBody)};delete cleanInit.__mclTraceStage;
+  const traceId=window.MCLAiTrace?.request?.(traceStage,url,cleanInit,finalBody);
+  const response=await nativeFetch(input,cleanInit);
+  const traceRaw=await response.clone().text().catch(()=>'');
+  window.MCLAiTrace?.response?.(traceId,response,traceRaw);
   if(mode!=='chat'||!response.ok)return response;
   const d=await response.clone().json().catch(()=>null);if(!d)return response;const raw=responseText(provider,d),m=raw.match(CONCEPT_RE);if(!m)return response;
   storeProposal(m[1]);const cleaned=raw.replace(CONCEPT_RE,'').replace(/\n{3,}/g,'\n\n').trim();return jsonResponse(replaceResponseText(provider,d,cleaned),response);
@@ -85,5 +91,5 @@ function bindButtons(){
   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey)setMode('chat')},true);
   const syncDisabled=()=>{compose.disabled=chat.disabled};syncDisabled();new MutationObserver(syncDisabled).observe(chat,{attributes:true,attributeFilter:['disabled']});
 }
-removeLegacyProposalMarkers();bindButtons();window.MCLExplicitModeV135={version:VERSION,getMode:()=>window.MCLRequestMode,setMode,storeProposal,pendingProposal,transferProposal};
+removeLegacyProposalMarkers();bindButtons();window.MCLExplicitModeV136={version:VERSION,getMode:()=>window.MCLRequestMode,setMode,storeProposal,pendingProposal,transferProposal};
 })();
