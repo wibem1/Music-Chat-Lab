@@ -1,4 +1,4 @@
-const CACHE_NAME = 'music-chat-lab-v1.4.15';
+const CACHE_NAME = 'music-chat-lab-v1.4.16';
 const APP_SHELL = [
   './', './index.html', './styles.css', './app.js', './settings-store.js', './state-vault.js', './music-file-processing.js',
   './midi-player.js', './midi-export.js', './midi-context.js', './midi-memory.js',
