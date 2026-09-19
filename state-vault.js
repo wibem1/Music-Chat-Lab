@@ -21,8 +21,10 @@ async function restoreIfMissing(){
 async function compositionHistory(chatId){const x=await get(HISTORY_PREFIX+String(chatId||''));return Array.isArray(x)?x:[]}
 async function saveCompositionHistory(chatId,items){if(!chatId)return false;return put(HISTORY_PREFIX+String(chatId),Array.isArray(items)?items:[])}
 async function appendComposition(chatId,entry){if(!chatId||!entry)return false;const items=await compositionHistory(chatId);if(entry.messageId&&items.some(x=>x?.messageId===entry.messageId))return false;items.push(entry);return saveCompositionHistory(chatId,items)}
+async function exportCompositionHistories(){try{const db=await openDB();return await new Promise((resolve,reject)=>{const out={},tx=db.transaction(STORE,'readonly'),r=tx.objectStore(STORE).openCursor();r.onsuccess=()=>{const cur=r.result;if(!cur){resolve(out);return}const k=String(cur.key);if(k.startsWith(HISTORY_PREFIX))out[k.slice(HISTORY_PREFIX.length)]=cur.value;cur.continue()};r.onerror=()=>reject(r.error)})}catch{return{}}}
+async function importCompositionHistories(histories){if(!histories||typeof histories!=='object')return false;for(const [chatId,items] of Object.entries(histories))if(Array.isArray(items))await saveCompositionHistory(chatId,items);return true}
 const ready=restoreIfMissing();
-window.MCLStateVault={version:'1.1.0',ready,mirrorChats,restoreIfMissing,compositionHistory,saveCompositionHistory,appendComposition};
+window.MCLStateVault={version:'1.1.0',ready,mirrorChats,restoreIfMissing,compositionHistory,saveCompositionHistory,appendComposition,exportCompositionHistories,importCompositionHistories};
 window.addEventListener('pageshow',async()=>{if(await restoreIfMissing())location.reload()});
 document.addEventListener('visibilitychange',async()=>{if(document.visibilityState==='visible'&&await restoreIfMissing())location.reload()});
 })();
