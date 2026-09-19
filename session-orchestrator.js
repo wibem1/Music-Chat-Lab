@@ -166,7 +166,7 @@ function buildProviderBody(provider,body,msgs,system,mode){
     b.system=system;b.messages=msgs.map(m=>({role:m.role,content:m.text}));
     const adaptive=/^claude-(?:sonnet-(?:5|4-6)|opus-5)(?:$|-)/i.test(String(b.model||''));
     if(adaptive&&mode!=='compose'){b.thinking={type:'adaptive'};b.output_config={...(b.output_config||{}),effort:'high'};b.max_tokens=Math.max(Number(b.max_tokens)||4096,12000)}
-    else if(adaptive&&mode==='compose'){b.thinking={type:'disabled'};delete b.output_config;b.max_tokens=12000}
+    else if(adaptive&&mode==='compose'){b.thinking={type:'adaptive'};b.output_config={...(b.output_config||{}),effort:'medium'};b.max_tokens=Math.max(Number(b.max_tokens)||4096,20000)}
     else{delete b.thinking;delete b.output_config;b.max_tokens=Math.max(Number(b.max_tokens)||4096,mode==='compose'?12000:12000)}
   }else if(provider==='openai'){
     b.input=[{role:'system',content:system},...msgs.map(m=>({role:m.role,content:m.text}))];b.store=false;
