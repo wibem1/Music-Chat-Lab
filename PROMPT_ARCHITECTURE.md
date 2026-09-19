@@ -1,6 +1,6 @@
 # MusicChatLab – Prompt-Architektur
 
-Stand: v1.4.35
+Stand: v1.4.42
 
 ## Grundsatz
 Die App organisiert; die KI musiziert. Kontext wird nur dann an ein Modell gesendet, wenn er für den aktuellen Zug tatsächlich gebraucht wird. Technische MIDI-Protokolle dürfen den normalen musikalischen Dialog nicht belasten.
@@ -72,3 +72,9 @@ Jeder Release-Smoke-Test prüft zusätzlich die Prompt-Architektur:
 - vollständiger finaler Provider-Request bleibt in der Diagnose sichtbar.
 
 Bei Qualitätsproblemen wird zuerst der tatsächlich gesendete Request untersucht. Zusätzliche Promptregeln werden nicht prophylaktisch angehängt.
+
+
+## Claude im direkten Komponiermodus
+Claude bleibt auch technisch ein **direkter Komponist**: Es gibt keine vorgeschaltete Prosakomposition und keine zweite Instanz, die einen fremden Bauplan nur serialisiert. Der eigentliche Claude-Aufruf darf adaptiv denken und erzeugt danach im selben Aufruf die MCL_ACTION.
+
+Für Claude Sonnet 5 / Opus 5 / Sonnet 4.6 gilt ab v1.4.42 im Komponiermodus: adaptives Thinking mit mittlerem Effort und mindestens 20.000 gemeinsamen Output-Tokens. Diese Begrenzung ist ausschließlich Schutz gegen den in v1.4.35 diagnostizierten vollständigen 32k-Thinking-Token-Sink; sie darf nicht durch zusätzliche musikalische Vorgaben ersetzt werden. Im Chat bleibt High-Effort-Thinking bestehen.
