@@ -181,3 +181,9 @@ v1.4.16 installiert `@playwright/test@1.55.0` im Workflow vor dem Browser-Test e
 Der v1.4.16-Workflow erreichte den Browser-Test vollständig. Er scheiterte ausschließlich an der Assertion `toBeVisible()` für das erste `<option>` des Modell-Selects. Das Log zeigte gleichzeitig, dass die Option `GPT-6 Astra` korrekt im DOM vorhanden war. Einzelne `<option>`-Elemente gelten in Headless Chromium jedoch als nicht sichtbar, solange das native `<select>` nicht geöffnet ist; die Assertion testete damit Browserdarstellung statt App-Funktion.
 
 v1.4.17 prüft stattdessen, dass nach dem Providerwechsel mindestens eine Modelloption vorhanden und im Modell-Select ein nichtleerer Wert ausgewählt ist. Damit entspricht der Smoke-Test der eigentlichen Funktionsanforderung, ohne Produktionscode wegen eines fehlerhaften Tests zu verändern.
+
+
+### v1.4.18 – PWA-Updatepfad von festgefrorener v1.4.14 entkoppelt
+Nach erfolgreichem v1.4.17-Release zeigte Safari den aktuellen Stand, während die bereits installierte iPad-PWA weiterhin v1.4.14 ausführte. Die Quellprüfung ergab eine konkrete Versionsinkonsistenz in `index.html`: Obwohl sichtbare App-Version und Service-Worker-Cache inzwischen v1.4.17 waren, registrierte ein zweiter Service-Worker-Pfad weiterhin explizit `service-worker.js?v=1.4.14`. Auch Manifest-, Favicon- und Apple-Touch-Icon-URLs waren auf v1.4.14 eingefroren; das Manifest selbst referenzierte Icons sogar noch mit v1.4.6.
+
+v1.4.18 beseitigt diese eingefrorenen PWA-Ressourcenkennungen: Service-Worker-Registrierung, Manifest-URL, Icons, Manifest-Icon-URLs, sichtbare Version und Cache tragen denselben aktuellen Buildstand. Die bestehende Netzwerk-zuerst-Strategie des Service Workers und die lokalen Datenbanken/Local-Storage-Daten werden dabei nicht verändert. Ziel ist ausdrücklich, den Updatepfad zu korrigieren, ohne Chatverlauf oder API-Einstellungen anzutasten.
