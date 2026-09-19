@@ -265,3 +265,15 @@ v1.4.28 übernimmt dieses Diagnoseprinzip in die bestehende MusicChat-Architektu
 API-Schlüssel und Authorization-Header werden ausdrücklich nicht gespeichert: bekannte Key-Queryparameter werden durch `[REDACTED]` ersetzt, Auth-/API-Key-Header ebenfalls. Die Diagnose erhält Format 6 und exportiert die chronologische Liste als `aiCalls`. Das lokale Trace-Protokoll ist auf die letzten 40 Aufrufe begrenzt. Der Browser-Smoke-Test prüft sowohl vollständigen Request-/Response-Inhalt als auch die Entfernung von URL- und Header-Geheimnissen.
 
 Diese Protokollierung ist Diagnose und verändert weder den musikalischen Auftrag noch die erzeugte Partitur.
+
+
+### v1.4.29 – Rückkehr zur direkten Komposition
+Die vollständige Aufrufdiagnose von v1.4.28 zeigte, dass die neu eingeführte Zwei-Stufen-Komposition die ursprüngliche Stärke der Engine beeinträchtigen kann. Eine erste KI-Instanz schrieb aus einem offenen musikalischen Auftrag einen detaillierten Prosabauplan; die eigentliche MIDI-Instanz erhielt anschließend die Anweisung, diesen Plan „werkgetreu“ zu übertragen, „nicht neu“ zu komponieren und ungewöhnliche Entscheidungen nicht zu regularisieren. Damit wurden musikalische Erfindung und konkrete Notenentscheidung künstlich getrennt. Zugleich bekam die Entwurfsstufe nicht zuverlässig den vollständigen aktuellen musikalischen Kontext.
+
+v1.4.29 entfernt `composition-two-stage.js` vollständig aus dem aktiven Lade- und PWA-Pfad. Die komponierende Provider-Instanz erhält wieder unmittelbar den aktuellen Dialog, den ausdrücklichen Kompositionsauftrag, die bewusst übernommene Kompositionsidee sowie bei Bedarf die vollständigen Scores aus dem Arbeitstisch und erzeugt daraus selbst die tatsächlichen Noten und die `MCL_ACTION`. Es gibt keinen vorgeschalteten Prosabauplan mehr.
+
+Die Plausibilitätsprüfung wird zugleich auf ihre technische Aufgabe zurückgeführt. Sie vergleicht eine neue Komposition nicht mehr mechanisch mit aus dem Ideenfeld herausgelesenen Taktzahlen, Tempi oder Tonarten und löst deshalb auch keine musikalische Neukomposition wegen solcher Abweichungen aus. Geprüft werden ausschließlich formal unbrauchbare MIDI-Daten: Partitur-/Spurstruktur, Startzeiten, positive Dauern, MIDI-Pitches 0–127, Velocity 0–127, Controllerdaten, positives Tempo und gültige Taktart. Nur solche technischen Defekte dürfen den einmaligen technischen Reparaturpfad auslösen.
+
+Die vollständige Diagnose bleibt erhalten. Zusätzlich wurde ihre Position im Fetch-Pfad korrigiert: Der Trace wird nun erst nach Einfügung des Chat-/Komponiermodus und der aktuellen Kompositionsidee unmittelbar vor dem Provider-Aufruf aufgezeichnet. Damit enthält `aiCalls` den tatsächlich gesendeten finalen Request statt einer noch nachgelagert veränderten Vorstufe.
+
+Leitregel: Technische Robustheit darf die musikalische Entscheidung des Modells nicht ersetzen. Musikalische Qualität wird nicht durch nachträgliche starre Tempo-/Tonart-/Taktzahlregeln erzwungen.
