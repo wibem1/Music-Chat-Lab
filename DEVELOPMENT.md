@@ -385,3 +385,11 @@ Zusätzlich wurde die Prompt-Verantwortung konsolidiert: `session-orchestrator.j
 Nach dem direkten A/B-Test mit Claude Sonnet 5 wurde Minimal Composer als derzeitige kompositorische Referenz festgelegt. Music Chat übernimmt deshalb die aktive Kompositionspipeline aus `wibem1/Minimal-Composer` v0.4.24 ohne kompositorische Promptänderungen: (1) freier musikalischer Entwurf mit dem identischen `musical_draft`-Prompt, (2) werkgetreue `midi_translation` mit dem identischen technischen Partiturvertrag; bei Claude Sonnet/Opus 5 wird Thinking ausschließlich in der Übersetzungsstufe deaktiviert. Die bisherige ABC-Zwischenstufe aus v1.4.43 ist nicht mehr aktiv.
 
 Notwendige Umgebungsanpassungen sind bewusst auf die Integration begrenzt: Der sichtbare Music-Chat-Kompositionsauftrag wird als Minimal-Composer-Auftrag übergeben; ausdrücklich referenziertes Material aus dem Arbeitstisch wird dem Auftrag beigefügt; das von der unveränderten Minimal-Composer-Übersetzung erzeugte Partitur-JSON wird anschließend lokal und deterministisch in das interne Music-Chat-Scoreformat umbenannt/konvertiert. Diese lokale Konvertierung trifft keine musikalischen Entscheidungen. Minimal Composer selbst bleibt unverändert.
+
+
+### v1.4.45 – vorhandenen musikalischen Entwurf als Kompositionsbeschreibung anzeigen
+Die Minimal-Composer-Engine aus v1.4.44 bleibt vollständig unverändert. Insbesondere werden weder `musical_draft`-Prompt, `midi_translation`-Prompt noch Provider-/Thinking-Einstellungen geändert und es gibt keinen zusätzlichen KI-Aufruf.
+
+Nach erfolgreicher Materialisierung übernimmt ausschließlich die bestehende Music-Chat-Zustandslogik den bereits vorhandenen `window.__mclLastMusicalComposition.draft` in `score.sm` der neu erzeugten Arbeitskopie. Dadurch zeigt der vorhandene ausklappbare Bereich **Kompositionsbeschreibung** den tatsächlichen musikalischen Entwurf der ersten Stufe. Die Übernahme erfolgt erst nach der Provider-Antwort und außerhalb der Engine; der an die MIDI-Übersetzung übergebene Entwurf und die erzeugten Noten werden nicht verändert.
+
+Regressionstest: Eine simulierte neu erzeugte Partitur erhält den vorhandenen musikalischen Draft als `score.sm`; außerdem bleiben die v1.4.44-Tests der unveränderten Minimal-Composer-Prompts und Thinking-Konfiguration bestehen.
