@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 test('core ui', async ({ page }) => {
   const errors=[]; page.on('pageerror',e=>errors.push(String(e)));
   await page.goto('http://127.0.0.1:4173/index.html');
-  await expect(page.locator('[data-app-version]')).toHaveText('v1.4.47');
+  await expect(page.locator('[data-app-version]')).toHaveText('v1.4.48');
   await page.locator('#topSettingsButton').click();
   await expect(page.locator('#settingsDialog')).toHaveJSProperty('open',true);
   await page.locator('#settingsDialog .dialog-close').click();
@@ -91,6 +91,14 @@ test('core ui', async ({ page }) => {
   expect(validation.different).toEqual([]);
   expect(validation.badPitch.some(x=>x.includes('ungültige Note'))).toBeTruthy();
   expect(validation.badDuration.some(x=>x.includes('ungültige Note'))).toBeTruthy();
+  const restPlaceholder = await page.evaluate(() => {
+    const raw={title:'Pause',bpm:66,timeSignature:[4,4],tracks:[{name:'Piano',program:0,channel:0,notes:[[0,1,60,80],[1,0,0,0],[2,1,64,72]]}]};
+    const score=window.MCLSessionV145.minimalToMclScore(raw,'Test');
+    return {notes:score.tr[0].nt,issues:window.MCLSessionV145.scoreIssues(score)};
+  });
+  expect(restPlaceholder.notes).toHaveLength(2);
+  expect(restPlaceholder.notes.map(n=>n[2])).toEqual([60,64]);
+  expect(restPlaceholder.issues).toEqual([]);
   const traceSafety=await page.evaluate(()=>{
     const id=window.MCLAiTrace.request('test','https://example.test/api?key=secret',{headers:{Authorization:'Bearer secret','x-api-key':'secret','Content-Type':'application/json'}},{model:'test',messages:[{role:'user',content:'vollständiger Auftrag'}]});
     window.MCLAiTrace.response(id,{status:200,statusText:'OK',headers:new Headers({'content-type':'application/json'})},'{"answer":"vollständige Antwort"}');
