@@ -331,3 +331,13 @@ Beim Öffnen einer CLAB-Datei wird deshalb deren gespeichertes Feld `assignment`
 Auch die bloße Auswahl eines MIDI-Slots überschreibt den Kompositionsauftrag nicht mehr mit `score.sm`. Reine MIDI-Dateien besitzen im Dateiformat keinen ursprünglichen natürlichsprachlichen Kompositionsauftrag; deshalb kann MusicChatLab beim MIDI-Import keinen solchen Auftrag zuverlässig rekonstruieren. Für diese Stücke kann ein neuer Auftrag frei eingetragen werden.
 
 Regressionstest: Eine CLAB-Datei mit `assignment` und abweichendem `concept` muss exakt `assignment` in das Ideenfeld laden; anschließendes Anklicken eines Slots darf einen dort bereits eingetragenen Auftrag nicht verändern.
+
+
+### v1.4.35 – Kompositionsauftrag und sichtbare Ergebnisbeschreibung
+Die Begriffe werden in der Oberfläche entsprechend dem Arbeitsablauf präzisiert: Eine **Kompositionsidee** entsteht im Chat. Wird sie bewusst übernommen, steht sie im editierbaren Feld **„Kompositionsauftrag“**. Erst der Klick auf „Komponiere“ führt diesen Auftrag aus. Das Chat-Eingabefeld bleibt reiner Gesprächskanal und löst keine Komposition aus. Ein Kompositionsauftrag darf weiterhin maximal offen sein, etwa „ein Klavierstück“.
+
+Davon getrennt ist die **Kompositionsbeschreibung** des tatsächlich entstandenen Stücks. Sie bleibt im Score als `score.sm` gespeichert und wird nun direkt unter dem Kompositionsauftrag in einem kompakten, standardmäßig eingeklappten Bereich angezeigt. Damit kann der Nutzer Soll (Auftrag) und Ist (Beschreibung) vergleichen, ohne die Oberfläche insbesondere auf Handys im Hochformat dauerhaft zu vergrößern. Beim Wechsel des aktiven Arbeitstisch-Stücks aktualisiert sich die Beschreibung, der Kompositionsauftrag wird durch die bloße Slot-Auswahl weiterhin nicht überschrieben.
+
+Die CLAB-Trennung wurde dabei korrigiert: `assignment` speichert den tatsächlichen Inhalt des Felds „Kompositionsauftrag“, während `concept` und `score.sm` die Ergebnisbeschreibung behalten. Das Speichern einer CLAB-Datei darf `score.sm` nicht mehr mit dem Auftrag überschreiben. Beim Laden erscheint `assignment` im Auftragsfeld und `score.sm` im einklappbaren Beschreibungsbereich.
+
+Regressionstests prüfen die eingeklappte mobile-kompakte Beschreibung, die getrennte CLAB-Speicherung von Auftrag und Beschreibung, das Laden des Auftrags sowie die unveränderte Slot-Auswahl.
