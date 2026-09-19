@@ -213,3 +213,13 @@ Die Diagnose einer Claude-Komposition zeigte eine strukturell zerrissene Zeitach
 v1.4.22 ergänzt die Prüfung direkt im zuständigen `session-orchestrator.js`, ohne musikalische Stilregeln einzuführen. Erkannt werden globale innere Leerstellen von mindestens vier Takten sowie klare Abweichungen von in den letzten Dialogzügen ausdrücklich genannten BPM-, Taktzahl- und Dur/Moll-Angaben. Ein auffälliges Ergebnis wird nicht auf den Arbeitstisch übernommen. Stattdessen erhält dieselbe KI genau einen technischen Korrekturversuch mit den konkret gefundenen Inkonsistenzen; Melodik, Harmonik und Form werden dabei nicht zusätzlich vorgeschrieben. Bleibt die korrigierte Fassung technisch auffällig, wird sie fail-closed verworfen und der Nutzer erhält eine verständliche Meldung.
 
 Der Browser-Smoke-Test enthält nun zusätzlich einen absichtlich zerrissenen Score, der erkannt werden muss, sowie eine konsistente 24-Takt-/88-BPM-/a-Moll-Fassung, die ohne Beanstandung passieren muss.
+
+
+### v1.4.23 – Kompositionsidee als maßgebliche Referenz
+Der Gerätetest von v1.4.22 zeigte, dass die Plausibilitätsprüfung zwar große globale Zeitlöcher erkennen konnte, die Eckdaten aber aus den letzten Chatnachrichten rekonstruierte. In längeren Dialogen konnten dadurch ältere Ideen (z. B. 24 Takte) mit dem aktuellen Auftrag (z. B. 56 Takte) verwechselt werden.
+
+v1.4.23 verwendet deshalb für Taktzahl, BPM und Dur/Moll nicht mehr eine Textsuche im Nachrichtenfenster, sondern ausschließlich den aktuellen Inhalt des bereits vorhandenen editierbaren Felds „Kompositionsidee“ als maßgebliche Referenz. Das Feld bleibt chatbezogen persistent.
+
+Abweichungen von diesen Eckdaten bleiben aus kompositorischen Gründen ausdrücklich erlaubt. Die KI muss eine bewusste Abweichung im strukturierten MCL_ACTION-Feld `deviationReason` knapp musikalisch begründen. Eine so begründete Abweichung wird akzeptiert und als „Bewusste Abweichung“ in der Kompositionsbeschreibung dokumentiert. Unbegründete Abweichungen lösen weiterhin genau einen technischen Korrekturversuch aus. Große globale innere Zeitlöcher gelten weiterhin als technische Auffälligkeit und können nicht allein durch eine Begründung freigegeben werden.
+
+Der Smoke-Test setzt eine aktuelle Idee mit 56 Takten, 88 BPM und a-Moll und prüft, dass genau diese Werte – nicht ältere Chatwerte – von der Validierung verwendet werden.
