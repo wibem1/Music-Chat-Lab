@@ -1,7 +1,7 @@
 (()=>{
 'use strict';
-if(window.__mclCompositionStateFixV120)return;
-window.__mclCompositionStateFixV120=true;
+if(window.__mclCompositionStateFixV121)return;
+window.__mclCompositionStateFixV121=true;
 const CHAT_KEY='music-chat-lab.chats.v1',ACTIVE_KEY='music-chat-lab.active-chat.v1',APPLE_EPOCH=978307200;
 const clone=x=>x==null?x:JSON.parse(JSON.stringify(x)),clean=s=>String(s||'').trim();
 
@@ -15,8 +15,17 @@ function coreSignature(score){try{const x=clone(score);delete x.ti;return JSON.s
 function providerLabel(p){return p==='anthropic'?'Claude':p==='google'||p==='gemini'?'Gemini':p==='openai'?'OpenAI':'KI'}
 function ensureTitle(score,message){let title=clean(score?.ti);if(title)return title;title=`Neue Komposition von ${providerLabel(message?.provider)}`;score.ti=title;return title}
 function activeSlotNumber(){const b=document.querySelector('.mcl-midi-slot.active');return b?Number(b.dataset.slot)+1:0}
+function attachCurrentMusicalDraft(rec){
+  const d=window.__mclLastMusicalComposition;
+  if(!rec?.score||!rec?.message||!d||!clean(d.draft))return;
+  const sameProvider=!d.provider||!rec.message.provider||String(d.provider)===String(rec.message.provider);
+  const sameModel=!d.model||!rec.message.model||String(d.model)===String(rec.message.model);
+  if(!sameProvider||!sameModel)return;
+  rec.score.sm=String(d.draft).trim();
+}
 async function recordGeneratedResult(rec){
   const chat=currentChat();if(!chat?.id||!rec?.score||!rec?.message)return false;
+  attachCurrentMusicalDraft(rec);
   const entry={id:rec.message.id||('composition-'+Date.now()),messageId:rec.message.id||null,createdAt:rec.message.createdAt||Date.now(),title:ensureTitle(rec.score,rec.message),provider:rec.message.provider||null,model:rec.message.model||null,assignment:assignmentBefore(rec.message.id)||latestAssignment(),score:clone(rec.score)};
   const added=await window.MCLStateVault?.appendComposition?.(chat.id,entry);
   if(added)window.dispatchEvent(new CustomEvent('mcl-composition-history-changed',{detail:{chatId:chat.id}}));
