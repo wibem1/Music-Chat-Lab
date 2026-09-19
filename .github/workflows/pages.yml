@@ -1,5 +1,5 @@
 name: Deploy Music Chat Lab to GitHub Pages
-# deployment trigger: v1.4.13
+# deployment trigger: v1.4.14
 
 on:
   workflow_dispatch:
@@ -25,6 +25,18 @@ jobs:
       - name: Checkout deployment snapshot
         uses: actions/checkout@v4
 
+      - name: JavaScript syntax check
+        shell: bash
+        run: |
+          for f in *.js; do node --check "$f"; done
+
+      - name: Browser smoke test
+        shell: bash
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/mcl-http.log 2>&1 &
+          npx -y @playwright/test@1.55.0 install --with-deps chromium
+          npx -y @playwright/test@1.55.0 test .github/smoke.spec.js --reporter=line
+
       - name: Build Pages artifact
         shell: bash
         run: |
@@ -48,6 +60,7 @@ jobs:
           test -f "$RUNNER_TEMP/mcl-pages/clab-document-v1.js"
           test -f "$RUNNER_TEMP/mcl-pages/backup-manager.js"
           test -f "$RUNNER_TEMP/mcl-pages/diagnostic-enhancer.js"
+          test -f "$RUNNER_TEMP/mcl-pages/state-vault.js"
           grep -Eq 'data-app-version>v[0-9]+\.[0-9]+\.[0-9]+<' "$RUNNER_TEMP/mcl-pages/index.html"
 
       - name: Configure Pages
