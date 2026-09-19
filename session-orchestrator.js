@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-if(window.__mclSessionOrchestratorV143)return;
-window.__mclSessionOrchestratorV143=true;
+if(window.__mclSessionOrchestratorV144)return;
+window.__mclSessionOrchestratorV144=true;
 
-const VERSION='1.4.3';
+const VERSION='1.4.4';
 const MEMORY_KEY='music-chat-lab.session-memory.v3';
 const ACTIVE_CHAT_KEY='music-chat-lab.active-chat.v1';
 const RECENT_MESSAGES=8;
