@@ -1,5 +1,5 @@
 name: Deploy Music Chat Lab to GitHub Pages
-# deployment trigger: v1.4.22-score-plausibility
+# deployment trigger: v1.4.23-authoritative-idea
 
 on:
   workflow_dispatch:
