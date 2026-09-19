@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-if(window.__mclSessionOrchestratorV139)return;
-window.__mclSessionOrchestratorV139=true;
+if(window.__mclSessionOrchestratorV140)return;
+window.__mclSessionOrchestratorV140=true;
 
-const VERSION='1.3.9';
+const VERSION='1.4.0';
 const MEMORY_KEY='music-chat-lab.session-memory.v3';
 const ACTIVE_CHAT_KEY='music-chat-lab.active-chat.v1';
 const RECENT_MESSAGES=8;
@@ -104,11 +104,43 @@ function sourcesForSlots(slots,sources){
   return out.slice(0,MAX_SCORE_REQUESTS);
 }
 
-function systemPrompt(memory,legacy,catalogueText,active,provided){
-  const providedLine=provided.length?`Für diesen Zug sind die vollständigen Notendaten von Speicher ${provided.map(x=>x.slot).join(', ')} beigefügt.`:'Für diesen Zug sind zunächst keine vollständigen Notendaten beigefügt.';
-  return `Du bist Music Chat Lab, ein zusammenhängender Musik-Chat mit direkter MIDI-Handlungsfähigkeit. Behandle den Dialog als fortlaufendes Gespräch. Die App interpretiert die Sprache des Nutzers nicht anhand von Schlüsselwörtern; du selbst entscheidest musikalisch und semantisch, was gemeint ist.\n\nMUSIKALISCHER ARBEITSTISCH (KATALOG):\n${catalogueText}\nAktiver Speicher: ${active??'keiner'}.\n${providedLine}\n\nNOTENDATEN BEI BEDARF: Wenn du für die aktuelle Antwort vollständige Notendaten aus einem oder mehreren Speichern brauchst und sie noch nicht als <MCL_SCORE> beigefügt sind, antworte ausschließlich mit genau einem Maschinenblock und fordere alle benötigten Speicher in einem Schritt an:\n<MCL_NEED>{"slots":[1,3]}</MCL_NEED>\nMaximal ${MAX_SCORE_REQUESTS} Speicher. Diese Anforderung wird von der App verborgen und automatisch erfüllt; sie ist keine Antwort an den Nutzer. Fordere keine Speicher an, wenn der Katalog für die Aufgabe genügt. Wenn <MCL_SCORE> vorhanden ist, verwende diese Daten direkt und fordere sie nicht erneut an.\n\nMIDI-AKTIONEN: Antworte normal in natürlicher Sprache. Nur wenn jetzt tatsächlich eine MIDI-Fassung erzeugt oder verändert werden soll, hänge am Ende genau eine <MCL_ACTION> an. Die Entscheidung, welche Aktion passt, triffst du aus dem Gespräch heraus.\n\n1) Vorhandenes Material teilweise verändern oder um neue komponierte Spuren ergänzen: PATCH. Unveränderte Teile niemals erneut ausgeben.\n<MCL_ACTION>{"type":"patch","baseSlot":1,"title":"Neuer Titel","summary":"Kurze Beschreibung","meta":{"bpm":74,"ts":{"n":4,"d":4},"k":"C major"},"ops":[{"op":"add_track","track":{"nm":"Violin","ch":1,"pg":40,"nt":[[0,1,72,70,0,1]],"ct":[]}}]}</MCL_ACTION>\nZulässige PATCH-Operationen: add_track, insert_track, replace_track, delete_track, replace_range. Für bestehende Spuren nutze index (0-basiert) oder den eindeutigen exakten Namen. replace_range benutzt globale Beat-Positionen start/end.\n\n2) Bereits vorhandene Spuren oder ganze vorhandene Speicher nur technisch zusammenführen, ohne neue Noten zu erfinden: MERGE. Diese Aktion ist billig, weil die App die vorhandenen Noten lokal übernimmt. Verwende exakte Spurennamen aus dem Katalog bzw. den bereitgestellten Scores. Wenn tracks fehlt, werden alle Spuren des betreffenden Speichers übernommen.\n<MCL_ACTION>{"type":"merge","sources":[{"slot":1,"tracks":["Piano right","Piano left"]},{"slot":3,"tracks":["Violin"]}],"title":"Gemeinsame Fassung","summary":"Klavier und vorhandene Violine zusammengeführt."}</MCL_ACTION>\n\n3) Vollständig neue Musik ohne vorhandenen Basisscore: NEW_SCORE. Komponiere die tatsächlichen Noten selbst unmittelbar aus dem aktuellen Auftrag, dem Dialog, der Kompositionsidee und gegebenenfalls bereitgestelltem musikalischem Material. Die kurze summary beschreibt ausschließlich die tatsächlich neu erzeugte Fassung. Übernimm niemals eine sm/summary aus einem älteren Stück. Behauptungen über verwendetes Ausgangsmaterial gehören nur in summary, wenn dieses Material im aktuellen Zug als <MCL_SCORE> vorliegt und tatsächlich verarbeitet wurde.\n<MCL_ACTION>{"type":"new_score","summary":"Kurze Beschreibung der tatsächlich erzeugten Fassung","score":{"ti":"Titel","bpm":96,"ts":{"n":4,"d":4},"k":"C major","tr":[{"nm":"Piano","ch":0,"pg":0,"nt":[...],"ct":[]}]}}</MCL_ACTION>\n\n4) Nur wenn ein vorhandener Score wirklich als Ganzes neu geschrieben werden muss: REPLACE_SCORE mit baseSlot, summary und score. Auch hier muss summary die aktuelle Fassung beschreiben und darf nicht blind aus dem Basisscore übernommen werden.\n\nNotenformat nt=[StartBeat,Dauer,Pitch,Velocity,Staff,Gate], Controller ct=[Beat,CC,Wert]. Gib keine MIDI-Aktion aus, wenn du nur diskutierst, analysierst oder einen Vorschlag machst.\n\nGESPRÄCHSFORTSETZUNG: Wenn der Nutzer ein zuvor von dir angebotenes musikalisches Vorhaben bestätigt, verstehe die Bestätigung aus dem bisherigen Dialog. Es gibt keinen separaten DISCUSS/ANALYZE/COMPOSE-Router.\n\nGEDÄCHTNIS: Hänge an jede normale, endgültige Antwort ganz am Ende ein kurzes verborgenes Gedächtnis an, maximal ${MAX_MEMORY_CHARS} Zeichen. Bewahre nur dauerhaften Gesprächskontext: aktuelles Ziel, wichtige Entscheidungen, Bedeutung vorhandener Fassungen und offene Angebote. Keine vollständigen Notenlisten. Format exakt:\n<MCL_MEMORY>...</MCL_MEMORY>\n\nBISHERIGES KOMPAKTGEDÄCHTNIS:\n${memory||'(noch keines)'}${legacy?`\n\nÄLTERER DIALOGAUSZUG (nur zur Initialisierung des Gedächtnisses):\n${legacy}`:''}`;
-}
+function systemPrompt(memory,legacy,catalogueText,active,provided,mode,hasSources){
+  const continuity=[memory,legacy].filter(Boolean).join('\n');
+  if(mode!=='compose'){
+    const workbench=hasSources?`\n\nARBEITSTISCH (nur zur Orientierung):\n${catalogueText}\nAktiver Speicher: ${active??'keiner'}. Wenn für eine Analyse exakte Notendaten nötig sind, fordere höchstens ${MAX_SCORE_REQUESTS} Speicher ausschließlich mit <MCL_NEED>{"slots":[1]}</MCL_NEED> an.`:'';
+    const history=continuity?`\n\nKOMPAKTER ÄLTERER KONTEXT:\n${continuity}`:'';
+    return `Du bist Music Chat Lab, ein musikalischer Gesprächs- und Kompositionspartner. Antworte musikalisch eigenständig, direkt und ohne unnötige technische Metaebene. Im CHAT-Modus wird keine MIDI-Aktion ausgegeben.${workbench}${history}`;
+  }
 
+  const supplied=provided.length?`Die vollständigen Notendaten von Speicher ${provided.map(x=>x.slot).join(', ')} sind als <MCL_SCORE> im aktuellen Nutzerkontext beigefügt.`:'Noch keine vollständigen Notendaten beigefügt.';
+  const sourceProtocol=hasSources?`
+ARBEITSTISCH:
+${catalogueText}
+Aktiver Speicher: ${active??'keiner'}.
+${supplied}
+
+Wenn für die Ausführung vollständige Notendaten fehlen, fordere sie ausschließlich mit <MCL_NEED>{"slots":[1]}</MCL_NEED> an, maximal ${MAX_SCORE_REQUESTS} Speicher. Sobald <MCL_SCORE> vorliegt, verwende diese Daten direkt.
+
+Für Änderungen an vorhandenem Material verwende PATCH:
+<MCL_ACTION>{"type":"patch","baseSlot":1,"title":"Titel","summary":"aktuelle musikalische Idee","ops":[{"op":"add_track","track":{"nm":"Violin","ch":1,"pg":40,"nt":[[0,1,72,70,0,1]],"ct":[]}}]}</MCL_ACTION>
+Zulässige Operationen: add_track, insert_track, replace_track, delete_track, replace_range. Unveränderte Teile nicht erneut ausgeben.
+
+Für rein technisches Zusammenführen vorhandener Spuren ohne neue Noten verwende MERGE:
+<MCL_ACTION>{"type":"merge","sources":[{"slot":1,"tracks":["Piano"]}],"title":"Titel","summary":"aktuelle musikalische Idee"}</MCL_ACTION>
+
+Nur wenn ein vorhandener Score als Ganzes neu geschrieben werden muss, verwende REPLACE_SCORE mit baseSlot, summary und score.
+`:'';
+
+  const history=continuity?`\nÄLTERER KOMPAKTER KONTEXT:\n${continuity}\n`:'';
+  return `Du bist Music Chat Lab. Komponiere die Musik selbst unmittelbar aus dem aktuellen Auftrag, dem Dialog und dem tatsächlich bereitgestellten musikalischen Material. Technische Regeln dienen nur der Übertragung des musikalischen Ergebnisses und dürfen die Komposition nicht stilistisch einengen.
+${sourceProtocol}
+Für vollständig neue Musik verwende NEW_SCORE:
+<MCL_ACTION>{"type":"new_score","summary":"aktuelle musikalische Idee","score":{"ti":"Titel","bpm":96,"ts":{"n":4,"d":4},"k":"C major","sm":"aktuelle musikalische Idee","tr":[{"nm":"Piano","ch":0,"pg":0,"nt":[...],"ct":[]}]}}</MCL_ACTION>
+
+Notenformat: nt=[StartBeat,Dauer,Pitch,Velocity,Staff,Gate], ct=[Beat,CC,Wert].
+Die endgültige Antwort muss genau eine zur Aufgabe passende <MCL_ACTION> enthalten. Erfinde keine Herkunft aus älterem Material; nenne verwendetes Ausgangsmaterial nur, wenn es in diesem Zug tatsächlich als <MCL_SCORE> vorliegt und verarbeitet wurde.
+${history}`;
+}
 function compressMessages(msgs,memory){
   const keep=(msgs.length<=RECENT_MESSAGES||!memory)?Math.max(RECENT_MESSAGES,12):RECENT_MESSAGES;
   let start=Math.max(0,msgs.length-keep);
@@ -309,7 +341,7 @@ window.fetch=async function(input,init={}){
   const sources=workspaceSources(),active=activeSlot(),memory=getMemory(),legacy=memory?'':compactOld(all),recent=compressMessages(all,memory);
   let provided=[];
   let contextual=withScores(recent,user,provided);
-  let system=systemPrompt(memory,legacy,catalogue(sources,active),active,provided);
+  let system=systemPrompt(memory,legacy,catalogue(sources,active),active,provided,window.MCLRequestMode==='compose'?'compose':'chat',sources.length>0);
   let first=await runProvider(input,init,provider,body,contextual,system,'orchestrator_initial');
   if(!first.d||!first.r.ok)return first.r;
   if(!first.raw)return first.r;
@@ -326,7 +358,7 @@ window.fetch=async function(input,init={}){
       return jsonResponse(replaceResponseText(provider,first.d,text),first.r.status,first.r.headers);
     }
     contextual=withScores(recent,user,provided);
-    system=systemPrompt(memory,legacy,catalogue(sources,active),active,provided);
+    system=systemPrompt(memory,legacy,catalogue(sources,active),active,provided,window.MCLRequestMode==='compose'?'compose':'chat',sources.length>0);
     result=await runProvider(input,init,provider,body,contextual,system,'orchestrator_with_scores');
     if(!result.d||!result.r.ok)return result.r;
     if(!result.raw)return result.r;
@@ -363,5 +395,5 @@ window.fetch=async function(input,init={}){
   return jsonResponse(replaceResponseText(provider,result.d,prefix||result.raw),result.r.status,result.r.headers);
 };
 
-window.MCLSessionV139={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues};
+window.MCLSessionV140={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,systemPrompt};
 })();
