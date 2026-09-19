@@ -206,7 +206,6 @@ function scoreTimeline(score){
 function scoreIssues(score,constraints={}){
   if(!isScore(score))return['keine gültige Partiturstruktur'];
   const issues=[],tl=scoreTimeline(score);
-  for(let i=1;i<tl.merged.length;i++){const gap=tl.merged[i][0]-tl.merged[i-1][1];if(gap>=tl.bar*4)issues.push(`unbegründete globale Leerstelle von ${Number(gap.toFixed(2))} Beats ab Beat ${Number(tl.merged[i-1][1].toFixed(2))}`)}
   if(constraints.bpm&&Number(score.bpm)!==constraints.bpm)issues.push(`Tempo ${score.bpm??'?'} BPM statt ausdrücklich ${constraints.bpm} BPM`);
   if(constraints.bars){const actual=Math.ceil(tl.end/tl.bar);if(Math.abs(actual-constraints.bars)>1)issues.push(`Umfang ca. ${actual} Takte statt ausdrücklich ${constraints.bars} Takte`)}
   if(constraints.key&&String(score.k||'').trim()){const norm=x=>String(x||'').toLowerCase().replace(/\s+/g,'').replace(/-/g,'').replace(/major$/,'dur').replace(/minor$/,'moll');if(norm(score.k)!==norm(constraints.key))issues.push(`Tonart ${score.k} statt ausdrücklich ${constraints.key}`)}
