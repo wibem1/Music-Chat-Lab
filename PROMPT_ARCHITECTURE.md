@@ -1,0 +1,72 @@
+# MusicChatLab – Prompt-Architektur
+
+Stand: v1.4.31
+
+## Grundsatz
+Die App organisiert; die KI musiziert. Kontext wird nur dann an ein Modell gesendet, wenn er für den aktuellen Zug tatsächlich gebraucht wird. Technische MIDI-Protokolle dürfen den normalen musikalischen Dialog nicht belasten.
+
+## Datenweg
+1. app.js baut den Provider-Request aus dem sichtbaren Chat.
+2. session-orchestrator.js reduziert den Verlauf und ergänzt nur den für den Modus nötigen Kontext.
+3. execution-mode.js fügt unmittelbar vor dem Provider-Aufruf nur den expliziten Modus und – im Komponiermodus – gegebenenfalls die bewusst übernommene Kompositionsidee ein.
+4. ai-call-trace.js protokolliert genau diesen finalen Request schlüsselfrei.
+5. Die Provider-Antwort wird anschließend technisch ausgewertet.
+
+## CHAT
+Zweck: musikalisches Gespräch, Analyse, Kritik, Ideenentwicklung.
+
+Standardkontext bei leerem Arbeitstisch:
+- eine kurze Rollenbeschreibung als musikalischer Gesprächs- und Kompositionspartner,
+- expliziter CHAT-Modus,
+- tatsächlicher Gesprächsverlauf.
+
+Nicht enthalten:
+- PATCH,
+- MERGE,
+- NEW_SCORE,
+- REPLACE_SCORE,
+- MIDI-Notenformat,
+- vollständiges MIDI-Aktionsprotokoll.
+
+Wenn ein Arbeitstisch vorhanden ist, wird nur sein knapper Katalog ergänzt. Für eine Analyse, die exakte Noten benötigt, darf die KI mit einem kleinen MCL_NEED-Block gezielt Notendaten anfordern. Erst der Folgeaufruf erhält diese Notendaten.
+
+Eine konkrete im Chat formulierte Kompositionsidee kann weiterhin als MCL_CONCEPT zur manuellen Übernahme angeboten werden. Der Chat-Prompt schreibt weder Stil, Tonart, Form, Tempo noch eine stereotype Ideenstruktur vor.
+
+## KOMPONIERE – neues Stück ohne Quellen
+Zweck: direkte musikalische Erfindung und unmittelbare Ausgabe als MIDI-Partitur.
+
+Kontext:
+- aktueller Auftrag und relevanter Dialog,
+- bewusst übernommene Kompositionsidee, falls vorhanden,
+- nur das NEW_SCORE-Übertragungsformat,
+- kompaktes Notenformat.
+
+Nicht enthalten:
+- PATCH,
+- MERGE,
+- REPLACE_SCORE,
+- Arbeitstisch-/Quellenprotokoll, wenn keine Quellen existieren.
+
+Die KI komponiert die tatsächlichen Noten selbst. Es gibt keinen vorgeschalteten Prosabauplan.
+
+## KOMPONIERE – Bearbeitung/Synthese mit Quellen
+Nur wenn tatsächlich MIDI-Quellen auf dem Arbeitstisch vorhanden sind, werden zusätzlich geladen:
+- knapper Katalog der vorhandenen Quellen,
+- MCL_NEED für gezieltes Nachladen vollständiger Notendaten,
+- PATCH,
+- MERGE,
+- REPLACE_SCORE.
+
+Vollständige MCL_SCORE-Daten werden erst nach konkreter Anforderung geliefert. NEW_SCORE bleibt verfügbar, falls der aktuelle Auftrag tatsächlich eine neue Fassung verlangt.
+
+## TECHNISCHE REPARATUR
+Nur wenn eine erzeugte Aktion formal unbrauchbare MIDI-Daten enthält, erhält das Modell genau einen Reparaturauftrag mit den gefundenen technischen Fehlern. Musikalische Entscheidungen wie Tonart, Tempo, Form oder Pausen sind keine technischen Fehler.
+
+## Diagnose- und Freigaberegel
+Jeder Release-Smoke-Test prüft zusätzlich die Prompt-Architektur:
+- leerer CHAT-Prompt bleibt klein und enthält kein MIDI-Aktionsprotokoll,
+- neues Stück ohne Quellen enthält NEW_SCORE, aber weder PATCH noch MERGE,
+- quellenbasierte Ausführung enthält die dafür nötigen Protokolle,
+- vollständiger finaler Provider-Request bleibt in der Diagnose sichtbar.
+
+Bei Qualitätsproblemen wird zuerst der tatsächlich gesendete Request untersucht. Zusätzliche Promptregeln werden nicht prophylaktisch angehängt.
