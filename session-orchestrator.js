@@ -362,10 +362,24 @@ window.fetch=async function(input,init={}){
   const translated=await runMinimalStage(input,init,provider,body,translationPrompt,'midi_translation');
   if(!translated.d||!translated.r.ok||!translated.raw)return translated.r;
   let obj;try{obj=extractLooseJson(translated.raw)}catch(_){const warning='Die MIDI-Übersetzung war kein gültiges Partitur-JSON. Es wurde keine Fassung übernommen.';return jsonResponse(replaceResponseText(provider,translated.d,warning),translated.r.status,translated.r.headers)}
-  const score=minimalToMclScore(obj,task),issues=score?scoreIssues(score):['keine gültige Partiturstruktur'];
+  let score=minimalToMclScore(obj,task),issues=score?scoreIssues(score):['keine gültige Partiturstruktur'];
+  const plannedBars=(()=>{let max=0;const re=/\\b(?:Takt|T\\.?)\\s*(\\d+)(?:\\s*[–—-]\\s*(\\d+))?/gi;let m;while((m=re.exec(draft)))max=Math.max(max,Number(m[2]||m[1])||0);return max})();
+  const actualBars=s=>{if(!s?.tr?.length)return 0;const beatPerBar=(Number(s.ts?.n)||4)*(4/(Number(s.ts?.d)||4));let end=0;for(const tr of s.tr)for(const n of tr.nt||[])end=Math.max(end,(Number(n[0])||0)+(Number(n[1])||0));return beatPerBar>0?Math.ceil(end/beatPerBar):0};
+  let bars=actualBars(score);
+  if(score&&!issues.length&&plannedBars>=8&&bars<Math.ceil(plannedBars*.8)){
+    if(note)note.textContent='Vervollständige MIDI-Übertragung …';
+    const retryPrompt='TECHNISCHE KORREKTUR: Deine erste MIDI-Übersetzung ist unvollständig. Der fertige musikalische Entwurf umfasst '+plannedBars+' Takte, die technische Partitur aber nur '+bars+'. Übertrage jetzt den GESAMTEN bereits fertigen Entwurf vollständig und werkgetreu. Komponiere NICHT neu, kürze NICHT, fasse NICHT zusammen und lasse keine Formteile weg.\\n\\nURSPRÜNGLICHER AUFTRAG:\\n'+task+'\\n\\nFERTIGER MUSIKALISCHER ENTWURF:\\n'+draft+'\\n\\n'+MINIMAL_TECHNICAL_CONTRACT;
+    const retry=await runMinimalStage(input,init,provider,body,retryPrompt,'midi_translation_completeness_retry');
+    if(!retry.d||!retry.r.ok||!retry.raw)return retry.r;
+    try{obj=extractLooseJson(retry.raw)}catch(_){const warning='Auch die vervollständigte MIDI-Übersetzung war kein gültiges Partitur-JSON. Es wurde keine Fassung übernommen.';return jsonResponse(replaceResponseText(provider,retry.d,warning),retry.r.status,retry.r.headers)}
+    score=minimalToMclScore(obj,task);issues=score?scoreIssues(score):['keine gültige Partiturstruktur'];bars=actualBars(score);
+    if(!score||issues.length){const warning=`Die vervollständigte MIDI-Fassung wurde wegen technischer Inkonsistenzen nicht übernommen: ${issues.join('; ')}.`;return jsonResponse(replaceResponseText(provider,retry.d,warning),retry.r.status,retry.r.headers)}
+    if(bars<Math.ceil(plannedBars*.8)){const warning=`Die MIDI-Übersetzung blieb unvollständig (Entwurf: ${plannedBars} Takte, Partitur: ${bars} Takte). Es wurde keine verkürzte Fassung übernommen.`;return jsonResponse(replaceResponseText(provider,retry.d,warning),retry.r.status,retry.r.headers)}
+    translated.d=retry.d;translated.r=retry.r;translated.raw=retry.raw;
+  }
   if(!score||issues.length){const warning=`Die erzeugte MIDI-Fassung wurde wegen technischer Inkonsistenzen nicht übernommen: ${issues.join('; ')}.`;return jsonResponse(replaceResponseText(provider,translated.d,warning),translated.r.status,translated.r.headers)}
   if(note)note.textContent='Erstelle Kompositionsbeschreibung …';
-  const ideaPrompt='Analysiere die soeben entstandene Komposition und formuliere ihre Kompositionsidee knapp und musikalisch konkret. Beschreibe Charakter, formalen Verlauf, rhythmische und harmonische Grundidee sowie das Verhältnis der Stimmen bzw. Instrumente. Erfinde nichts und gib keine Bewertung ab. Antworte nur mit der Kompositionsidee als normalem Text.\n\nURSPRÜNGLICHER AUFTRAG:\n'+task+'\n\nMUSIKALISCHER ENTWURF:\n'+draft+'\n\nTECHNISCHE PARTITUR:\n'+translated.raw;
+  const ideaPrompt='Analysiere die soeben entstandene TECHNISCHE PARTITUR und formuliere ihre Kompositionsidee knapp und musikalisch konkret. Prüfe deine Aussagen an der tatsächlich erzeugten Partitur; der musikalische Entwurf dient nur als Kontext und darf der Partitur nicht widersprechen. Die ERSTE ZEILE muss exakt diese drei Angaben enthalten: Tonart: <tatsächliche Tonart> · BPM: '+score.bpm+' · Takte: '+actualBars(score)+'. Danach beschreibe Charakter, formalen Verlauf, rhythmische und harmonische Grundidee sowie das Verhältnis der Stimmen bzw. Instrumente. Erfinde nichts und gib keine Bewertung ab. Antworte nur mit der Kompositionsidee als normalem Text.\\n\\nURSPRÜNGLICHER AUFTRAG:\\n'+task+'\\n\\nMUSIKALISCHER ENTWURF (nur Kontext):\\n'+draft+'\\n\\nTECHNISCHE PARTITUR (maßgeblich):\\n'+translated.raw;
   const ideaResult=await runMinimalStage(input,init,provider,body,ideaPrompt,'composition_idea_afterwards');
   if(!ideaResult.d||!ideaResult.r.ok||!ideaResult.raw)return ideaResult.r;
   score.sm=ideaResult.raw.trim();
