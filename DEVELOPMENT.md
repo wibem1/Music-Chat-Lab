@@ -163,3 +163,9 @@ Beim Öffnen des Verlaufs werden auch bereits im aktuellen Chat vorhandene Assis
 „In Slot laden“ kopiert eine historische Fassung auf den Arbeitstisch, ohne den historischen Eintrag zu verändern. Zuerst wird ein freier der sechs Speicher verwendet. Sind alle belegt, muss ein aktiver Speicher markiert sein und dessen Ersetzung wird ausdrücklich bestätigt. Der Kompositionsverlauf ist damit Gedächtnis, die Slots bleiben Arbeitskopien.
 
 Die Backup-Verwaltung exportiert und importiert die chatbezogenen Kompositionsverläufe zusätzlich zum bisherigen Local-Storage- und MIDI-Arbeitstisch-Zustand. Große Scores werden weiterhin nicht in Local Storage gespeichert.
+
+
+### v1.4.15 – Herkunftsbehauptungen in Kompositions-Metadaten entkoppelt
+Die Analyse einer Diagnosedatei zeigte, dass eine neu erzeugte Komposition („Chant du crépuscule“) im Feld `sm` noch die Herkunftsbeschreibung einer älteren Drei-Stücke-Synthese tragen konnte, obwohl die Notendaten diese Herkunft nicht belegten. Ursache war, dass NEW_SCORE/REPLACE_SCORE ein von der KI geliefertes `score.sm` unverändert übernahmen. Damit konnte alter Gesprächs- oder Score-Kontext als scheinbare Provenienz in eine neue Partitur gelangen.
+
+v1.4.15 macht die Kurzbeschreibung bei vollständig neu erzeugten bzw. vollständig neu geschriebenen Scores explizit zur Eigenschaft der aktuellen Aktion: `score.sm` aus dem gelieferten Score wird nicht mehr als maßgeblich übernommen. Stattdessen setzt der Orchestrator `sm` aus der aktuellen `action.summary`; fehlt diese, wird eine neutrale technische Beschreibung verwendet. Der Systemauftrag verlangt außerdem, dass eine Herkunft aus Ausgangsmaterial nur behauptet wird, wenn dieses Material im aktuellen Zug als vollständiger `<MCL_SCORE>` vorliegt und tatsächlich verarbeitet wurde. Ein Browser-Smoke-Test prüft ausdrücklich, dass ein absichtlich veraltetes `score.sm` bei NEW_SCORE weder mit noch ohne aktuelle Summary in das Ergebnis durchsickert.
