@@ -364,6 +364,11 @@ window.fetch=async function(input,init={}){
   let obj;try{obj=extractLooseJson(translated.raw)}catch(_){const warning='Die MIDI-Übersetzung war kein gültiges Partitur-JSON. Es wurde keine Fassung übernommen.';return jsonResponse(replaceResponseText(provider,translated.d,warning),translated.r.status,translated.r.headers)}
   const score=minimalToMclScore(obj,task),issues=score?scoreIssues(score):['keine gültige Partiturstruktur'];
   if(!score||issues.length){const warning=`Die erzeugte MIDI-Fassung wurde wegen technischer Inkonsistenzen nicht übernommen: ${issues.join('; ')}.`;return jsonResponse(replaceResponseText(provider,translated.d,warning),translated.r.status,translated.r.headers)}
+  if(note)note.textContent='Erstelle Kompositionsbeschreibung …';
+  const ideaPrompt='Analysiere die soeben entstandene Komposition und formuliere ihre Kompositionsidee knapp und musikalisch konkret. Beschreibe Charakter, formalen Verlauf, rhythmische und harmonische Grundidee sowie das Verhältnis der Stimmen bzw. Instrumente. Erfinde nichts und gib keine Bewertung ab. Antworte nur mit der Kompositionsidee als normalem Text.\n\nURSPRÜNGLICHER AUFTRAG:\n'+task+'\n\nMUSIKALISCHER ENTWURF:\n'+draft+'\n\nTECHNISCHE PARTITUR:\n'+translated.raw;
+  const ideaResult=await runMinimalStage(input,init,provider,body,ideaPrompt,'composition_idea_afterwards');
+  if(!ideaResult.d||!ideaResult.r.ok||!ideaResult.raw)return ideaResult.r;
+  score.sm=ideaResult.raw.trim();
   return jsonResponse(replaceResponseText(provider,translated.d,JSON.stringify(score)),translated.r.status,translated.r.headers);
 };
 
