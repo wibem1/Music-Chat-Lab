@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 test('core ui', async ({ page }) => {
   const errors=[]; page.on('pageerror',e=>errors.push(String(e)));
   await page.goto('http://127.0.0.1:4173/index.html');
-  await expect(page.locator('[data-app-version]')).toHaveText('v1.4.35');
+  await expect(page.locator('[data-app-version]')).toHaveText('v1.4.38');
   await page.locator('#topSettingsButton').click();
   await expect(page.locator('#settingsDialog')).toHaveJSProperty('open',true);
   await page.locator('#settingsDialog .dialog-close').click();
@@ -14,6 +14,11 @@ test('core ui', async ({ page }) => {
   await expect(page.locator('#modelSelect option')).not.toHaveCount(0);
   await expect(page.locator('#modelSelect')).toHaveValue(/.+/);
   await expect(page.locator('#adoptIdeaButton')).toBeDisabled();
+  const assignmentBox=page.locator('#compositionIdeaInput');
+  expect(await assignmentBox.evaluate(e=>e.getBoundingClientRect().height)).toBeGreaterThanOrEqual(100);
+  await expect(page.locator('#clabSaveBtn')).toBeVisible();
+  await expect(page.locator('#clabOpenBtn')).toHaveCount(0);
+  await expect(page.locator('#midiSlotFileInput')).toHaveAttribute('accept',/\.clab/);
   await page.locator('#composeButton').click();
   await expect(page.locator('#composerNote')).toHaveText('Bitte Kompositionsauftrag eintragen.');
   await expect(page.locator('#messageInput')).toHaveValue('');
@@ -35,9 +40,9 @@ test('core ui', async ({ page }) => {
   await expect(page.locator('#compositionHistoryDialog')).toHaveJSProperty('open',true);
   await expect(page.locator('#compositionHistoryList')).toContainText('noch keine gespeicherte Kompositionsfassung');
   const promptArchitecture = await page.evaluate(() => {
-    const chat=window.MCLExplicitModeV139.directive('chat','')+'\n\n'+window.MCLSessionV142.systemPrompt('','','Keine MIDI-Fassung im Arbeitstisch.',null,[],'chat',false);
-    const composeNew=window.MCLSessionV142.systemPrompt('','','Keine MIDI-Fassung im Arbeitstisch.',null,[],'compose',false);
-    const composeExisting=window.MCLSessionV142.systemPrompt('','', 'Speicher 1: Quelle',1,[],'compose',true);
+    const chat=window.MCLExplicitModeV139.directive('chat','')+'\n\n'+window.MCLSessionV143.systemPrompt('','','Keine MIDI-Fassung im Arbeitstisch.',null,[],'chat',false);
+    const composeNew=window.MCLSessionV143.systemPrompt('','','Keine MIDI-Fassung im Arbeitstisch.',null,[],'compose',false);
+    const composeExisting=window.MCLSessionV143.systemPrompt('','', 'Speicher 1: Quelle',1,[],'compose',true);
     return {chat,composeNew,composeExisting};
   });
   expect(promptArchitecture.chat.length).toBeLessThan(1200);
@@ -53,9 +58,9 @@ test('core ui', async ({ page }) => {
   expect(promptArchitecture.composeExisting).toContain('NEW_SCORE');
   const ideaContract=await page.evaluate(()=>({
     chatDirective:window.MCLExplicitModeV139.directive('chat',''),
-    noRef:window.MCLSessionV142.referencesWorkbench('Komponiere ein Klavierstück.',[{slot:1,name:'Stilles Wiegen',score:{ti:'Stilles Wiegen'}}]),
-    slotRef:window.MCLSessionV142.referencesWorkbench('Überarbeite Stück 1.',[{slot:1,name:'Stilles Wiegen',score:{ti:'Stilles Wiegen'}}]),
-    nameRef:window.MCLSessionV142.referencesWorkbench('Überarbeite Stilles Wiegen.',[{slot:1,name:'Stilles Wiegen',score:{ti:'Stilles Wiegen'}}])
+    noRef:window.MCLSessionV143.referencesWorkbench('Komponiere ein Klavierstück.',[{slot:1,name:'Stilles Wiegen',score:{ti:'Stilles Wiegen'}}]),
+    slotRef:window.MCLSessionV143.referencesWorkbench('Überarbeite Stück 1.',[{slot:1,name:'Stilles Wiegen',score:{ti:'Stilles Wiegen'}}]),
+    nameRef:window.MCLSessionV143.referencesWorkbench('Überarbeite Stilles Wiegen.',[{slot:1,name:'Stilles Wiegen',score:{ti:'Stilles Wiegen'}}])
   }));
   expect(ideaContract.chatDirective).toContain('als Kompositionsauftrag übernommen werden soll');
   expect(ideaContract.chatDirective).toContain('<MCL_ADOPT_CONCEPT/>');
@@ -64,21 +69,21 @@ test('core ui', async ({ page }) => {
   expect(ideaContract.nameRef).toBeTruthy();
   const anthropicThinking = await page.evaluate(() => {
     const base={model:'claude-sonnet-5',max_tokens:4096,messages:[]};
-    const chat=window.MCLSessionV142.buildProviderBody('anthropic',base,[{role:'user',text:'Komponiere ein Klavierstück.'}],'system','chat');
-    const compose=window.MCLSessionV142.buildProviderBody('anthropic',base,[{role:'user',text:'Komponiere ein Klavierstück.'}],'system','compose');
+    const chat=window.MCLSessionV143.buildProviderBody('anthropic',base,[{role:'user',text:'Komponiere ein Klavierstück.'}],'system','chat');
+    const compose=window.MCLSessionV143.buildProviderBody('anthropic',base,[{role:'user',text:'Komponiere ein Klavierstück.'}],'system','compose');
     return {chat,compose};
   });
   expect(anthropicThinking.chat.thinking).toEqual({type:'adaptive'});
   expect(anthropicThinking.chat.output_config?.effort).toBe('high');
   expect(anthropicThinking.chat.max_tokens).toBeGreaterThanOrEqual(12000);
-  expect(anthropicThinking.compose.thinking).toEqual({type:'adaptive'});
-  expect(anthropicThinking.compose.output_config?.effort).toBe('high');
-  expect(anthropicThinking.compose.max_tokens).toBeGreaterThanOrEqual(32768);
+  expect(anthropicThinking.compose.thinking).toEqual({type:'disabled'});
+  expect(anthropicThinking.compose.output_config).toBeUndefined();
+  expect(anthropicThinking.compose.max_tokens).toBe(12000);
   const provenance = await page.evaluate(() => {
     const source={slot:1,name:'Quelle',score:{ti:'Quelle',bpm:90,ts:{n:4,d:4},k:'Am',sm:'ALTE SYNTHESEBEHAUPTUNG',tr:[{nm:'Piano',ch:0,pg:0,nt:[[0,1,60,80,0,1]],ct:[]}]}};
     const fresh={ti:'Neu',bpm:90,ts:{n:4,d:4},k:'Am',sm:'ALTE SYNTHESEBEHAUPTUNG',tr:[{nm:'Piano',ch:0,pg:0,nt:[[0,1,64,80,0,1]],ct:[]}]};
-    const withSummary=window.MCLSessionV142.materializeAction({type:'new_score',summary:'Aktuelle Fassung',score:fresh},[source],'');
-    const withoutSummary=window.MCLSessionV142.materializeAction({type:'new_score',score:fresh},[source],'');
+    const withSummary=window.MCLSessionV143.materializeAction({type:'new_score',summary:'Aktuelle Fassung',score:fresh},[source],'');
+    const withoutSummary=window.MCLSessionV143.materializeAction({type:'new_score',score:fresh},[source],'');
     return {a:withSummary.sm,b:withoutSummary.sm};
   });
   expect(provenance).toEqual({a:'Aktuelle Fassung',b:'Neu komponierte MIDI-Fassung.'});
@@ -87,7 +92,7 @@ test('core ui', async ({ page }) => {
     const different={ti:'Frei',bpm:120,ts:{n:3,d:4},k:'Des-Dur',tr:[{nm:'Piano',nt:[[0,1,61,80,0,1],[1,2,68,90,0,1]]}]};
     const badPitch={ti:'Defekt',bpm:66,ts:{n:4,d:4},tr:[{nm:'Piano',nt:[[0,1,200,80,0,1]]}]};
     const badDuration={ti:'Defekt',bpm:66,ts:{n:4,d:4},tr:[{nm:'Piano',nt:[[0,0,60,80,0,1]]}]};
-    return {good:window.MCLSessionV142.scoreIssues(good),different:window.MCLSessionV142.scoreIssues(different),badPitch:window.MCLSessionV142.scoreIssues(badPitch),badDuration:window.MCLSessionV142.scoreIssues(badDuration)};
+    return {good:window.MCLSessionV143.scoreIssues(good),different:window.MCLSessionV143.scoreIssues(different),badPitch:window.MCLSessionV143.scoreIssues(badPitch),badDuration:window.MCLSessionV143.scoreIssues(badDuration)};
   });
   expect(validation.good).toEqual([]);
   expect(validation.different).toEqual([]);
@@ -109,5 +114,8 @@ test('core ui', async ({ page }) => {
     return {current,all:all.length,currentOnly:window.MCLAiTrace.snapshotCurrentChat().every(x=>x.chatId===current)};
   });
   expect(traceIsolation.currentOnly).toBeTruthy();
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth)).toBeTruthy();
+  expect(await assignmentBox.evaluate(e=>e.getBoundingClientRect().height)).toBeGreaterThanOrEqual(100);
   expect(errors).toEqual([]);
 });

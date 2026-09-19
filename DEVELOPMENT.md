@@ -341,3 +341,27 @@ Davon getrennt ist die **Kompositionsbeschreibung** des tatsächlich entstandene
 Die CLAB-Trennung wurde dabei korrigiert: `assignment` speichert den tatsächlichen Inhalt des Felds „Kompositionsauftrag“, während `concept` und `score.sm` die Ergebnisbeschreibung behalten. Das Speichern einer CLAB-Datei darf `score.sm` nicht mehr mit dem Auftrag überschreiben. Beim Laden erscheint `assignment` im Auftragsfeld und `score.sm` im einklappbaren Beschreibungsbereich.
 
 Regressionstests prüfen die eingeklappte mobile-kompakte Beschreibung, die getrennte CLAB-Speicherung von Auftrag und Beschreibung, das Laden des Auftrags sowie die unveränderte Slot-Auswahl.
+
+
+### v1.4.36 – Claude-Tokenverschwendung im Komponiermodus beseitigt
+Die Gerätediagnose von v1.4.35 zeigte einen klaren Ausfallmodus: Claude Sonnet 5 erhielt beim direkten Komponieren adaptives Thinking mit `effort:"high"` und ein gemeinsames Ausgabelimit von 32.768 Tokens. Claude verbrauchte dieses Limit vollständig im Thinking und lieferte keinen Text-/`MCL_ACTION`-Block. Der Kompositionsauftrag war korrekt angekommen; der Fehler lag damit nicht in Chat-, Auftrags- oder Beschreibungslogik, sondern in der Provider-Konfiguration des Komponiermodus.
+
+Die Ursache ist die in v1.4.32 zu grob vorgenommene Übertragung von adaptivem Thinking auf **alle** Anthropic-Aufrufe. Das war als Gegenmaßnahme gegen zu schwache Musik gedacht, wiederholt im direkten strukturierten Komponiermodus aber genau den bereits im Minimal Composer diagnostizierten Token-Sink: umfangreiches internes Denken konkurriert dort mit der zwingend benötigten strukturierten Notenausgabe um dasselbe Tokenbudget.
+
+v1.4.36 trennt deshalb wieder nach Aufgabe: Im **Chat** bleibt für Claude Sonnet 5/Opus 5/Sonnet 4.6 adaptives Thinking mit hoher Anstrengung erhalten, weil dort Ideenentwicklung und musikalische Reflexion stattfinden. Im **Komponiermodus** ist der musikalische Auftrag bereits festgelegt; Claude soll daraus unmittelbar die Noten/`MCL_ACTION` erzeugen. Für diesen strukturierten Ausgabeschritt wird Thinking bei diesen Claude-Modellen deaktiviert und `max_tokens` auf 12.000 begrenzt. Das verhindert 32k reine Thinking-Tokens, ohne zusätzliche musikalische Regeln in den Prompt einzubauen oder den Auftrag zu verändern.
+
+Regressionstest: Sonnet 5 muss im Chat weiterhin `thinking.type=adaptive` und `effort=high` erhalten; im Komponiermodus muss `thinking.type=disabled`, kein `output_config.effort` und exakt `max_tokens=12000` gesendet werden. Ein späteres Refactoring darf diese beiden Aufgaben nicht wieder global gleich behandeln.
+
+
+### v1.4.37 – Kompositionsauftrag vergrößert und CLAB in den Arbeitstisch integriert
+Die Bedienoberfläche wird ohne neue Seite und unter Erhalt des Hochformat-Layouts gestrafft. Das Feld **Kompositionsauftrag** ist nun deutlich höher (Desktop mindestens 120 px, schmale/mobile Ansicht mindestens 108 px), besitzt größere Schrift und bleibt vertikal bis 280/240 px vergrößerbar. Längere Aufträge lassen sich damit direkt lesen und bearbeiten.
+
+Die separate CLAB-Werkzeugleiste entfällt. **CLAB speichern** sitzt nun als Exportaktion direkt im MIDI-Player neben **MIDI speichern**. Ein eigener globaler Button **CLAB laden** entfällt vollständig. Stattdessen öffnen leere Arbeitstisch-Slots einen gemeinsamen MIDI-/CLAB-Dateidialog. MIDI wird wie bisher direkt in den gewählten Slot geladen; eine CLAB-Datei wird über denselben Slotweg geladen, übernimmt ihren gespeicherten Kompositionsauftrag und ihre Ergebnisbeschreibung und aktiviert den gewählten Slot. Damit sind MIDI und CLAB auf dem Arbeitstisch gleichartige ladbare musikalische Dokumente.
+
+Der Stand enthält zugleich den Token-Fix aus v1.4.36: Claude behält adaptives High-Effort-Thinking im Chat, nicht aber im strukturierten Komponiermodus; dort gilt `thinking: disabled` und `max_tokens: 12000`.
+
+Regressionstests prüfen Feldhöhe, mobile Breite ohne horizontalen Überlauf, sichtbaren CLAB-Speicherbutton im Player, das Fehlen des alten CLAB-Öffnen-Buttons, CLAB im Slot-Dateifilter sowie die getrennte Claude-Konfiguration für Chat und Komposition.
+
+
+### v1.4.38 – alte CLAB-Recovery-Leiste entfernt
+Der Smoke-Test von v1.4.37 fand korrekt eine doppelte ID `clabSaveBtn`: Obwohl die reguläre CLAB-Werkzeugleiste entfernt worden war, erzeugte `ui-enhancements.js` über den historischen Recovery-Pfad `bindClabToolbar()` weiterhin die alten Buttons **CLAB öffnen / CLAB speichern**. Ursache war damit kein Layout-CSS, sondern eine zweite, veraltete UI-Quelle. v1.4.38 entfernt diese alte Toolbar-Erzeugung aus dem Recovery-Modul; die einzige CLAB-Speicheraktion bleibt der Button im MIDI-Player, und CLAB-Laden bleibt ausschließlich im Slot-Dateidialog. Der Regressionstest verlangt genau einen sichtbaren `clabSaveBtn` und keinen `clabOpenBtn`.
