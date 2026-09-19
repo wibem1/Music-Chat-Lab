@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-if(window.__mclSessionOrchestratorV142)return;
-window.__mclSessionOrchestratorV142=true;
+if(window.__mclSessionOrchestratorV143)return;
+window.__mclSessionOrchestratorV143=true;
 
-const VERSION='1.4.2';
+const VERSION='1.4.3';
 const MEMORY_KEY='music-chat-lab.session-memory.v3';
 const ACTIVE_CHAT_KEY='music-chat-lab.active-chat.v1';
 const RECENT_MESSAGES=8;
@@ -165,9 +165,9 @@ function buildProviderBody(provider,body,msgs,system,mode){
   if(provider==='anthropic'){
     b.system=system;b.messages=msgs.map(m=>({role:m.role,content:m.text}));
     const adaptive=/^claude-(?:sonnet-(?:5|4-6)|opus-5)(?:$|-)/i.test(String(b.model||''));
-    if(adaptive){b.thinking={type:'adaptive'};b.output_config={...(b.output_config||{}),effort:'high'}}
-    else{delete b.thinking;delete b.output_config}
-    b.max_tokens=Math.max(Number(b.max_tokens)||4096,mode==='compose'?32768:12000);
+    if(adaptive&&mode!=='compose'){b.thinking={type:'adaptive'};b.output_config={...(b.output_config||{}),effort:'high'};b.max_tokens=Math.max(Number(b.max_tokens)||4096,12000)}
+    else if(adaptive&&mode==='compose'){b.thinking={type:'disabled'};delete b.output_config;b.max_tokens=12000}
+    else{delete b.thinking;delete b.output_config;b.max_tokens=Math.max(Number(b.max_tokens)||4096,mode==='compose'?12000:12000)}
   }else if(provider==='openai'){
     b.input=[{role:'system',content:system},...msgs.map(m=>({role:m.role,content:m.text}))];b.store=false;
   }else{
@@ -407,5 +407,5 @@ window.fetch=async function(input,init={}){
   return jsonResponse(replaceResponseText(provider,result.d,prefix||result.raw),result.r.status,result.r.headers);
 };
 
-window.MCLSessionV142={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,systemPrompt,buildProviderBody,referencesWorkbench};
+window.MCLSessionV143={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,systemPrompt,buildProviderBody,referencesWorkbench};
 })();
