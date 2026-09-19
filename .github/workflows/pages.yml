@@ -1,5 +1,5 @@
 name: Deploy Music Chat Lab to GitHub Pages
-# deployment trigger: v1.4.16-playwright-fix
+# deployment trigger: v1.4.18-pwa-update-fix
 
 on:
   workflow_dispatch:
