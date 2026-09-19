@@ -255,3 +255,13 @@ Der Komponiermodus behandelt eine vorhandene Kompositionsidee als bewusst übern
 
 ### Entwicklungsablauf ab v1.4.27 – erst prüfen, dann veröffentlichen
 Um Wartezeit und unnötige öffentliche Zwischenversionen zu vermeiden, werden zusammengehörige Änderungen künftig zunächst auf einem Entwicklungszweig gesammelt. Pull Requests führen Syntax- und Browser-Smoke-Tests aus, veröffentlichen aber keine GitHub-Pages-Version. Erst ein geprüfter, konsolidierter Stand wird nach `main` übernommen; nur dieser Merge löst die Pages-Veröffentlichung aus. GitHub bleibt damit Versionsarchiv, Testplattform und Release-Host, ohne jeden internen Arbeitsschritt sofort als PWA-Release auszuliefern.
+
+
+### v1.4.28 – vollständiges, schlüsselfreies KI-Aufrufprotokoll
+Die Untersuchung schwacher Kompositionen zeigte eine Diagnose-Lücke: MusicChatLab speicherte sichtbaren Chat, Scores, Usage und ältere Routing-Daten, aber nicht den tatsächlich an den Provider gesendeten Gesamtauftrag jeder KI-Stufe. Damit war im Nachhinein nicht sicher unterscheidbar, ob ein schwaches Ergebnis vom Modell selbst oder von Orchestrator-, Zwei-Stufen-, Kontext- oder Reparaturprompts verursacht wurde. Minimal Composer besitzt aus genau diesem Grund bereits eine vollständige Request-/Response-Protokollierung.
+
+v1.4.28 übernimmt dieses Diagnoseprinzip in die bestehende MusicChat-Architektur. Jeder vom Orchestrator ausgeführte Provider-Aufruf wird mit Stufenbezeichnung, Zeitpunkt, Provider, bereinigter URL, bereinigten Headern, vollständigem tatsächlich gesendetem Request-Body und vollständiger roher Provider-Antwort protokolliert. Der freie musikalische Entwurf der Zwei-Stufen-Komposition wird als eigene Stufe `musical_draft` ebenfalls vollständig erfasst; nachfolgende Orchestrator-Aufrufe enthalten dadurch auch den tatsächlich angehängten Entwurf. Notendaten in `<MCL_SCORE>`, Systemprompt, Chatkontext, Kompositionsidee und Reparaturauftrag bleiben im Request-Body erhalten, soweit sie tatsächlich an das Modell gesendet wurden.
+
+API-Schlüssel und Authorization-Header werden ausdrücklich nicht gespeichert: bekannte Key-Queryparameter werden durch `[REDACTED]` ersetzt, Auth-/API-Key-Header ebenfalls. Die Diagnose erhält Format 6 und exportiert die chronologische Liste als `aiCalls`. Das lokale Trace-Protokoll ist auf die letzten 40 Aufrufe begrenzt. Der Browser-Smoke-Test prüft sowohl vollständigen Request-/Response-Inhalt als auch die Entfernung von URL- und Header-Geheimnissen.
+
+Diese Protokollierung ist Diagnose und verändert weder den musikalischen Auftrag noch die erzeugte Partitur.
