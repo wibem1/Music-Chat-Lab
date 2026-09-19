@@ -6,7 +6,7 @@ Stand: v1.4.43
 Die App organisiert; die KI musiziert. Musikalische Komposition und technische MIDI-Materialisierung sind getrennte Aufgaben. Der verbindliche übergeordnete Rahmen steht in `ARCHITECTURE_CONTRACT.md`.
 
 ## CHAT
-Der Chat dient Gespräch, Analyse, Kritik und Ideenentwicklung. Er enthält kein MIDI-Aktionsprotokoll. Eine konkrete Kompositionsidee kann mit `MCL_CONCEPT` zur bewussten Übernahme in das Feld „Kompositionsauftrag“ angeboten werden.
+Der Chat dient Gespräch, Analyse, Kritik und Ideenentwicklung. Er enthält kein MIDI-Aktionsprotokoll. Wenn der Nutzer vorhandenes Material ausdrücklich referenziert, bleibt die bisherige bedarfsgesteuerte `MCL_NEED`-Anforderung exakter Notendaten erhalten. Eine konkrete Kompositionsidee kann mit `MCL_CONCEPT` zur bewussten Übernahme in das Feld „Kompositionsauftrag“ angeboten werden.
 
 ## KOMPONIERE – Stufe 1: musikalische Komposition
 Der gewählte Provider erhält den aktuellen Dialog, den verbindlichen Kompositionsauftrag und nur dann vorhandenes musikalisches Ausgangsmaterial, wenn der Auftrag darauf Bezug nimmt.
