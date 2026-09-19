@@ -341,3 +341,13 @@ Davon getrennt ist die **Kompositionsbeschreibung** des tatsächlich entstandene
 Die CLAB-Trennung wurde dabei korrigiert: `assignment` speichert den tatsächlichen Inhalt des Felds „Kompositionsauftrag“, während `concept` und `score.sm` die Ergebnisbeschreibung behalten. Das Speichern einer CLAB-Datei darf `score.sm` nicht mehr mit dem Auftrag überschreiben. Beim Laden erscheint `assignment` im Auftragsfeld und `score.sm` im einklappbaren Beschreibungsbereich.
 
 Regressionstests prüfen die eingeklappte mobile-kompakte Beschreibung, die getrennte CLAB-Speicherung von Auftrag und Beschreibung, das Laden des Auftrags sowie die unveränderte Slot-Auswahl.
+
+
+### v1.4.36 – Claude-Tokenverschwendung im Komponiermodus beseitigt
+Die Gerätediagnose von v1.4.35 zeigte einen klaren Ausfallmodus: Claude Sonnet 5 erhielt beim direkten Komponieren adaptives Thinking mit `effort:"high"` und ein gemeinsames Ausgabelimit von 32.768 Tokens. Claude verbrauchte dieses Limit vollständig im Thinking und lieferte keinen Text-/`MCL_ACTION`-Block. Der Kompositionsauftrag war korrekt angekommen; der Fehler lag damit nicht in Chat-, Auftrags- oder Beschreibungslogik, sondern in der Provider-Konfiguration des Komponiermodus.
+
+Die Ursache ist die in v1.4.32 zu grob vorgenommene Übertragung von adaptivem Thinking auf **alle** Anthropic-Aufrufe. Das war als Gegenmaßnahme gegen zu schwache Musik gedacht, wiederholt im direkten strukturierten Komponiermodus aber genau den bereits im Minimal Composer diagnostizierten Token-Sink: umfangreiches internes Denken konkurriert dort mit der zwingend benötigten strukturierten Notenausgabe um dasselbe Tokenbudget.
+
+v1.4.36 trennt deshalb wieder nach Aufgabe: Im **Chat** bleibt für Claude Sonnet 5/Opus 5/Sonnet 4.6 adaptives Thinking mit hoher Anstrengung erhalten, weil dort Ideenentwicklung und musikalische Reflexion stattfinden. Im **Komponiermodus** ist der musikalische Auftrag bereits festgelegt; Claude soll daraus unmittelbar die Noten/`MCL_ACTION` erzeugen. Für diesen strukturierten Ausgabeschritt wird Thinking bei diesen Claude-Modellen deaktiviert und `max_tokens` auf 12.000 begrenzt. Das verhindert 32k reine Thinking-Tokens, ohne zusätzliche musikalische Regeln in den Prompt einzubauen oder den Auftrag zu verändern.
+
+Regressionstest: Sonnet 5 muss im Chat weiterhin `thinking.type=adaptive` und `effort=high` erhalten; im Komponiermodus muss `thinking.type=disabled`, kein `output_config.effort` und exakt `max_tokens=12000` gesendet werden. Ein späteres Refactoring darf diese beiden Aufgaben nicht wieder global gleich behandeln.
