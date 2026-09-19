@@ -321,3 +321,13 @@ Der Chat bleibt der Ort für Ideenentwicklung. Formuliert die KI eine konkrete I
 Der Arbeitstisch ist ab v1.4.33 **kein impliziter musikalischer Auftrag mehr**. Vorhandene oder aktive Slots werden einem normalen neuen Chat-/Kompositionsauftrag nicht allein wegen ihrer Existenz als Kontext angeboten. Quellenprotokoll und Quellenkatalog werden nur aktiviert, wenn der aktuelle Auftrag bzw. die Kompositionsidee ausdrücklich auf den Arbeitstisch, einen Speicher/Slot/Stück-Index oder den Namen eines vorhandenen Stücks Bezug nimmt. Damit darf ein aktiver alter Slot einen offenen Neuauftrag nicht mehr stilistisch kontaminieren.
 
 Regressionstests prüfen: leere Idee blockiert „Komponiere“ ohne Eingabetext zu erzeugen; ein freier Auftrag „Komponiere ein Klavierstück.“ referenziert einen vorhandenen Slot nicht; ausdrückliche Referenzen wie „Stück 1“ oder ein vorhandener Titel aktivieren den Quellenweg; der Chat-Prompt enthält den Übernahme-Dialog und den internen Bestätigungsmarker.
+
+
+### v1.4.34 – Geladener Kompositionsauftrag bleibt Auftrag, nicht Beschreibung
+Die begriffliche Trennung wird auf geladene Stücke ausgedehnt: Das Chat-Eingabefeld dient ausschließlich dem Gespräch und löst niemals selbst eine Komposition aus. Das Feld „Kompositionsidee“ enthält ausschließlich den frei wählbaren **Kompositionsauftrag**, der beim Klick auf „Komponiere“ ausgeführt wird.
+
+Beim Öffnen einer CLAB-Datei wird deshalb deren gespeichertes Feld `assignment` in „Kompositionsidee“ geladen. `concept` bzw. `score.sm` sind Beschreibungen des musikalischen Ergebnisses und werden nicht mehr ersatzweise als Auftrag eingesetzt. Enthält eine ältere CLAB-Datei keinen gespeicherten Auftrag, bleibt das Feld leer; ein Auftrag wird nicht erfunden.
+
+Auch die bloße Auswahl eines MIDI-Slots überschreibt den Kompositionsauftrag nicht mehr mit `score.sm`. Reine MIDI-Dateien besitzen im Dateiformat keinen ursprünglichen natürlichsprachlichen Kompositionsauftrag; deshalb kann MusicChatLab beim MIDI-Import keinen solchen Auftrag zuverlässig rekonstruieren. Für diese Stücke kann ein neuer Auftrag frei eingetragen werden.
+
+Regressionstest: Eine CLAB-Datei mit `assignment` und abweichendem `concept` muss exakt `assignment` in das Ideenfeld laden; anschließendes Anklicken eines Slots darf einen dort bereits eingetragenen Auftrag nicht verändern.
