@@ -12,7 +12,7 @@ test('core ui', async ({ page }) => {
   await expect(page.locator('#modelSelect option')).not.toHaveCount(0);
   await expect(page.locator('#modelSelect')).toHaveValue(/.+/);
   await expect(page.locator('#adoptIdeaButton')).toBeDisabled();
-  await page.evaluate(()=>window.MCLExplicitModeV135.storeProposal('Neue Idee: bewegter Mittelteil, kontrastierende Begleitung.'));
+  await page.evaluate(()=>window.MCLExplicitModeV136.storeProposal('Neue Idee: bewegter Mittelteil, kontrastierende Begleitung.'));
   await expect(page.locator('#adoptIdeaButton')).toBeEnabled();
   await page.locator('#adoptIdeaButton').click();
   await expect(page.locator('#compositionIdeaInput')).toHaveValue('Neue Idee: bewegter Mittelteil, kontrastierende Begleitung.');
