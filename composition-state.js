@@ -17,7 +17,7 @@ function ensureTitle(score,message){let title=clean(score?.ti);if(title)return t
 function activeSlotNumber(){const b=document.querySelector('.mcl-midi-slot.active');return b?Number(b.dataset.slot)+1:0}
 async function recordGeneratedResult(rec){
   const chat=currentChat();if(!chat?.id||!rec?.score||!rec?.message)return false;
-  const entry={id:rec.message.id||('composition-'+Date.now()),messageId:rec.message.id||null,createdAt:rec.message.createdAt||Date.now(),title:ensureTitle(rec.score,rec.message),provider:rec.message.provider||null,model:rec.message.model||null,assignment:latestAssignment(),score:clone(rec.score)};
+  const entry={id:rec.message.id||('composition-'+Date.now()),messageId:rec.message.id||null,createdAt:rec.message.createdAt||Date.now(),title:ensureTitle(rec.score,rec.message),provider:rec.message.provider||null,model:rec.message.model||null,assignment:assignmentBefore(rec.message.id)||latestAssignment(),score:clone(rec.score)};
   const added=await window.MCLStateVault?.appendComposition?.(chat.id,entry);
   if(added)window.dispatchEvent(new CustomEvent('mcl-composition-history-changed',{detail:{chatId:chat.id}}));
   return !!added;
@@ -28,6 +28,7 @@ function scheduleGeneratedSync(){clearTimeout(syncTimer);syncTimer=setTimeout(()
 function scoreMeasures(score){let end=0;for(const tr of score?.tr||[])for(const n of tr.nt||[])if(Array.isArray(n))end=Math.max(end,(Number(n[0])||0)+(Number(n[1])||0));const ts=score?.ts||{n:4,d:4},beats=(Number(ts.n)||4)*(4/(Number(ts.d)||4));return String(Math.max(1,Math.ceil(end/Math.max(.25,beats))))}
 function ensemble(score){return(score?.tr||[]).map(t=>t.nm).filter(Boolean).join(', ')}
 function latestAssignment(){const c=currentChat();if(!c)return'';const m=[...(c.messages||[])].reverse().find(x=>x.role==='user'&&!x.isError&&!x.thinking);return String(m?.displayText||m?.text||'').replace(/\[MCL-(?:ENGINE14-SCORE|CLAB-SCORE)[\s\S]*$/i,'').trim()}
+function assignmentBefore(messageId){const c=currentChat(),ms=c?.messages||[];const ix=ms.findIndex(x=>x.id===messageId);for(let i=(ix>=0?ix:ms.length)-1;i>=0;i--){const m=ms[i];if(m.role==='user'&&!m.isError&&!m.thinking)return String(m.displayText||m.text||'').replace(/\[MCL-(?:ENGINE14-SCORE|CLAB-SCORE)[\s\S]*$/i,'').trim()}return''}
 function activeProviderModel(){const p=document.getElementById('providerSelect')?.value||'',m=document.getElementById('modelSelect')?.value||null;return{provider:p==='google'?'gemini':p||null,model:m}}
 function safeName(v){return String(v||'Komposition').replace(/[\\/:*?"<>|]+/g,'_').replace(/\s+/g,' ').trim()||'Komposition'}
 function download(text,name){const blob=new Blob([text],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500)}
@@ -63,7 +64,8 @@ function loadHistoryItem(item){
   items.push({slot:target,name:item.title||item.score.ti||'Historische Fassung',kind:'Verlauf',score:clone(item.score)});
   api.restoreState(items,target);setNote('Historische Fassung in Speicher '+target+' geladen. Der Verlauf selbst bleibt unverändert.');historyDialog()?.close();
 }
-async function openCompositionHistory(){await renderCompositionHistory();historyDialog()?.showModal()}
+async function backfillCompositionHistory(){const chat=currentChat();if(!chat?.id)return;for(const m of chat.messages||[]){if(m.role!=='assistant'||m.isError||m.thinking)continue;const score=parseScore(m.text);if(score)await recordGeneratedResult({message:m,score})}}
+async function openCompositionHistory(){await backfillCompositionHistory();await renderCompositionHistory();historyDialog()?.showModal()}
 function installHistoryUI(){
   document.getElementById('compositionHistoryButton')?.addEventListener('click',openCompositionHistory);
   document.getElementById('compositionHistoryCloseButton')?.addEventListener('click',()=>historyDialog()?.close());
