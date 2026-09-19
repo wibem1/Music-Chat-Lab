@@ -1,5 +1,5 @@
 name: Deploy Music Chat Lab to GitHub Pages
-# deployment trigger: v1.4.11-retry
+# deployment trigger: v1.4.12
 
 on:
   workflow_dispatch:
