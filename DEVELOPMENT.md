@@ -175,3 +175,9 @@ v1.4.15 macht die Kurzbeschreibung bei vollständig neu erzeugten bzw. vollstän
 Der Release-Check von v1.4.15 scheiterte nicht an MusicChatLab, sondern bereits beim Start des Browser-Smoke-Tests. Das Actions-Log zeigte `Error: Cannot find module '@playwright/test'` und anschließend `No tests found`. Ursache war die Verwendung von `npx -y @playwright/test ...`: damit wurde zwar der Playwright-Befehl ausgeführt, das Testmodul stand beim Laden von `.github/smoke.spec.js` aber nicht als Projektabhängigkeit für `require('@playwright/test')` zur Verfügung.
 
 v1.4.16 installiert `@playwright/test@1.55.0` im Workflow vor dem Browser-Test explizit per npm und verwendet danach `npx playwright`. Damit prüft der Release-Workflow wieder tatsächlich die Anwendung statt an seiner eigenen Testumgebung zu scheitern. Die Änderung erhält wegen der verbindlichen Buildregel eine neue sichtbare Buildnummer.
+
+
+### v1.4.17 – Smoke-Test prüft Select-Optionen semantisch statt visuell
+Der v1.4.16-Workflow erreichte den Browser-Test vollständig. Er scheiterte ausschließlich an der Assertion `toBeVisible()` für das erste `<option>` des Modell-Selects. Das Log zeigte gleichzeitig, dass die Option `GPT-6 Astra` korrekt im DOM vorhanden war. Einzelne `<option>`-Elemente gelten in Headless Chromium jedoch als nicht sichtbar, solange das native `<select>` nicht geöffnet ist; die Assertion testete damit Browserdarstellung statt App-Funktion.
+
+v1.4.17 prüft stattdessen, dass nach dem Providerwechsel mindestens eine Modelloption vorhanden und im Modell-Select ein nichtleerer Wert ausgewählt ist. Damit entspricht der Smoke-Test der eigentlichen Funktionsanforderung, ohne Produktionscode wegen eines fehlerhaften Tests zu verändern.
