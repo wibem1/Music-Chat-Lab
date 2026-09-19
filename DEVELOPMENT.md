@@ -387,5 +387,5 @@ Nach dem direkten A/B-Test mit Claude Sonnet 5 wurde Minimal Composer als derzei
 Notwendige Umgebungsanpassungen sind bewusst auf die Integration begrenzt: Der sichtbare Music-Chat-Kompositionsauftrag wird als Minimal-Composer-Auftrag übergeben; ausdrücklich referenziertes Material aus dem Arbeitstisch wird dem Auftrag beigefügt; das von der unveränderten Minimal-Composer-Übersetzung erzeugte Partitur-JSON wird anschließend lokal und deterministisch in das interne Music-Chat-Scoreformat umbenannt/konvertiert. Diese lokale Konvertierung trifft keine musikalischen Entscheidungen. Minimal Composer selbst bleibt unverändert.
 
 
-### v1.4.45 – vollständige Minimal-Composer-Dreistufenpipeline
+### v1.4.46 – vollständige Minimal-Composer-Dreistufenpipeline
 Ausgangspunkt ist unverändert der stabile Stand v1.4.44. Die beiden kompositorischen Stufen `musical_draft` und `midi_translation` bleiben unverändert. Nach erfolgreicher technischer Validierung der Partitur wird nun auch die in Minimal Composer v0.4.24 vorhandene dritte Stufe `composition_idea_afterwards` mit identischem Prompt und identischer Provider-Konfiguration ausgeführt. Ihr Ergebnis wird als `score.sm` an die bereits vorhandene Kompositionsbeschreibung der Music-Chat-Oberfläche übergeben. Es gibt keine nachträgliche Zustandskorrektur und keinen Zugriff auf globale Draft-Zwischenspeicher.
