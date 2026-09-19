@@ -112,7 +112,7 @@ function sourcesForSlots(slots,sources){
 
 function chatSystemPrompt(memory,legacy,catalogueText,active,hasSources){
   const continuity=[memory,legacy].filter(Boolean).join('\n');
-  const workbench=hasSources?`\n\nARBEITSTISCH (nur zur Orientierung):\n${catalogueText}\nAktiver Speicher: ${active??'keiner'}.`:'';
+  const workbench=hasSources?`\n\nARBEITSTISCH (nur zur Orientierung):\n${catalogueText}\nAktiver Speicher: ${active??'keiner'}. Wenn für eine Analyse exakte Notendaten nötig sind, fordere höchstens ${MAX_SCORE_REQUESTS} Speicher ausschließlich mit <MCL_NEED>{"slots":[1]}</MCL_NEED> an. Fordere keine Daten an, wenn der Katalog genügt.`:'';
   const history=continuity?`\n\nKOMPAKTER ÄLTERER KONTEXT:\n${continuity}`:'';
   return `Du bist Music Chat Lab, ein musikalischer Gesprächs- und Kompositionspartner. Antworte musikalisch eigenständig, direkt und ohne unnötige technische Metaebene. Im CHAT-Modus wird keine MIDI-Aktion ausgegeben. Wenn du eine konkrete Kompositions- oder Bearbeitungsidee entwickelst, frage den Nutzer am Ende sichtbar, ob diese Idee als Kompositionsauftrag übernommen werden soll, und hänge zusätzlich <MCL_CONCEPT>kurze Zusammenfassung der Idee</MCL_CONCEPT> an. Wenn der Nutzer einen unmittelbar zuvor angebotenen Kompositionsvorschlag eindeutig bestätigt, antworte knapp und hänge <MCL_ADOPT_CONCEPT/> an. Bei normalem Gespräch, Analyse oder Kritik verwende keinen dieser Marker.${workbench}${history}`;
 }
@@ -341,8 +341,22 @@ window.fetch=async function(input,init={}){
   if(mode==='compose'){const assignment=ideaText();for(let i=contextual.length-1;i>=0;i--){if(contextual[i].role==='user'){contextual[i].text=`${contextual[i].text}\n\nVERBINDLICHER AKTUELLER KOMPOSITIONSAUFTRAG:\n${assignment}`;break}}}
   const system=systemPrompt(memory,legacy,catalogue(availableSources,active),active,provided,mode,availableSources.length>0);
   if(mode!=='compose'){
-    const result=await runProvider(input,init,provider,body,contextual,system,'orchestrator_chat','chat');
+    let result=await runProvider(input,init,provider,body,contextual,system,'orchestrator_chat','chat');
     if(!result.d||!result.r.ok||!result.raw)return result.r;
+    const firstIncomplete=incompleteInternal(result.raw);
+    if(firstIncomplete)return jsonResponse(replaceResponseText(provider,result.d,safeIncompleteText(result.raw,firstIncomplete)),result.r.status,result.r.headers);
+    const need=parseNeed(result.raw);
+    if(need?.length){
+      const selected=sourcesForSlots(need,availableSources);
+      if(selected.length!==need.length){const warning='Die angeforderten Notendaten sind im musikalischen Arbeitstisch nicht vollständig verfügbar.';return jsonResponse(replaceResponseText(provider,result.d,warning),result.r.status,result.r.headers)}
+      const moreContext=withScores(recent,user,selected);
+      const moreSystem=chatSystemPrompt(memory,legacy,catalogue(availableSources,active),active,true);
+      result=await runProvider(input,init,provider,body,moreContext,moreSystem,'orchestrator_chat_with_scores','chat');
+      if(!result.d||!result.r.ok||!result.raw)return result.r;
+      const secondIncomplete=incompleteInternal(result.raw);
+      if(secondIncomplete)return jsonResponse(replaceResponseText(provider,result.d,safeIncompleteText(result.raw,secondIncomplete)),result.r.status,result.r.headers);
+      if(parseNeed(result.raw)?.length){const warning='Die KI fordert nach der Bereitstellung erneut Notendaten an. Der Vorgang wurde beendet, um unnötige API-Kosten zu vermeiden.';return jsonResponse(replaceResponseText(provider,result.d,warning),result.r.status,result.r.headers)}
+    }
     const mem=extractMemory(result.raw);if(mem)saveMemory(mem);
     return jsonResponse(replaceResponseText(provider,result.d,visibleText(result.raw)||result.raw),result.r.status,result.r.headers);
   }
