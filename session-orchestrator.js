@@ -363,5 +363,5 @@ window.fetch=async function(input,init={}){
   return jsonResponse(replaceResponseText(provider,result.d,prefix||result.raw),result.r.status,result.r.headers);
 };
 
-window.MCLSessionV138={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,explicitConstraints,explicitConstraintsFromText,deviationNote};
+window.MCLSessionV139={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues};
 })();
