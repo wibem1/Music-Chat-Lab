@@ -108,9 +108,8 @@ function systemPrompt(memory,legacy,catalogueText,active,provided,mode,hasSource
   const continuity=[memory,legacy].filter(Boolean).join('\n');
   if(mode!=='compose'){
     const workbench=hasSources?`\n\nARBEITSTISCH (nur zur Orientierung):\n${catalogueText}\nAktiver Speicher: ${active??'keiner'}. Wenn für eine Analyse exakte Notendaten nötig sind, fordere höchstens ${MAX_SCORE_REQUESTS} Speicher ausschließlich mit <MCL_NEED>{"slots":[1]}</MCL_NEED> an.`:'';
-    const supplied=provided.length?`\n\nBEREITGESTELLTE NOTENDATEN:\n${scoreBlocks(provided)}`:'';
     const history=continuity?`\n\nKOMPAKTER ÄLTERER KONTEXT:\n${continuity}`:'';
-    return `Du bist Music Chat Lab, ein musikalischer Gesprächs- und Kompositionspartner. Antworte musikalisch eigenständig, direkt und ohne unnötige technische Metaebene. Im CHAT-Modus wird keine MIDI-Aktion ausgegeben.${workbench}${supplied}${history}`;
+    return `Du bist Music Chat Lab, ein musikalischer Gesprächs- und Kompositionspartner. Antworte musikalisch eigenständig, direkt und ohne unnötige technische Metaebene. Im CHAT-Modus wird keine MIDI-Aktion ausgegeben.${workbench}${history}`;
   }
 
   const supplied=provided.length?`Die vollständigen Notendaten von Speicher ${provided.map(x=>x.slot).join(', ')} sind als <MCL_SCORE> im aktuellen Nutzerkontext beigefügt.`:'Noch keine vollständigen Notendaten beigefügt.';
