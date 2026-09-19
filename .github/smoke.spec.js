@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 test('core ui', async ({ page }) => {
   const errors=[]; page.on('pageerror',e=>errors.push(String(e)));
   await page.goto('http://127.0.0.1:4173/index.html');
-  await expect(page.locator('[data-app-version]')).toHaveText('v1.4.44');
+  await expect(page.locator('[data-app-version]')).toHaveText('v1.4.45');
   await page.locator('#topSettingsButton').click();
   await expect(page.locator('#settingsDialog')).toHaveJSProperty('open',true);
   await page.locator('#settingsDialog .dialog-close').click();
@@ -57,6 +57,10 @@ test('core ui', async ({ page }) => {
   expect(minimalEngine.claudeMidi.thinking).toEqual({type:'disabled'});
   expect(minimalEngine.openaiDraft.store).toBe(false);
   expect(minimalEngine.googleDraft.contents[0].parts[0].text).toBe('ENTWURF');
+  const ideaStage=await page.evaluate(()=>window.MCLSessionV145.minimalStageBody('anthropic',{model:'claude-sonnet-5'},'IDEE','composition_idea_afterwards'));
+  expect(ideaStage.max_tokens).toBe(32768);
+  expect(ideaStage.thinking).toBeUndefined();
+  expect(ideaStage.messages[0].content).toBe('IDEE');
   const ideaContract=await page.evaluate(()=>({
     chatDirective:window.MCLExplicitModeV139.directive('chat',''),
     noRef:window.MCLSessionV143.referencesWorkbench('Komponiere ein Klavierstück.',[{slot:1,name:'Stilles Wiegen',score:{ti:'Stilles Wiegen'}}]),
