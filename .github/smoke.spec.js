@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 test('core ui', async ({ page }) => {
   const errors=[]; page.on('pageerror',e=>errors.push(String(e)));
   await page.goto('http://127.0.0.1:4173/index.html');
-  await expect(page.locator('[data-app-version]')).toHaveText('v1.4.34');
+  await expect(page.locator('[data-app-version]')).toHaveText('v1.4.35');
   await page.locator('#topSettingsButton').click();
   await expect(page.locator('#settingsDialog')).toHaveJSProperty('open',true);
   await page.locator('#settingsDialog .dialog-close').click();
@@ -15,14 +15,19 @@ test('core ui', async ({ page }) => {
   await expect(page.locator('#modelSelect')).toHaveValue(/.+/);
   await expect(page.locator('#adoptIdeaButton')).toBeDisabled();
   await page.locator('#composeButton').click();
-  await expect(page.locator('#composerNote')).toHaveText('Bitte Kompositionsidee eintragen.');
+  await expect(page.locator('#composerNote')).toHaveText('Bitte Kompositionsauftrag eintragen.');
   await expect(page.locator('#messageInput')).toHaveValue('');
   const loadedAssignment=await page.evaluate(()=>{const doc={format:'composition-lab-document',version:1,title:'Geladenes Stück',assignment:'Variiere das Thema frei für Klavier.',concept:'Beschreibung des Ergebnisses',score:{ti:'Geladenes Stück',bpm:80,ts:{n:4,d:4},k:'C major',sm:'Beschreibung des Ergebnisses',tr:[{nm:'Piano',ch:0,pg:0,nt:[[0,1,60,80,0,1]],ct:[]}]}};window.MCLCLAB.applyDocument(doc,'test.clab');return document.getElementById('compositionIdeaInput').value});
   expect(loadedAssignment).toBe('Variiere das Thema frei für Klavier.');
+  await expect(page.locator('#compositionDescriptionDetails')).not.toHaveAttribute('open','');
+  await page.locator('#compositionDescriptionDetails summary').click();
+  await expect(page.locator('#compositionDescriptionText')).toHaveText('Beschreibung des Ergebnisses');
+  const clabSeparation=await page.evaluate(()=>{const d=window.MCLCLAB.makeDocument();return {assignment:d.assignment,concept:d.concept,scoreSummary:d.score.sm}});
+  expect(clabSeparation).toEqual({assignment:'Variiere das Thema frei für Klavier.',concept:'Beschreibung des Ergebnisses',scoreSummary:'Beschreibung des Ergebnisses'});
   await page.evaluate(()=>window.MCLCompositionIdea.set('Eigener Auftrag',{generated:false,source:'test'}));
   await page.locator('.mcl-midi-slot').first().click();
   await expect(page.locator('#compositionIdeaInput')).toHaveValue('Eigener Auftrag');
-  await page.evaluate(()=>window.MCLExplicitModeV138.storeProposal('Neue Idee: bewegter Mittelteil, kontrastierende Begleitung.'));
+  await page.evaluate(()=>window.MCLExplicitModeV139.storeProposal('Neue Idee: bewegter Mittelteil, kontrastierende Begleitung.'));
   await expect(page.locator('#adoptIdeaButton')).toBeEnabled();
   await page.locator('#adoptIdeaButton').click();
   await expect(page.locator('#compositionIdeaInput')).toHaveValue('Neue Idee: bewegter Mittelteil, kontrastierende Begleitung.');
@@ -30,7 +35,7 @@ test('core ui', async ({ page }) => {
   await expect(page.locator('#compositionHistoryDialog')).toHaveJSProperty('open',true);
   await expect(page.locator('#compositionHistoryList')).toContainText('noch keine gespeicherte Kompositionsfassung');
   const promptArchitecture = await page.evaluate(() => {
-    const chat=window.MCLExplicitModeV138.directive('chat','')+'\n\n'+window.MCLSessionV142.systemPrompt('','','Keine MIDI-Fassung im Arbeitstisch.',null,[],'chat',false);
+    const chat=window.MCLExplicitModeV139.directive('chat','')+'\n\n'+window.MCLSessionV142.systemPrompt('','','Keine MIDI-Fassung im Arbeitstisch.',null,[],'chat',false);
     const composeNew=window.MCLSessionV142.systemPrompt('','','Keine MIDI-Fassung im Arbeitstisch.',null,[],'compose',false);
     const composeExisting=window.MCLSessionV142.systemPrompt('','', 'Speicher 1: Quelle',1,[],'compose',true);
     return {chat,composeNew,composeExisting};
@@ -47,12 +52,12 @@ test('core ui', async ({ page }) => {
   expect(promptArchitecture.composeExisting).toContain('MERGE');
   expect(promptArchitecture.composeExisting).toContain('NEW_SCORE');
   const ideaContract=await page.evaluate(()=>({
-    chatDirective:window.MCLExplicitModeV138.directive('chat',''),
+    chatDirective:window.MCLExplicitModeV139.directive('chat',''),
     noRef:window.MCLSessionV142.referencesWorkbench('Komponiere ein Klavierstück.',[{slot:1,name:'Stilles Wiegen',score:{ti:'Stilles Wiegen'}}]),
     slotRef:window.MCLSessionV142.referencesWorkbench('Überarbeite Stück 1.',[{slot:1,name:'Stilles Wiegen',score:{ti:'Stilles Wiegen'}}]),
     nameRef:window.MCLSessionV142.referencesWorkbench('Überarbeite Stilles Wiegen.',[{slot:1,name:'Stilles Wiegen',score:{ti:'Stilles Wiegen'}}])
   }));
-  expect(ideaContract.chatDirective).toContain('übernommen werden soll');
+  expect(ideaContract.chatDirective).toContain('als Kompositionsauftrag übernommen werden soll');
   expect(ideaContract.chatDirective).toContain('<MCL_ADOPT_CONCEPT/>');
   expect(ideaContract.noRef).toBeFalsy();
   expect(ideaContract.slotRef).toBeTruthy();
