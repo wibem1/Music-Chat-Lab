@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-if(window.__mclExplicitModeV138)return;
-window.__mclExplicitModeV138=true;
+if(window.__mclExplicitModeV139)return;
+window.__mclExplicitModeV139=true;
 
-const VERSION='1.4.4';
+const VERSION='1.4.5';
 const PENDING_KEY='music-chat-lab.pending-composition-idea.v1';
 const nativeFetch=window.fetch.bind(window);
 const CONCEPT_RE=/<MCL_CONCEPT>\s*([\s\S]*?)\s*<\/MCL_CONCEPT>/i;
@@ -40,10 +40,10 @@ function removeDecisionLayer(system){return String(system||'').replace(OLD_HEAD,
 
 function directive(mode,idea){
   if(mode==='compose'){
-    const brief=idea?`\n\nAKTUELLE KOMPOSITIONSIDEE:\n${idea}\nNutze sie als Ausgangspunkt, sofern der aktuelle Nutzerauftrag sie nicht ausdrücklich verändert oder ersetzt.`:'';
+    const brief=idea?`\n\nAKTUELLER KOMPOSITIONSAUFTRAG:\n${idea}\nFühre diesen Auftrag musikalisch aus.`:'';
     return `MODUS: KOMPONIERE. Führe den aktuellen musikalischen Auftrag jetzt als MIDI aus.${brief}`;
   }
-  return `MODUS: CHAT. Antworte als musikalischer Gesprächs- und Kompositionspartner frei und direkt. Erzeuge in diesem Modus keine MIDI-Aktion. Wenn du eine konkrete Kompositions- oder Bearbeitungsidee entwickelst, frage den Nutzer am Ende sichtbar, ob diese Idee als Kompositionsidee übernommen werden soll, und hänge zusätzlich <MCL_CONCEPT>kurze Zusammenfassung der Idee</MCL_CONCEPT> an. Wenn der Nutzer einen unmittelbar zuvor angebotenen Kompositionsvorschlag eindeutig bestätigt, antworte knapp und hänge <MCL_ADOPT_CONCEPT/> an. Bei normalem Gespräch, Analyse oder Kritik verwende keinen dieser Marker.`;
+  return `MODUS: CHAT. Antworte als musikalischer Gesprächs- und Kompositionspartner frei und direkt. Erzeuge in diesem Modus keine MIDI-Aktion. Wenn du eine konkrete Kompositions- oder Bearbeitungsidee entwickelst, frage den Nutzer am Ende sichtbar, ob diese Idee als Kompositionsauftrag übernommen werden soll, und hänge zusätzlich <MCL_CONCEPT>kurze Zusammenfassung der Idee</MCL_CONCEPT> an. Wenn der Nutzer einen unmittelbar zuvor angebotenen Kompositionsvorschlag eindeutig bestätigt, antworte knapp und hänge <MCL_ADOPT_CONCEPT/> an. Bei normalem Gespräch, Analyse oder Kritik verwende keinen dieser Marker.`;
 }
 function inject(system,mode,idea){return`${directive(mode,idea)}\n\n${removeDecisionLayer(system)}`}
 function patchBody(provider,body,mode,idea){
@@ -78,22 +78,22 @@ window.fetch=async function(input,init={}){
 
 function bindButtons(){
   const chat=document.getElementById('sendButton'),compose=document.getElementById('composeButton'),input=document.getElementById('messageInput'),adopt=document.getElementById('adoptIdeaButton');if(!chat||!compose||!input)return;
-  adopt?.addEventListener('click',()=>{if(transferProposal()){const note=document.getElementById('composerNote');if(note)note.textContent='Vorschlag in die Kompositionsidee übernommen.'}});
+  adopt?.addEventListener('click',()=>{if(transferProposal()){const note=document.getElementById('composerNote');if(note)note.textContent='Idee als Kompositionsauftrag übernommen.'}});
   updateIdeaButton();
   document.addEventListener('click',e=>{if(e.target?.closest?.('.chat-item,#newChatButton'))setTimeout(updateIdeaButton,40)},true);
   chat.addEventListener('click',()=>{if(!forwardingCompose)setMode('chat')},true);
   compose.addEventListener('click',()=>{
     if(chat.disabled)return;
     if(!currentIdea()){
-      const note=document.getElementById('composerNote');if(note)note.textContent='Bitte Kompositionsidee eintragen.';
+      const note=document.getElementById('composerNote');if(note)note.textContent='Bitte Kompositionsauftrag eintragen.';
       return;
     }
-    input.value='Komponiere die aktuelle Kompositionsidee.';
+    input.value='Führe den aktuellen Kompositionsauftrag aus.';
     input.dispatchEvent(new Event('input',{bubbles:true}));
     setMode('compose');forwardingCompose=true;try{chat.click()}finally{forwardingCompose=false}
   });
   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey)setMode('chat')},true);
   const syncDisabled=()=>{compose.disabled=chat.disabled};syncDisabled();new MutationObserver(syncDisabled).observe(chat,{attributes:true,attributeFilter:['disabled']});
 }
-removeLegacyProposalMarkers();bindButtons();window.MCLExplicitModeV138={version:VERSION,getMode:()=>window.MCLRequestMode,setMode,storeProposal,pendingProposal,transferProposal,directive,currentIdea};
+removeLegacyProposalMarkers();bindButtons();window.MCLExplicitModeV139={version:VERSION,getMode:()=>window.MCLRequestMode,setMode,storeProposal,pendingProposal,transferProposal,directive,currentIdea};
 })();
