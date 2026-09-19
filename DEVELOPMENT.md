@@ -103,3 +103,11 @@ Die Korrektur entfernt diese dauerhafte Wiederherstellung. Die Backup-Erstellung
 
 
 Für den Freigabestand v1.4.7 wurde zusätzlich der Service-Worker-Cache auf `music-chat-lab-v1.4.7` angehoben, damit installierte Clients nicht auf dem v1.4.6-App-Shell einschließlich der alten Backup-Verwaltung verbleiben. Der Versionsguard des Backup-Managers wurde auf v1.1.32 korrigiert.
+
+
+### v1.4.8 – API-Key-Schutz während des mobilen Backup-Lebenszyklus
+Auf dem iPad wurde reproduzierbar beobachtet: Ein neu gespeicherter Anthropic-Key funktionierte zunächst; nach „Backup erstellen“ waren die API-Einstellungen anschließend verschwunden. v1.4.7 hatte zwar die dauerhaft festgehaltene alte `protectedSettings`-Kopie entfernt, schützte den aktuellen Einstellungsstand während des mobilen Download-/Seitenlebenszyklus aber nicht.
+
+v1.4.8 nimmt deshalb unmittelbar beim Start des Backups einen kurzlebigen Snapshot ausschließlich der aktuellen API-Einstellungen. Während eines 15-Sekunden-Fensters werden bei `pageshow` bzw. Rückkehr aus dem Hintergrund nur tatsächlich fehlende API-Key-Felder aus diesem Snapshot ergänzt; vorhandene oder neuere Werte werden nicht überschrieben. Vor und unmittelbar nach dem Download wird dieselbe Invariante geprüft. Der Schutz läuft automatisch aus und wird vor einer absichtlichen Backup-Wiederherstellung deaktiviert. Damit wird die fehlerhafte dauerhafte Rückschreibung aus v1.4.6 nicht wieder eingeführt.
+
+Freigabekriterium für diesen Stand: API-Key speichern → Backup erstellen → API-Key bleibt vorhanden → Provider-Aufruf weiterhin möglich. Der iPad-spezifische Download-/PWA-Lebenszyklus bleibt eine gerätespezifische Restprüfung; er darf erst nach bestandenem automatisierbarem Syntax-/Ressourcen-/Initialisierungs-Smoke-Test dem Anwender zur Prüfung vorgelegt werden.
