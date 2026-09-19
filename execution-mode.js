@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-if(window.__mclExplicitModeV136)return;
-window.__mclExplicitModeV136=true;
+if(window.__mclExplicitModeV137)return;
+window.__mclExplicitModeV137=true;
 
-const VERSION='1.4.2';
+const VERSION='1.4.3';
 const PENDING_KEY='music-chat-lab.pending-composition-idea.v1';
 const nativeFetch=window.fetch.bind(window);
 const CONCEPT_RE=/<MCL_CONCEPT>\s*([\s\S]*?)\s*<\/MCL_CONCEPT>/i;
@@ -39,10 +39,10 @@ function removeDecisionLayer(system){return String(system||'').replace(OLD_HEAD,
 
 function directive(mode,idea){
   if(mode==='compose'){
-    const brief=idea?`\n\nAKTUELLE KOMPOSITIONSIDEE AUS DEM EDITIERBAREN ARBEITSFELD:\n${idea}\nDiese Idee beschreibt den bewusst übernommenen musikalischen Arbeitsstand. Ob sie weiterentwickelt, verändert oder durch einen ausdrücklich neuen Kompositionsauftrag ersetzt wird, ergibt sich aus dem aktuellen Nutzertext und dem Dialog.`:'';
-    return `AKTUELLER AUSFÜHRUNGSMODUS: KOMPONIERE.\nDieser Modus wurde ausdrücklich vom Nutzer gewählt. Der aktuelle Nutzertext ist im Zusammenhang mit dem bisherigen Dialog als verbindlicher Auftrag zur musikalischen Ausführung zu behandeln.${brief}\n\nErzeuge oder bearbeite die gewünschte MIDI-Fassung jetzt. Falls dafür vollständige Notendaten fehlen, fordere sie mit <MCL_NEED> an. Die endgültige Antwort dieses Zugs muss genau eine gültige <MCL_ACTION> enthalten. Gib nicht zuerst nur eine Kompositionsidee oder einen bloßen Vorschlag aus.\n\nKOMPOSITIONSIDEE ALS FESTES METADATUM: Jede ausgeführte Komposition oder Bearbeitung muss eine konkrete musikalische Kompositionsidee mitführen. Wenn das editierbare Arbeitsfeld eine Idee enthält, verwende deren aktuellen Inhalt als Ausgangspunkt. Wenn ohne vorhandene Idee direkt komponiert wird, entwickle die Kompositionsidee selbst während dieses Zugs, ohne Rückfrage und ohne zusätzliche Freigabestufe. Schreibe die resultierende aktuelle Idee bei NEW_SCORE in score.sm; bei PATCH, MERGE oder REPLACE_SCORE in action.summary bzw. zusätzlich in score.sm. Formuliere sie knapp: 2 bis 4 kurze Sätze, insgesamt höchstens etwa 350 Zeichen. Sie darf kein bloßer technischer Statussatz sein.`;
+    const brief=idea?`\n\nAKTUELLE KOMPOSITIONSIDEE:\n${idea}\nNutze sie als Ausgangspunkt, sofern der aktuelle Nutzerauftrag sie nicht ausdrücklich verändert oder ersetzt.`:'';
+    return `MODUS: KOMPONIERE. Führe den aktuellen musikalischen Auftrag jetzt als MIDI aus.${brief}`;
   }
-  return `AKTUELLER AUSFÜHRUNGSMODUS: CHAT.\nDieser Modus wurde ausdrücklich vom Nutzer gewählt. In diesem Zug wird keine MIDI-Fassung erzeugt oder verändert und es darf keine <MCL_ACTION> ausgegeben werden. Antworte auf den eigentlichen Inhalt des Nutzertexts. Wenn der Nutzer im CHAT-Modus eine Komposition, Variation, Bearbeitung oder sonstige musikalische Ausführung verlangt, führe sie nicht als MIDI aus, sondern entwickle unmittelbar eine konkrete musikalische Kompositionsidee bzw. Bearbeitungsidee dafür. Triff die nötigen musikalischen Entscheidungen selbst und stelle keine vorbereitenden Rückfragen, außer der Nutzer bittet ausdrücklich darum. Halte eine solche Idee knapp: 2 bis 4 kurze Sätze, insgesamt höchstens etwa 350 Zeichen.\n\nVORSCHLAG ZUR MANUELLEN ÜBERNAHME: Wenn deine Antwort tatsächlich eine konkrete, anschließend ausführbare Kompositions- oder Bearbeitungsidee formuliert oder eine solche Idee im Gespräch verändert, hänge ganz am Ende zusätzlich genau diesen verborgenen Block an: <MCL_CONCEPT>die aktuelle kurze Idee</MCL_CONCEPT>. Dieser Block aktualisiert das Ideenfeld nicht automatisch, sondern stellt den Vorschlag für die Schaltfläche „Idee übernehmen“ bereit. Bei normaler Analyse, Kritik, Erklärung oder sonstigem Gespräch ohne neue bzw. geänderte ausführbare Idee darf kein <MCL_CONCEPT>-Block erscheinen.`;
+  return `MODUS: CHAT. Antworte als musikalischer Gesprächs- und Kompositionspartner frei und direkt. Erzeuge in diesem Modus keine MIDI-Aktion. Wenn deine Antwort eine konkrete Kompositions- oder Bearbeitungsidee enthält, hänge am Ende zusätzlich <MCL_CONCEPT>kurze Zusammenfassung der Idee</MCL_CONCEPT> an; bei normalem Gespräch, Analyse oder Kritik nicht.`;
 }
 function inject(system,mode,idea){return`${directive(mode,idea)}\n\n${removeDecisionLayer(system)}`}
 function patchBody(provider,body,mode,idea){
@@ -91,5 +91,5 @@ function bindButtons(){
   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey)setMode('chat')},true);
   const syncDisabled=()=>{compose.disabled=chat.disabled};syncDisabled();new MutationObserver(syncDisabled).observe(chat,{attributes:true,attributeFilter:['disabled']});
 }
-removeLegacyProposalMarkers();bindButtons();window.MCLExplicitModeV136={version:VERSION,getMode:()=>window.MCLRequestMode,setMode,storeProposal,pendingProposal,transferProposal};
+removeLegacyProposalMarkers();bindButtons();window.MCLExplicitModeV137={version:VERSION,getMode:()=>window.MCLRequestMode,setMode,storeProposal,pendingProposal,transferProposal};
 })();
