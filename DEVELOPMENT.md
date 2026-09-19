@@ -389,3 +389,11 @@ Notwendige Umgebungsanpassungen sind bewusst auf die Integration begrenzt: Der s
 
 ### v1.4.46 – vollständige Minimal-Composer-Dreistufenpipeline
 Ausgangspunkt ist unverändert der stabile Stand v1.4.44. Die beiden kompositorischen Stufen `musical_draft` und `midi_translation` bleiben unverändert. Nach erfolgreicher technischer Validierung der Partitur wird nun auch die in Minimal Composer v0.4.24 vorhandene dritte Stufe `composition_idea_afterwards` mit identischem Prompt und identischer Provider-Konfiguration ausgeführt. Ihr Ergebnis wird als `score.sm` an die bereits vorhandene Kompositionsbeschreibung der Music-Chat-Oberfläche übergeben. Es gibt keine nachträgliche Zustandskorrektur und keinen Zugriff auf globale Draft-Zwischenspeicher.
+
+
+### v1.4.47 – Vollständigkeitskontrolle der MIDI-Materialisierung und lesbare Kompositionsbeschreibung
+Die Diagnose von v1.4.46 zeigte erstmals klar einen Verlust zwischen musikalischem Entwurf und technischer Materialisierung: Ein von Claude als 52-taktig geplanter Entwurf wurde in der Stufe `midi_translation` regulär, ohne Tokenlimit, auf nur rund 14 Takte verkürzt. Parser und Music-Chat-Konvertierung waren nicht die Ursache.
+
+v1.4.47 ergänzt deshalb an der bestehenden technischen Validierungsstelle eine messbare Vollständigkeitskontrolle. Wenn der Entwurf eine eindeutige Taktzahl von mindestens acht Takten enthält und die materialisierte Partitur weniger als 80 % dieser Ausdehnung erreicht, wird genau einmal eine technische Vervollständigungsübersetzung angefordert. Sie darf nicht neu komponieren, kürzen oder Formteile auslassen. Bleibt auch diese Übersetzung unter der Schwelle, wird die verkürzte Fassung nicht übernommen. Die musikalische erste Stufe und ihr Minimal-Composer-Prompt bleiben unverändert.
+
+Die nachträgliche Kompositionsbeschreibung erhält die technische Partitur als maßgebliche Quelle; der musikalische Entwurf ist nur Kontext. Ihre erste Zeile muss Tonart, tatsächliche BPM und die aus der fertigen Partitur berechnete Taktzahl enthalten. Das Beschreibungsfeld ist auf eine feste Maximalhöhe begrenzt und vertikal scrollbar, damit lange Beschreibungen vollständig zugänglich bleiben, ohne die Oberfläche zu verdrängen.
