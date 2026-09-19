@@ -244,3 +244,14 @@ v1.4.24 korrigiert die RegExp-Literale im zuständigen Orchestrator. Der Test f�
 
 ### v1.4.26 – PWA-Referenzen nach v1.4.25 vollständig synchronisiert
 Die zusätzliche Freigabeprüfung von v1.4.25 fand trotz grünem Workflow noch veraltete Query-Versionen für Manifest und Service-Worker-Registrierung in index.html. Nach der verbindlichen Buildregel wird der geänderte Stand nicht unter derselben Nummer weitergeführt. v1.4.26 synchronisiert sichtbare Version, Manifest-URL, Icons, Service-Worker-Registrierung, Service-Worker-Cache, Manifest-Icons und Smoke-Test. An der musikalischen Reparatur von v1.4.25 wird dabei nichts weiter verändert.
+
+
+### v1.4.27 – Vorschlag bewusst in die Kompositionsidee übernehmen
+Die bisherige Automatik schrieb einen im Chat von der KI formulierten ausführbaren Vorschlag über den verborgenen `<MCL_CONCEPT>`-Block sofort in das Feld „Kompositionsidee“. Das vermischte zwei verschiedene Zustände: Die Kompositionsidee beschreibt den bewusst übernommenen musikalischen Arbeitsstand; der Chat kann dagegen Änderungen diskutieren, neue Vorschläge entwickeln oder einen völlig neuen kompositorischen Weg beginnen.
+
+v1.4.27 trennt diese Zustände ausdrücklich. Ein im Chat erzeugter `<MCL_CONCEPT>` wird chatbezogen als noch nicht übernommener Vorschlag gespeichert, verändert das Ideenfeld aber nicht. Der neue Button **„Idee übernehmen“** wird nur aktiv, wenn im aktuellen Chat ein solcher Vorschlag vorliegt. Erst ein bewusster Klick kopiert genau diesen Vorschlag in das editierbare Feld „Kompositionsidee“; dort kann er anschließend manuell verändert und mit „Komponiere“ ausgeführt werden. Ein neuerer Vorschlag desselben Chats ersetzt lediglich den noch nicht übernommenen Vorschlag, nicht automatisch die Kompositionsidee.
+
+Der Komponiermodus behandelt eine vorhandene Kompositionsidee als bewusst übernommenen Arbeitsstand, aber nicht als Zwang für jeden späteren Auftrag: Ein ausdrücklich neuer Nutzerauftrag darf eine neue Komposition beginnen. Der aktuelle Nutzertext und der Dialog entscheiden, ob die Idee weiterentwickelt, verändert oder ersetzt wird.
+
+### Entwicklungsablauf ab v1.4.27 – erst prüfen, dann veröffentlichen
+Um Wartezeit und unnötige öffentliche Zwischenversionen zu vermeiden, werden zusammengehörige Änderungen künftig zunächst auf einem Entwicklungszweig gesammelt. Pull Requests führen Syntax- und Browser-Smoke-Tests aus, veröffentlichen aber keine GitHub-Pages-Version. Erst ein geprüfter, konsolidierter Stand wird nach `main` übernommen; nur dieser Merge löst die Pages-Veröffentlichung aus. GitHub bleibt damit Versionsarchiv, Testplattform und Release-Host, ohne jeden internen Arbeitsschritt sofort als PWA-Release auszuliefern.

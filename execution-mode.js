@@ -1,9 +1,10 @@
 (()=>{
 'use strict';
-if(window.__mclExplicitModeV134)return;
-window.__mclExplicitModeV134=true;
+if(window.__mclExplicitModeV135)return;
+window.__mclExplicitModeV135=true;
 
-const VERSION='1.4.0';
+const VERSION='1.4.1';
+const PENDING_KEY='music-chat-lab.pending-composition-idea.v1';
 const nativeFetch=window.fetch.bind(window);
 const CONCEPT_RE=/<MCL_CONCEPT>\s*([\s\S]*?)\s*<\/MCL_CONCEPT>/i;
 let forwardingCompose=false;
@@ -11,7 +12,13 @@ window.MCLRequestMode='chat';
 
 function setMode(mode){window.MCLRequestMode=mode==='compose'?'compose':'chat'}
 function currentIdea(){return String(window.MCLCompositionIdea?.get?.()||document.getElementById('compositionIdeaInput')?.value||'').trim()}
-function setIdea(text){const value=String(text||'').trim();if(!value)return;if(window.MCLCompositionIdea?.set)window.MCLCompositionIdea.set(value,{generated:true,source:'chat'});else{const e=document.getElementById('compositionIdeaInput');if(e)e.value=value}}
+function setIdea(text){const value=String(text||'').trim();if(!value)return;if(window.MCLCompositionIdea?.set)window.MCLCompositionIdea.set(value,{generated:false,source:'proposal'});else{const e=document.getElementById('compositionIdeaInput');if(e)e.value=value}}
+function activeChatId(){return localStorage.getItem('music-chat-lab.active-chat.v1')||'default'}
+function readPending(){try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'{}')||{}}catch{return{}}}
+function pendingProposal(){const all=readPending();return String(all[activeChatId()]||'').trim()}
+function updateIdeaButton(){const b=document.getElementById('adoptIdeaButton');if(!b)return;const has=!!pendingProposal();b.disabled=!has;b.title=has?'Letzten Kompositionsvorschlag aus dem Chat übernehmen':'Noch kein übernehmbarer Kompositionsvorschlag im aktuellen Chat'}
+function storeProposal(text){const value=String(text||'').trim();if(!value)return;try{const all=readPending();all[activeChatId()]=value;localStorage.setItem(PENDING_KEY,JSON.stringify(all))}catch(_){}updateIdeaButton()}
+function transferProposal(){const value=pendingProposal();if(!value)return false;setIdea(value);updateIdeaButton();return true}
 
 function removeLegacyProposalMarkers(){
   const key='music-chat-lab.chats.v1';
@@ -32,10 +39,10 @@ function removeDecisionLayer(system){return String(system||'').replace(OLD_HEAD,
 
 function directive(mode,idea){
   if(mode==='compose'){
-    const brief=idea?`\n\nAKTUELLE KOMPOSITIONSIDEE AUS DEM EDITIERBAREN ARBEITSFELD:\n${idea}\nNutze diese Fassung als aktuelle musikalische Arbeitsanweisung. Der aktuelle Nutzertext kann sie ergänzen oder ausdrücklich verändern.`:'';
+    const brief=idea?`\n\nAKTUELLE KOMPOSITIONSIDEE AUS DEM EDITIERBAREN ARBEITSFELD:\n${idea}\nDiese Idee beschreibt den bewusst übernommenen musikalischen Arbeitsstand. Ob sie weiterentwickelt, verändert oder durch einen ausdrücklich neuen Kompositionsauftrag ersetzt wird, ergibt sich aus dem aktuellen Nutzertext und dem Dialog.`:'';
     return `AKTUELLER AUSFÜHRUNGSMODUS: KOMPONIERE.\nDieser Modus wurde ausdrücklich vom Nutzer gewählt. Der aktuelle Nutzertext ist im Zusammenhang mit dem bisherigen Dialog als verbindlicher Auftrag zur musikalischen Ausführung zu behandeln.${brief}\n\nErzeuge oder bearbeite die gewünschte MIDI-Fassung jetzt. Falls dafür vollständige Notendaten fehlen, fordere sie mit <MCL_NEED> an. Die endgültige Antwort dieses Zugs muss genau eine gültige <MCL_ACTION> enthalten. Gib nicht zuerst nur eine Kompositionsidee oder einen bloßen Vorschlag aus.\n\nKOMPOSITIONSIDEE ALS FESTES METADATUM: Jede ausgeführte Komposition oder Bearbeitung muss eine konkrete musikalische Kompositionsidee mitführen. Wenn das editierbare Arbeitsfeld eine Idee enthält, verwende deren aktuellen Inhalt als Ausgangspunkt. Wenn ohne vorhandene Idee direkt komponiert wird, entwickle die Kompositionsidee selbst während dieses Zugs, ohne Rückfrage und ohne zusätzliche Freigabestufe. Schreibe die resultierende aktuelle Idee bei NEW_SCORE in score.sm; bei PATCH, MERGE oder REPLACE_SCORE in action.summary bzw. zusätzlich in score.sm. Formuliere sie knapp: 2 bis 4 kurze Sätze, insgesamt höchstens etwa 350 Zeichen. Sie darf kein bloßer technischer Statussatz sein.`;
   }
-  return `AKTUELLER AUSFÜHRUNGSMODUS: CHAT.\nDieser Modus wurde ausdrücklich vom Nutzer gewählt. In diesem Zug wird keine MIDI-Fassung erzeugt oder verändert und es darf keine <MCL_ACTION> ausgegeben werden. Antworte auf den eigentlichen Inhalt des Nutzertexts. Wenn der Nutzer im CHAT-Modus eine Komposition, Variation, Bearbeitung oder sonstige musikalische Ausführung verlangt, führe sie nicht als MIDI aus, sondern entwickle unmittelbar eine konkrete musikalische Kompositionsidee bzw. Bearbeitungsidee dafür. Triff die nötigen musikalischen Entscheidungen selbst und stelle keine vorbereitenden Rückfragen, außer der Nutzer bittet ausdrücklich darum. Halte eine solche Idee knapp: 2 bis 4 kurze Sätze, insgesamt höchstens etwa 350 Zeichen.\n\nEDITIERBARES IDEENFELD: Wenn deine Antwort tatsächlich eine konkrete, anschließend ausführbare Kompositions- oder Bearbeitungsidee formuliert oder eine solche Idee im Gespräch verändert, hänge ganz am Ende zusätzlich genau diesen verborgenen Block an: <MCL_CONCEPT>die aktuelle kurze Idee</MCL_CONCEPT>. Bei normaler Analyse, Kritik, Erklärung oder sonstigem Gespräch ohne neue bzw. geänderte ausführbare Idee darf kein <MCL_CONCEPT>-Block erscheinen.`;
+  return `AKTUELLER AUSFÜHRUNGSMODUS: CHAT.\nDieser Modus wurde ausdrücklich vom Nutzer gewählt. In diesem Zug wird keine MIDI-Fassung erzeugt oder verändert und es darf keine <MCL_ACTION> ausgegeben werden. Antworte auf den eigentlichen Inhalt des Nutzertexts. Wenn der Nutzer im CHAT-Modus eine Komposition, Variation, Bearbeitung oder sonstige musikalische Ausführung verlangt, führe sie nicht als MIDI aus, sondern entwickle unmittelbar eine konkrete musikalische Kompositionsidee bzw. Bearbeitungsidee dafür. Triff die nötigen musikalischen Entscheidungen selbst und stelle keine vorbereitenden Rückfragen, außer der Nutzer bittet ausdrücklich darum. Halte eine solche Idee knapp: 2 bis 4 kurze Sätze, insgesamt höchstens etwa 350 Zeichen.\n\nVORSCHLAG ZUR MANUELLEN ÜBERNAHME: Wenn deine Antwort tatsächlich eine konkrete, anschließend ausführbare Kompositions- oder Bearbeitungsidee formuliert oder eine solche Idee im Gespräch verändert, hänge ganz am Ende zusätzlich genau diesen verborgenen Block an: <MCL_CONCEPT>die aktuelle kurze Idee</MCL_CONCEPT>. Dieser Block aktualisiert das Ideenfeld nicht automatisch, sondern stellt den Vorschlag für die Schaltfläche „Idee übernehmen“ bereit. Bei normaler Analyse, Kritik, Erklärung oder sonstigem Gespräch ohne neue bzw. geänderte ausführbare Idee darf kein <MCL_CONCEPT>-Block erscheinen.`;
 }
 function inject(system,mode,idea){return`${directive(mode,idea)}\n\n${removeDecisionLayer(system)}`}
 function patchBody(provider,body,mode,idea){
@@ -56,11 +63,14 @@ window.fetch=async function(input,init={}){
   const response=await nativeFetch(input,{...init,body:JSON.stringify(patchBody(provider,body,mode,idea))});
   if(mode!=='chat'||!response.ok)return response;
   const d=await response.clone().json().catch(()=>null);if(!d)return response;const raw=responseText(provider,d),m=raw.match(CONCEPT_RE);if(!m)return response;
-  setIdea(m[1]);const cleaned=raw.replace(CONCEPT_RE,'').replace(/\n{3,}/g,'\n\n').trim();return jsonResponse(replaceResponseText(provider,d,cleaned),response);
+  storeProposal(m[1]);const cleaned=raw.replace(CONCEPT_RE,'').replace(/\n{3,}/g,'\n\n').trim();return jsonResponse(replaceResponseText(provider,d,cleaned),response);
 };
 
 function bindButtons(){
-  const chat=document.getElementById('sendButton'),compose=document.getElementById('composeButton'),input=document.getElementById('messageInput');if(!chat||!compose||!input)return;
+  const chat=document.getElementById('sendButton'),compose=document.getElementById('composeButton'),input=document.getElementById('messageInput'),adopt=document.getElementById('adoptIdeaButton');if(!chat||!compose||!input)return;
+  adopt?.addEventListener('click',()=>{if(transferProposal()){const note=document.getElementById('composerNote');if(note)note.textContent='Vorschlag in die Kompositionsidee übernommen.'}});
+  updateIdeaButton();
+  document.addEventListener('click',e=>{if(e.target?.closest?.('.chat-item,#newChatButton'))setTimeout(updateIdeaButton,40)},true);
   chat.addEventListener('click',()=>{if(!forwardingCompose)setMode('chat')},true);
   compose.addEventListener('click',()=>{
     if(chat.disabled)return;
@@ -75,5 +85,5 @@ function bindButtons(){
   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey)setMode('chat')},true);
   const syncDisabled=()=>{compose.disabled=chat.disabled};syncDisabled();new MutationObserver(syncDisabled).observe(chat,{attributes:true,attributeFilter:['disabled']});
 }
-removeLegacyProposalMarkers();bindButtons();window.MCLExplicitModeV134={version:VERSION,getMode:()=>window.MCLRequestMode,setMode};
+removeLegacyProposalMarkers();bindButtons();window.MCLExplicitModeV135={version:VERSION,getMode:()=>window.MCLRequestMode,setMode,storeProposal,pendingProposal,transferProposal};
 })();
