@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-if(window.__mclSessionOrchestratorV143)return;
-window.__mclSessionOrchestratorV143=true;
+if(window.__mclSessionOrchestratorV144)return;
+window.__mclSessionOrchestratorV144=true;
 
-const VERSION='1.4.3';
+const VERSION='1.4.4';
 const MEMORY_KEY='music-chat-lab.session-memory.v3';
 const ACTIVE_CHAT_KEY='music-chat-lab.active-chat.v1';
 const RECENT_MESSAGES=8;
@@ -110,42 +110,24 @@ function sourcesForSlots(slots,sources){
   return out.slice(0,MAX_SCORE_REQUESTS);
 }
 
-function systemPrompt(memory,legacy,catalogueText,active,provided,mode,hasSources){
+function chatSystemPrompt(memory,legacy,catalogueText,active,hasSources){
   const continuity=[memory,legacy].filter(Boolean).join('\n');
-  if(mode!=='compose'){
-    const workbench=hasSources?`\n\nARBEITSTISCH (nur zur Orientierung):\n${catalogueText}\nAktiver Speicher: ${active??'keiner'}. Wenn für eine Analyse exakte Notendaten nötig sind, fordere höchstens ${MAX_SCORE_REQUESTS} Speicher ausschließlich mit <MCL_NEED>{"slots":[1]}</MCL_NEED> an.`:'';
-    const history=continuity?`\n\nKOMPAKTER ÄLTERER KONTEXT:\n${continuity}`:'';
-    return `Du bist Music Chat Lab, ein musikalischer Gesprächs- und Kompositionspartner. Antworte musikalisch eigenständig, direkt und ohne unnötige technische Metaebene. Im CHAT-Modus wird keine MIDI-Aktion ausgegeben.${workbench}${history}`;
-  }
-
-  const supplied=provided.length?`Die vollständigen Notendaten von Speicher ${provided.map(x=>x.slot).join(', ')} sind als <MCL_SCORE> im aktuellen Nutzerkontext beigefügt.`:'Noch keine vollständigen Notendaten beigefügt.';
-  const sourceProtocol=hasSources?`
-ARBEITSTISCH:
-${catalogueText}
-Aktiver Speicher: ${active??'keiner'}.
-${supplied}
-
-Wenn für die Ausführung vollständige Notendaten fehlen, fordere sie ausschließlich mit <MCL_NEED>{"slots":[1]}</MCL_NEED> an, maximal ${MAX_SCORE_REQUESTS} Speicher. Sobald <MCL_SCORE> vorliegt, verwende diese Daten direkt.
-
-Für Änderungen an vorhandenem Material verwende PATCH:
-<MCL_ACTION>{"type":"patch","baseSlot":1,"title":"Titel","summary":"aktuelle musikalische Idee","ops":[{"op":"add_track","track":{"nm":"Violin","ch":1,"pg":40,"nt":[[0,1,72,70,0,1]],"ct":[]}}]}</MCL_ACTION>
-Zulässige Operationen: add_track, insert_track, replace_track, delete_track, replace_range. Unveränderte Teile nicht erneut ausgeben.
-
-Für rein technisches Zusammenführen vorhandener Spuren ohne neue Noten verwende MERGE:
-<MCL_ACTION>{"type":"merge","sources":[{"slot":1,"tracks":["Piano"]}],"title":"Titel","summary":"aktuelle musikalische Idee"}</MCL_ACTION>
-
-Nur wenn ein vorhandener Score als Ganzes neu geschrieben werden muss, verwende REPLACE_SCORE mit baseSlot, summary und score.
-`:'';
-
-  const history=continuity?`\nÄLTERER KOMPAKTER KONTEXT:\n${continuity}\n`:'';
-  return `Du bist Music Chat Lab. Komponiere die Musik selbst unmittelbar aus dem aktuellen Auftrag, dem Dialog und dem tatsächlich bereitgestellten musikalischen Material. Technische Regeln dienen nur der Übertragung des musikalischen Ergebnisses und dürfen die Komposition nicht stilistisch einengen.
-${sourceProtocol}
-Für vollständig neue Musik verwende NEW_SCORE:
-<MCL_ACTION>{"type":"new_score","summary":"aktuelle musikalische Idee","score":{"ti":"Titel","bpm":96,"ts":{"n":4,"d":4},"k":"C major","sm":"aktuelle musikalische Idee","tr":[{"nm":"Piano","ch":0,"pg":0,"nt":[...],"ct":[]}]}}</MCL_ACTION>
-
-Notenformat: nt=[StartBeat,Dauer,Pitch,Velocity,Staff,Gate], ct=[Beat,CC,Wert].
-Die endgültige Antwort muss genau eine zur Aufgabe passende <MCL_ACTION> enthalten. Erfinde keine Herkunft aus älterem Material; nenne verwendetes Ausgangsmaterial nur, wenn es in diesem Zug tatsächlich als <MCL_SCORE> vorliegt und verarbeitet wurde.
-${history}`;
+  const workbench=hasSources?`\n\nARBEITSTISCH (nur zur Orientierung):\n${catalogueText}\nAktiver Speicher: ${active??'keiner'}. Wenn für eine Analyse exakte Notendaten nötig sind, fordere höchstens ${MAX_SCORE_REQUESTS} Speicher ausschließlich mit <MCL_NEED>{"slots":[1]}</MCL_NEED> an. Fordere keine Daten an, wenn der Katalog genügt.`:'';
+  const history=continuity?`\n\nKOMPAKTER ÄLTERER KONTEXT:\n${continuity}`:'';
+  return `Du bist Music Chat Lab, ein musikalischer Gesprächs- und Kompositionspartner. Antworte musikalisch eigenständig, direkt und ohne unnötige technische Metaebene. Im CHAT-Modus wird keine MIDI-Aktion ausgegeben. Wenn du eine konkrete Kompositions- oder Bearbeitungsidee entwickelst, frage den Nutzer am Ende sichtbar, ob diese Idee als Kompositionsauftrag übernommen werden soll, und hänge zusätzlich <MCL_CONCEPT>kurze Zusammenfassung der Idee</MCL_CONCEPT> an. Wenn der Nutzer einen unmittelbar zuvor angebotenen Kompositionsvorschlag eindeutig bestätigt, antworte knapp und hänge <MCL_ADOPT_CONCEPT/> an. Bei normalem Gespräch, Analyse oder Kritik verwende keinen dieser Marker.${workbench}${history}`;
+}
+function creativeSystemPrompt(memory,legacy,catalogueText,active,hasSources){
+  const continuity=[memory,legacy].filter(Boolean).join('\n');
+  const source=hasSources?`\n\nMUSIKALISCHES AUSGANGSMATERIAL:\n${catalogueText}\nAktiver Speicher: ${active??'keiner'}. Die vollständigen Ausgangspartituren stehen im Nutzerkontext. Nutze sie musikalisch entsprechend dem Auftrag.`:'';
+  const history=continuity?`\n\nKOMPAKTER ÄLTERER KONTEXT:\n${continuity}`:'';
+  return `Du bist Music Chat Lab im MUSIKALISCHEN KOMPONIERMODUS. Komponiere das verlangte Stück jetzt vollständig und eigenständig. Triff in dieser Stufe alle musikalischen Entscheidungen selbst: konkrete Tonhöhen, Rhythmen, Pausen, Stimmen, Form, Harmonik, Artikulation, Dynamik, Instrumentation und Verlauf. Dies ist die eigentliche Komposition, keine Skizze und kein Prosabauplan.\n\nNotiere das vollständig bestimmte musikalische Ergebnis als ABC-Notation innerhalb genau eines <MCL_MUSIC>...</MCL_MUSIC>-Blocks. ABC dient hier ausschließlich als musikalische Partiturnotation. Verwende bei Mehrstimmigkeit vollständige V:-Stimmen und notiere das ganze verlangte Stück, nicht nur ein Beispiel oder einen Anfang. Gib außerhalb des Blocks höchstens einen sehr kurzen Titel aus.\n\nEine spätere technische Stufe überträgt deine bereits fertige Partitur lediglich in das benötigte Ausgabeformat und darf nicht neu komponieren.${source}${history}`;
+}
+function materializationSystemPrompt(hasSources){
+  const sourceProtocol=hasSources?'Für eine Bearbeitung vorhandenen Materials darfst du PATCH oder REPLACE_SCORE verwenden, wenn das musikalische Manuskript dies eindeutig verlangt. Bei PATCH bleiben nicht genannte Teile des Basisscores unverändert.\n':'';
+  return `TECHNISCHE MATERIALISIERUNG. Die musikalische Komposition ist abgeschlossen. Übertrage ausschließlich das bereitgestellte <MCL_MUSIC>-Manuskript in die interne MIDI-Partitur. Komponiere nicht neu, ergänze keine fehlenden musikalischen Ideen, vereinfache nicht und regularisiere keine ungewöhnlichen Entscheidungen. ${sourceProtocol}\nFür eine vollständig neue Fassung verwende:\n<MCL_ACTION>{"type":"new_score","summary":"kurze sachliche Beschreibung","score":{"ti":"Titel","bpm":96,"ts":{"n":4,"d":4},"k":"C major","sm":"kurze sachliche Beschreibung","tr":[{"nm":"Piano","ch":0,"pg":0,"nt":[...],"ct":[]}]}}</MCL_ACTION>\nFür vollständigen Ersatz eines vorhandenen Scores ist REPLACE_SCORE mit baseSlot zulässig. Für gezielte Änderungen ist PATCH mit baseSlot und den Operationen add_track, insert_track, replace_track, delete_track oder replace_range zulässig.\nNotenformat: nt=[StartBeat,Dauer,Pitch,Velocity,Staff,Gate], ct=[Beat,CC,Wert].\nGib genau einen vollständigen <MCL_ACTION>-Block aus und sonst nichts.`;
+}
+function systemPrompt(memory,legacy,catalogueText,active,provided,mode,hasSources){
+  return mode==='compose'?creativeSystemPrompt(memory,legacy,catalogueText,active,hasSources):chatSystemPrompt(memory,legacy,catalogueText,active,hasSources);
 }
 function compressMessages(msgs,memory){
   const keep=(msgs.length<=RECENT_MESSAGES||!memory)?Math.max(RECENT_MESSAGES,12):RECENT_MESSAGES;
@@ -160,23 +142,22 @@ function withScores(msgs,user,selected){
   for(let i=out.length-1;i>=0;i--){if(out[i].role!=='user')continue;out[i].text=`${cleanLegacy(user)}${selected.length?`\n\n${scoreBlocks(selected)}`:''}`.trim();break}
   return out;
 }
-function buildProviderBody(provider,body,msgs,system,mode){
+function buildProviderBody(provider,body,msgs,system,stage='chat'){
   const b=clone(body);
   if(provider==='anthropic'){
     b.system=system;b.messages=msgs.map(m=>({role:m.role,content:m.text}));
     const adaptive=/^claude-(?:sonnet-(?:5|4-6)|opus-5)(?:$|-)/i.test(String(b.model||''));
-    if(adaptive&&mode!=='compose'){b.thinking={type:'adaptive'};b.output_config={...(b.output_config||{}),effort:'high'};b.max_tokens=Math.max(Number(b.max_tokens)||4096,12000)}
-    else if(adaptive&&mode==='compose'){b.thinking={type:'disabled'};delete b.output_config;b.max_tokens=12000}
-    else{delete b.thinking;delete b.output_config;b.max_tokens=Math.max(Number(b.max_tokens)||4096,mode==='compose'?12000:12000)}
+    if(adaptive&&stage==='materialize'){b.thinking={type:'disabled'};delete b.output_config;b.max_tokens=Math.max(Number(b.max_tokens)||4096,12000)}
+    else if(adaptive){b.thinking={type:'adaptive'};b.output_config={...(b.output_config||{}),effort:'high'};b.max_tokens=Math.max(Number(b.max_tokens)||4096,stage==='compose'?32768:12000)}
+    else{delete b.thinking;delete b.output_config;b.max_tokens=Math.max(Number(b.max_tokens)||4096,12000)}
   }else if(provider==='openai'){
     b.input=[{role:'system',content:system},...msgs.map(m=>({role:m.role,content:m.text}))];b.store=false;
   }else{
     b.systemInstruction={parts:[{text:system}]};b.contents=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.text}]}));
-    b.generationConfig={...(b.generationConfig||{}),maxOutputTokens:Math.max(Number(b.generationConfig?.maxOutputTokens)||8192,12000)};
+    b.generationConfig={...(b.generationConfig||{}),maxOutputTokens:Math.max(Number(b.generationConfig?.maxOutputTokens)||8192,stage==='compose'?20000:12000)};
   }
   return b;
 }
-
 function responseText(provider,d){
   if(provider==='anthropic')return(d?.content||[]).filter(x=>x?.type==='text').map(x=>x.text||'').join('').trim();
   if(provider==='openai'){
@@ -332,13 +313,18 @@ function materializeAction(action,sources,prefix){
   return score;
 }
 
-async function runProvider(input,init,provider,body,msgs,system,stage='orchestrator'){
-  const mode=window.MCLRequestMode==='compose'?'compose':'chat';
-  const requestBody=buildProviderBody(provider,body,msgs,system,mode);
-  const r=await innerFetch(input,{...init,__mclTraceStage:stage,body:JSON.stringify(requestBody)});
+async function runProvider(input,init,provider,body,msgs,system,traceStage,policyStage){
+  const requestBody=buildProviderBody(provider,body,msgs,system,policyStage);
+  const r=await innerFetch(input,{...init,__mclTraceStage:traceStage,body:JSON.stringify(requestBody)});
   const rawTransport=await r.clone().text().catch(()=>'');
   let d=null;try{d=rawTransport?JSON.parse(rawTransport):null}catch{}
   return{r,d,raw:d&&r.ok?responseText(provider,d):''};
+}
+function musicBlock(text){const m=String(text||'').match(/<MCL_MUSIC>\s*([\s\S]*?)\s*<\/MCL_MUSIC>/i);return m?m[1].trim():''}
+function materializationMessages(user,music,provided){
+  const sourceText=provided.length?`\n\nAUSGANGSPARTITUREN:\n${scoreBlocks(provided)}`:'';
+  const technicalMode=provided.length?'PATCH':'NEW_SCORE';
+  return[{role:'user',text:`VERBINDLICHER TECHNISCHER MODUS: ${technicalMode}\n\nAUFTRAG DES NUTZERS:\n${cleanLegacy(user)}\n\nFERTIGES MUSIKALISCHES MANUSKRIPT:\n<MCL_MUSIC>\n${music}\n</MCL_MUSIC>${sourceText}`}];
 }
 
 window.fetch=async function(input,init={}){
@@ -346,66 +332,58 @@ window.fetch=async function(input,init={}){
   if(!provider||typeof init.body!=='string')return innerFetch(input,init);
   let body;try{body=JSON.parse(init.body)}catch{return innerFetch(input,init)}
   const all=messages(provider,body),user=currentUserText(all);if(!user)return innerFetch(input,init);
-
   const sources=workspaceSources(),active=activeSlot(),memory=getMemory(),legacy=memory?'':compactOld(all),recent=compressMessages(all,memory);
   const mode=window.MCLRequestMode==='compose'?'compose':'chat';
   const sourceIntent=referencesWorkbench(`${user}\n${mode==='compose'?ideaText():''}`,sources);
   const availableSources=sourceIntent?sources:[];
-  let provided=[];
-  let contextual=withScores(recent,user,provided);
-  let system=systemPrompt(memory,legacy,catalogue(availableSources,active),active,provided,mode,availableSources.length>0);
-  let first=await runProvider(input,init,provider,body,contextual,system,'orchestrator_initial');
-  if(!first.d||!first.r.ok)return first.r;
-  if(!first.raw)return first.r;
-
-  const firstIncomplete=incompleteInternal(first.raw);
-  if(firstIncomplete)return jsonResponse(replaceResponseText(provider,first.d,safeIncompleteText(first.raw,firstIncomplete)),first.r.status,first.r.headers);
-
-  const need=parseNeed(first.raw);
-  let result=first;
-  if(need?.length){
-    provided=sourcesForSlots(need,availableSources);
-    if(provided.length!==need.length){
-      const text='Die angeforderten Notendaten sind im musikalischen Arbeitstisch nicht vollständig verfügbar.';
-      return jsonResponse(replaceResponseText(provider,first.d,text),first.r.status,first.r.headers);
+  const provided=mode==='compose'?availableSources:[];
+  const contextual=withScores(recent,user,provided);
+  if(mode==='compose'){const assignment=ideaText();for(let i=contextual.length-1;i>=0;i--){if(contextual[i].role==='user'){contextual[i].text=`${contextual[i].text}\n\nVERBINDLICHER AKTUELLER KOMPOSITIONSAUFTRAG:\n${assignment}`;break}}}
+  const system=systemPrompt(memory,legacy,catalogue(availableSources,active),active,provided,mode,availableSources.length>0);
+  if(mode!=='compose'){
+    let result=await runProvider(input,init,provider,body,contextual,system,'orchestrator_chat','chat');
+    if(!result.d||!result.r.ok||!result.raw)return result.r;
+    const firstIncomplete=incompleteInternal(result.raw);
+    if(firstIncomplete)return jsonResponse(replaceResponseText(provider,result.d,safeIncompleteText(result.raw,firstIncomplete)),result.r.status,result.r.headers);
+    const need=parseNeed(result.raw);
+    if(need?.length){
+      const selected=sourcesForSlots(need,availableSources);
+      if(selected.length!==need.length){const warning='Die angeforderten Notendaten sind im musikalischen Arbeitstisch nicht vollständig verfügbar.';return jsonResponse(replaceResponseText(provider,result.d,warning),result.r.status,result.r.headers)}
+      const moreContext=withScores(recent,user,selected);
+      const moreSystem=chatSystemPrompt(memory,legacy,catalogue(availableSources,active),active,true);
+      result=await runProvider(input,init,provider,body,moreContext,moreSystem,'orchestrator_chat_with_scores','chat');
+      if(!result.d||!result.r.ok||!result.raw)return result.r;
+      const secondIncomplete=incompleteInternal(result.raw);
+      if(secondIncomplete)return jsonResponse(replaceResponseText(provider,result.d,safeIncompleteText(result.raw,secondIncomplete)),result.r.status,result.r.headers);
+      if(parseNeed(result.raw)?.length){const warning='Die KI fordert nach der Bereitstellung erneut Notendaten an. Der Vorgang wurde beendet, um unnötige API-Kosten zu vermeiden.';return jsonResponse(replaceResponseText(provider,result.d,warning),result.r.status,result.r.headers)}
     }
-    contextual=withScores(recent,user,provided);
-    system=systemPrompt(memory,legacy,catalogue(availableSources,active),active,provided,mode,availableSources.length>0);
-    result=await runProvider(input,init,provider,body,contextual,system,'orchestrator_with_scores');
-    if(!result.d||!result.r.ok)return result.r;
-    if(!result.raw)return result.r;
-    const secondIncomplete=incompleteInternal(result.raw);
-    if(secondIncomplete)return jsonResponse(replaceResponseText(provider,result.d,safeIncompleteText(result.raw,secondIncomplete)),result.r.status,result.r.headers);
-    if(parseNeed(result.raw)?.length){
-      const text='Die KI fordert nach der Bereitstellung erneut Notendaten an. Der Vorgang wurde beendet, um unnötige API-Kosten zu vermeiden.';
-      return jsonResponse(replaceResponseText(provider,result.d,text),result.r.status,result.r.headers);
-    }
+    const mem=extractMemory(result.raw);if(mem)saveMemory(mem);
+    return jsonResponse(replaceResponseText(provider,result.d,visibleText(result.raw)||result.raw),result.r.status,result.r.headers);
   }
-
-  const mem=extractMemory(result.raw);if(mem)saveMemory(mem);
-  let action=parseAction(result.raw),prefix=visibleText(result.raw);
-  if(action){
-    let score=materializeAction(action,availableSources,prefix);
-    let issues=score?scoreIssues(score):[];
-    if(score&&issues.length){
-      const repairSystem=system+'\\n\\nTECHNISCHE KORREKTUR: Die eben erzeugte MIDI-Fassung wurde noch nicht übernommen. Korrigiere ausschließlich die folgenden technischen Inkonsistenzen, ohne die musikalische Idee unnötig zu verändern: '+issues.join('; ')+'. Gib die vollständige korrigierte Aktion erneut als genau einen <MCL_ACTION>-Block aus.';
-      const repairContext=contextual.concat([{role:'assistant',text:result.raw}]);
-      const repair=await runProvider(input,init,provider,body,repairContext,repairSystem,'orchestrator_repair');
-      if(repair.d&&repair.r.ok&&repair.raw){
-        const repairAction=parseAction(repair.raw),repairPrefix=visibleText(repair.raw),repaired=materializeAction(repairAction,availableSources,repairPrefix);
-        let repairIssues=repaired?scoreIssues(repaired):['keine gültige korrigierte MIDI-Aktion'];
-        if(repaired&&!repairIssues.length)return jsonResponse(replaceResponseText(provider,repair.d,JSON.stringify(repaired)),repair.r.status,repair.r.headers);
-        issues=repairIssues;
-      }
-      const warning=`${prefix}${prefix?'\\n\\n':''}Die erzeugte MIDI-Fassung wurde wegen technischer Inkonsistenzen nicht übernommen: ${issues.join('; ')}.`;
-      return jsonResponse(replaceResponseText(provider,result.d,warning),result.r.status,result.r.headers);
-    }
-    if(score)return jsonResponse(replaceResponseText(provider,result.d,JSON.stringify(score)),result.r.status,result.r.headers);
-    const warning=`${prefix}${prefix?'\\n\\n':''}Die MIDI-Aktion konnte technisch nicht ausgeführt werden. Es wurde keine Datei verändert.`;
-    return jsonResponse(replaceResponseText(provider,result.d,warning),result.r.status,result.r.headers);
+  const note=document.getElementById('composerNote');if(note)note.textContent='Komponiere …';
+  const creative=await runProvider(input,init,provider,body,contextual,system,'musical_composition','compose');
+  if(!creative.d||!creative.r.ok||!creative.raw)return creative.r;
+  const music=musicBlock(creative.raw);
+  if(!music){const warning='Die musikalische Kompositionsstufe lieferte kein vollständiges Manuskript. Es wurde keine MIDI-Fassung erzeugt.';return jsonResponse(replaceResponseText(provider,creative.d,warning),creative.r.status,creative.r.headers)}
+  window.__mclLastMusicalComposition={at:new Date().toISOString(),provider,model:body.model||'',task:user,music};
+  if(note)note.textContent='Übertrage fertige Komposition in MIDI …';
+  const techSystem=materializationSystemPrompt(availableSources.length>0),techMessages=materializationMessages(user,music,provided);
+  let result=await runProvider(input,init,provider,body,techMessages,techSystem,'midi_materialization','materialize');
+  if(!result.d||!result.r.ok||!result.raw)return result.r;
+  const incomplete=incompleteInternal(result.raw);
+  if(incomplete)return jsonResponse(replaceResponseText(provider,result.d,safeIncompleteText(result.raw,incomplete)),result.r.status,result.r.headers);
+  let action=parseAction(result.raw),score=action?materializeAction(action,availableSources,''):null,issues=score?scoreIssues(score):['keine gültige MIDI-Aktion'];
+  if(score&&issues.length){
+    const repairSystem=techSystem+'\n\nTECHNISCHE KORREKTUR: Korrigiere ausschließlich diese formalen Fehler: '+issues.join('; ')+'. Verändere das musikalische Manuskript nicht.';
+    const repairContext=techMessages.concat([{role:'assistant',text:result.raw}]);
+    const repair=await runProvider(input,init,provider,body,repairContext,repairSystem,'midi_repair','materialize');
+    if(repair.d&&repair.r.ok&&repair.raw){const repaired=materializeAction(parseAction(repair.raw),availableSources,'');const ri=repaired?scoreIssues(repaired):['keine gültige korrigierte MIDI-Aktion'];if(repaired&&!ri.length){score=repaired;issues=[];result=repair}else issues=ri}
   }
-  return jsonResponse(replaceResponseText(provider,result.d,prefix||result.raw),result.r.status,result.r.headers);
+  if(!score||issues.length){const warning=`Die erzeugte MIDI-Fassung wurde wegen technischer Inkonsistenzen nicht übernommen: ${issues.join('; ')}.`;return jsonResponse(replaceResponseText(provider,result.d,warning),result.r.status,result.r.headers)}
+  return jsonResponse(replaceResponseText(provider,result.d,JSON.stringify(score)),result.r.status,result.r.headers);
 };
 
-window.MCLSessionV143={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,systemPrompt,buildProviderBody,referencesWorkbench};
+const api={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,systemPrompt,buildProviderBody,referencesWorkbench,creativeSystemPrompt,materializationSystemPrompt,musicBlock};
+window.MCLSessionV144=api;
+window.MCLSessionV143=api;
 })();

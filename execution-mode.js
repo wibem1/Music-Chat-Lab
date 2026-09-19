@@ -3,7 +3,7 @@
 if(window.__mclExplicitModeV139)return;
 window.__mclExplicitModeV139=true;
 
-const VERSION='1.4.7';
+const VERSION='1.4.8';
 const PENDING_KEY='music-chat-lab.pending-composition-idea.v1';
 const nativeFetch=window.fetch.bind(window);
 const CONCEPT_RE=/<MCL_CONCEPT>\s*([\s\S]*?)\s*<\/MCL_CONCEPT>/i;
@@ -41,7 +41,7 @@ function removeDecisionLayer(system){return String(system||'').replace(OLD_HEAD,
 function directive(mode,idea){
   if(mode==='compose'){
     const brief=idea?`\n\nAKTUELLER KOMPOSITIONSAUFTRAG:\n${idea}\nFühre diesen Auftrag musikalisch aus.`:'';
-    return `MODUS: KOMPONIERE. Führe den aktuellen musikalischen Auftrag jetzt als MIDI aus.${brief}`;
+    return `MODUS: KOMPONIERE. Führe den aktuellen musikalischen Auftrag vollständig aus.${brief}`;
   }
   return `MODUS: CHAT. Antworte als musikalischer Gesprächs- und Kompositionspartner frei und direkt. Erzeuge in diesem Modus keine MIDI-Aktion. Wenn du eine konkrete Kompositions- oder Bearbeitungsidee entwickelst, frage den Nutzer am Ende sichtbar, ob diese Idee als Kompositionsauftrag übernommen werden soll, und hänge zusätzlich <MCL_CONCEPT>kurze Zusammenfassung der Idee</MCL_CONCEPT> an. Wenn der Nutzer einen unmittelbar zuvor angebotenen Kompositionsvorschlag eindeutig bestätigt, antworte knapp und hänge <MCL_ADOPT_CONCEPT/> an. Bei normalem Gespräch, Analyse oder Kritik verwende keinen dieser Marker.`;
 }
@@ -60,8 +60,8 @@ window.fetch=async function(input,init={}){
   if(init&&init.__mclRawStage){const clean={...init};delete clean.__mclRawStage;return nativeFetch(input,clean)}
   const url=typeof input==='string'?input:input?.url||'',provider=providerFor(url);if(!provider||typeof init.body!=='string')return nativeFetch(input,init);
   let body;try{body=JSON.parse(init.body)}catch{return nativeFetch(input,init)}
-  const mode=window.MCLRequestMode==='compose'?'compose':'chat',idea=currentIdea();
-  const finalBody=patchBody(provider,body,mode,idea);
+  const mode=window.MCLRequestMode==='compose'?'compose':'chat';
+  const finalBody=body;
   const traceStage=String(init.__mclTraceStage||'provider_call');
   const cleanInit={...init,body:JSON.stringify(finalBody)};delete cleanInit.__mclTraceStage;
   const traceId=window.MCLAiTrace?.request?.(traceStage,url,cleanInit,finalBody);

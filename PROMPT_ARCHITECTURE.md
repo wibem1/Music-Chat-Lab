@@ -1,74 +1,42 @@
 # MusicChatLab – Prompt-Architektur
 
-Stand: v1.4.35
+Stand: v1.4.43
 
 ## Grundsatz
-Die App organisiert; die KI musiziert. Kontext wird nur dann an ein Modell gesendet, wenn er für den aktuellen Zug tatsächlich gebraucht wird. Technische MIDI-Protokolle dürfen den normalen musikalischen Dialog nicht belasten.
-
-## Datenweg
-1. app.js baut den Provider-Request aus dem sichtbaren Chat.
-2. session-orchestrator.js reduziert den Verlauf und ergänzt nur den für den Modus nötigen Kontext.
-3. execution-mode.js fügt unmittelbar vor dem Provider-Aufruf nur den expliziten Modus und – im Komponiermodus – gegebenenfalls die bewusst übernommene Kompositionsidee ein.
-4. ai-call-trace.js protokolliert genau diesen finalen Request schlüsselfrei.
-5. Die Provider-Antwort wird anschließend technisch ausgewertet.
+Die App organisiert; die KI musiziert. Musikalische Komposition und technische MIDI-Materialisierung sind getrennte Aufgaben. Der verbindliche übergeordnete Rahmen steht in `ARCHITECTURE_CONTRACT.md`.
 
 ## CHAT
-Zweck: musikalisches Gespräch, Analyse, Kritik, Ideenentwicklung.
+Der Chat dient Gespräch, Analyse, Kritik und Ideenentwicklung. Er enthält kein MIDI-Aktionsprotokoll. Wenn der Nutzer vorhandenes Material ausdrücklich referenziert, bleibt die bisherige bedarfsgesteuerte `MCL_NEED`-Anforderung exakter Notendaten erhalten. Eine konkrete Kompositionsidee kann mit `MCL_CONCEPT` zur bewussten Übernahme in das Feld „Kompositionsauftrag“ angeboten werden.
 
-Standardkontext bei leerem Arbeitstisch:
-- eine kurze Rollenbeschreibung als musikalischer Gesprächs- und Kompositionspartner,
-- expliziter CHAT-Modus,
-- tatsächlicher Gesprächsverlauf.
+## KOMPONIERE – Stufe 1: musikalische Komposition
+Der gewählte Provider erhält den aktuellen Dialog, den verbindlichen Kompositionsauftrag und nur dann vorhandenes musikalisches Ausgangsmaterial, wenn der Auftrag darauf Bezug nimmt.
 
-Nicht enthalten:
-- PATCH,
-- MERGE,
-- NEW_SCORE,
-- REPLACE_SCORE,
-- MIDI-Notenformat,
-- vollständiges MIDI-Aktionsprotokoll.
+Diese Stufe ist die eigentliche Komposition. Sie trifft konkrete musikalische Entscheidungen über Tonhöhen, Rhythmen, Pausen, Stimmen, Form, Harmonik, Artikulation, Dynamik, Instrumentation und Verlauf. Sie ist weder Prosabauplan noch technische MIDI-Ausgabe.
 
-Ein vorhandener Arbeitstisch wird nicht automatisch in den Chat eingebracht. Erst wenn der aktuelle Auftrag ausdrücklich den Arbeitstisch, einen Speicher/Slot/Stück-Index oder den Namen eines vorhandenen Stücks referenziert, wird der knappe Katalog ergänzt. Für eine Analyse, die exakte Noten benötigt, darf die KI dann mit einem kleinen MCL_NEED-Block gezielt Notendaten anfordern. Erst der Folgeaufruf erhält diese Notendaten.
+Das fertige musikalische Ergebnis wird als vollständige ABC-Partiturnotation in einem `<MCL_MUSIC>`-Block ausgegeben. ABC ist hier ein musiknahes Zwischenformat: vollständig genug, um die musikalischen Entscheidungen festzuhalten, aber unabhängig von MCL_ACTION, MIDI-Pitchnummern und der internen JSON-Score-Struktur.
 
-Eine konkrete im Chat formulierte Kompositionsidee wird als MCL_CONCEPT zur Übernahme angeboten. Die KI fragt sichtbar, ob sie übernommen werden soll. Bestätigt der Nutzer den unmittelbar vorherigen Vorschlag, signalisiert MCL_ADOPT_CONCEPT die Übernahme ins Ideenfeld; komponiert wird dadurch noch nicht. Der Chat-Prompt schreibt weder Stil, Tonart, Form, Tempo noch eine stereotype Ideenstruktur vor.
+Für Claude Sonnet 5, Opus 5 und Sonnet 4.6 verwendet diese Stufe adaptive Thinking mit `effort: high`. Die musikalische Kompositionsstufe wird nicht wegen der späteren strukturierten Ausgabe gedrosselt.
 
-## KOMPONIERE – neues Stück ohne Quellen
-Zweck: direkte musikalische Erfindung und unmittelbare Ausgabe als MIDI-Partitur.
+## KOMPONIERE – Stufe 2: technische Materialisierung
+Erst nach erfolgreicher musikalischer Komposition erhält eine zweite Provider-Anfrage das fertige `<MCL_MUSIC>`-Manuskript und das technische MCL_ACTION-/Score-Schema.
 
-Voraussetzung: Das Feld „Kompositionsidee“ ist nicht leer. Ein leerer Wert blockiert den Komponiermodus lokal ohne Provider-Aufruf. Eine minimale Idee wie „ein Klavierstück“ ist vollständig zulässig und überlässt alle weiteren Entscheidungen der KI.
+Diese Stufe darf nicht neu komponieren, ergänzen, vereinfachen oder musikalisch regularisieren. Ihre Aufgabe ist ausschließlich die Übertragung der bereits bestimmten Musik in die interne MIDI-Partitur.
 
-Kontext:
-- die bewusst eingetragene Kompositionsidee als verbindlicher aktueller Kompositionsauftrag,
-- relevanter Dialog,
-- nur das NEW_SCORE-Übertragungsformat,
-- kompaktes Notenformat.
+Bei Claude wird Thinking in dieser technischen Stufe deaktiviert. Diese Drosselung betrifft ausdrücklich nicht die musikalische Komposition.
 
-Nicht enthalten:
-- PATCH,
-- MERGE,
-- REPLACE_SCORE,
-- Arbeitstisch-/Quellenprotokoll, wenn keine Quellen existieren.
+## Technische Validierung und Reparatur
+Nach der Materialisierung werden ausschließlich formale Eigenschaften geprüft: Score-/Spurstruktur, gültige Startzeiten und Dauern, MIDI-Pitches, Velocity, Controllerwerte, positives Tempo und gültige Taktart.
 
-Die KI komponiert die tatsächlichen Noten selbst. Es gibt keinen vorgeschalteten Prosabauplan.
+Nur formale Fehler dürfen einen technischen Reparaturaufruf auslösen. Dieser erhält weiterhin das fertige musikalische Manuskript und darf keine musikalischen Entscheidungen ändern.
 
-## KOMPONIERE – Bearbeitung/Synthese mit Quellen
-Nur wenn tatsächlich MIDI-Quellen auf dem Arbeitstisch vorhanden sind, werden zusätzlich geladen:
-- knapper Katalog der vorhandenen Quellen,
-- MCL_NEED für gezieltes Nachladen vollständiger Notendaten,
-- PATCH,
-- MERGE,
-- REPLACE_SCORE.
+## Providerneutralität
+Sol, Claude und Gemini erhalten denselben musikalischen Auftrag und dieselbe musikalische Freiheit. Provider-spezifische Einstellungen sind nur technische Anpassungen an die jeweilige API. Die Trennung Komposition → Materialisierung gilt für alle Provider.
 
-Vollständige MCL_SCORE-Daten werden erst nach konkreter Anforderung geliefert. NEW_SCORE bleibt verfügbar, falls der aktuelle Auftrag tatsächlich eine neue Fassung verlangt.
+## Diagnose
+Die Diagnose unterscheidet die Aufrufstufen:
+- `musical_composition`
+- `midi_materialization`
+- gegebenenfalls `midi_repair`
+- `orchestrator_chat`
 
-## TECHNISCHE REPARATUR
-Nur wenn eine erzeugte Aktion formal unbrauchbare MIDI-Daten enthält, erhält das Modell genau einen Reparaturauftrag mit den gefundenen technischen Fehlern. Musikalische Entscheidungen wie Tonart, Tempo, Form oder Pausen sind keine technischen Fehler.
-
-## Diagnose- und Freigaberegel
-Jeder Release-Smoke-Test prüft zusätzlich die Prompt-Architektur:
-- leerer CHAT-Prompt bleibt klein und enthält kein MIDI-Aktionsprotokoll,
-- neues Stück ohne Quellen enthält NEW_SCORE, aber weder PATCH noch MERGE,
-- quellenbasierte Ausführung enthält die dafür nötigen Protokolle,
-- vollständiger finaler Provider-Request bleibt in der Diagnose sichtbar.
-
-Bei Qualitätsproblemen wird zuerst der tatsächlich gesendete Request untersucht. Zusätzliche Promptregeln werden nicht prophylaktisch angehängt.
+Damit lässt sich prüfen, ob technische MIDI-Regeln tatsächlich erst nach der musikalischen Komposition auftreten.
