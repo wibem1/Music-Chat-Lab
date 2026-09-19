@@ -229,3 +229,14 @@ Der Smoke-Test setzt eine aktuelle Idee mit 56 Takten, 88 BPM und a-Moll und pr�
 Der Release-Check von v1.4.23 scheiterte im Browser-Smoke-Test: Die aktuelle Idee „56 Takte, 88 BPM, a-Moll“ wurde gesetzt, aber `bars` blieb `null`. Ursache waren versehentlich doppelt escapte RegExp-Metazeichen in den neu eingeführten JavaScript-RegExp-Literalen (`\\d`, `\\s`, `\\b`). Dadurch suchte der Parser nach den Zeichenfolgen „\d“ usw. statt nach Ziffern, Leerraum und Wortgrenzen. Die JavaScript-Syntaxprüfung konnte diesen semantischen Fehler naturgemäß nicht erkennen; der neue Browser-Test hat ihn korrekt abgefangen.
 
 v1.4.24 korrigiert die RegExp-Literale im zuständigen Orchestrator. Der Test für die maßgebliche Kompositionsidee bleibt unverändert streng: 56 Takte, 88 BPM und a-Moll müssen tatsächlich aus dem Ideenfeld erkannt werden.
+
+
+## v1.4.25 – gründliche Reparatur von Kompositionsidee und Plausibilitätsprüfung
+- Die editierbare Kompositionsidee bleibt die maßgebliche Referenz und wird nach einer erzeugten Fassung nicht mehr automatisch durch deren score.sm überschrieben.
+- Die Plausibilitätsprüfung unterscheidet wieder technische Inkonsistenzen von musikalischen Entscheidungen. Eine längere Pause wird nicht allein wegen ihrer Länge als Fehler verworfen.
+- Tonartbezeichnungen aus deutscher und englischer Schreibweise werden bei der Prüfung äquivalent behandelt (z. B. F-Dur / F major).
+- Ein Korrekturversuch erhält die tatsächlich beanstandete KI-Aktion als unmittelbaren Kontext; dadurch korrigiert die KI die konkrete Fassung statt blind neu anzusetzen.
+- Bewusste Abweichungen von ausdrücklich genannten Eckdaten bleiben musikalisch zulässig, müssen aber weiterhin mit deviationReason begründet werden.
+- Diagnoseformat 5 trennt den aktuellen Snapshot von älteren Routing-Diagnosedaten, damit historische Fehler nicht mehr wie aktuelle Zustände erscheinen.
+- Regressionstest ergänzt: F major und F-Dur dürfen keinen falschen Tonartfehler erzeugen; die alte pauschale Leerstellentestannahme wurde entfernt.
+- PWA-, Manifest-, Script- und sichtbare Versionsreferenzen auf v1.4.25 synchronisiert.
