@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-if(window.__mclSessionOrchestratorV136)return;
-window.__mclSessionOrchestratorV136=true;
+if(window.__mclSessionOrchestratorV137)return;
+window.__mclSessionOrchestratorV137=true;
 
-const VERSION='1.3.6';
+const VERSION='1.3.7';
 const MEMORY_KEY='music-chat-lab.session-memory.v3';
 const ACTIVE_CHAT_KEY='music-chat-lab.active-chat.v1';
 const RECENT_MESSAGES=8;
@@ -209,7 +209,7 @@ function scoreIssues(score,constraints={}){
   for(let i=1;i<tl.merged.length;i++){const gap=tl.merged[i][0]-tl.merged[i-1][1];if(gap>=tl.bar*4)issues.push(`unbegründete globale Leerstelle von ${Number(gap.toFixed(2))} Beats ab Beat ${Number(tl.merged[i-1][1].toFixed(2))}`)}
   if(constraints.bpm&&Number(score.bpm)!==constraints.bpm)issues.push(`Tempo ${score.bpm??'?'} BPM statt ausdrücklich ${constraints.bpm} BPM`);
   if(constraints.bars){const actual=Math.ceil(tl.end/tl.bar);if(Math.abs(actual-constraints.bars)>1)issues.push(`Umfang ca. ${actual} Takte statt ausdrücklich ${constraints.bars} Takte`)}
-  if(constraints.key&&String(score.k||'').trim()){const norm=x=>String(x||'').toLowerCase().replace(/\s+/g,'').replace(/-/g,'');if(norm(score.k)!==norm(constraints.key))issues.push(`Tonart ${score.k} statt ausdrücklich ${constraints.key}`)}
+  if(constraints.key&&String(score.k||'').trim()){const norm=x=>String(x||'').toLowerCase().replace(/\s+/g,'').replace(/-/g,'').replace(/major$/,'dur').replace(/minor$/,'moll');if(norm(score.k)!==norm(constraints.key))issues.push(`Tonart ${score.k} statt ausdrücklich ${constraints.key}`)}
   return issues;
 }
 function isScore(x){return !!x&&Array.isArray(x.tr)&&x.tr.some(t=>Array.isArray(t?.nt))}
@@ -369,5 +369,5 @@ window.fetch=async function(input,init={}){
   return jsonResponse(replaceResponseText(provider,result.d,prefix||result.raw),result.r.status,result.r.headers);
 };
 
-window.MCLSessionV136={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,explicitConstraints,explicitConstraintsFromText,deviationNote};
+window.MCLSessionV137={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,explicitConstraints,explicitConstraintsFromText,deviationNote};
 })();
