@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-if(window.__mclSessionOrchestratorV140)return;
-window.__mclSessionOrchestratorV140=true;
+if(window.__mclSessionOrchestratorV141)return;
+window.__mclSessionOrchestratorV141=true;
 
-const VERSION='1.4.0';
+const VERSION='1.4.1';
 const MEMORY_KEY='music-chat-lab.session-memory.v3';
 const ACTIVE_CHAT_KEY='music-chat-lab.active-chat.v1';
 const RECENT_MESSAGES=8;
@@ -154,12 +154,14 @@ function withScores(msgs,user,selected){
   for(let i=out.length-1;i>=0;i--){if(out[i].role!=='user')continue;out[i].text=`${cleanLegacy(user)}${selected.length?`\n\n${scoreBlocks(selected)}`:''}`.trim();break}
   return out;
 }
-function buildProviderBody(provider,body,msgs,system){
+function buildProviderBody(provider,body,msgs,system,mode){
   const b=clone(body);
   if(provider==='anthropic'){
     b.system=system;b.messages=msgs.map(m=>({role:m.role,content:m.text}));
-    b.thinking={type:'disabled'};delete b.output_config;
-    b.max_tokens=Math.max(Number(b.max_tokens)||4096,12000);
+    const adaptive=/^claude-(?:sonnet-(?:5|4-6)|opus-5)(?:$|-)/i.test(String(b.model||''));
+    if(adaptive){b.thinking={type:'adaptive'};b.output_config={...(b.output_config||{}),effort:'high'}}
+    else{delete b.thinking;delete b.output_config}
+    b.max_tokens=Math.max(Number(b.max_tokens)||4096,mode==='compose'?32768:12000);
   }else if(provider==='openai'){
     b.input=[{role:'system',content:system},...msgs.map(m=>({role:m.role,content:m.text}))];b.store=false;
   }else{
@@ -325,7 +327,8 @@ function materializeAction(action,sources,prefix){
 }
 
 async function runProvider(input,init,provider,body,msgs,system,stage='orchestrator'){
-  const requestBody=buildProviderBody(provider,body,msgs,system);
+  const mode=window.MCLRequestMode==='compose'?'compose':'chat';
+  const requestBody=buildProviderBody(provider,body,msgs,system,mode);
   const r=await innerFetch(input,{...init,__mclTraceStage:stage,body:JSON.stringify(requestBody)});
   const rawTransport=await r.clone().text().catch(()=>'');
   let d=null;try{d=rawTransport?JSON.parse(rawTransport):null}catch{}
@@ -395,5 +398,5 @@ window.fetch=async function(input,init={}){
   return jsonResponse(replaceResponseText(provider,result.d,prefix||result.raw),result.r.status,result.r.headers);
 };
 
-window.MCLSessionV140={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,systemPrompt};
+window.MCLSessionV141={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,systemPrompt,buildProviderBody};
 })();
