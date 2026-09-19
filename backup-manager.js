@@ -1,22 +1,42 @@
 (()=>{
 'use strict';
-if(window.__mclBackupManagerV1132)return;
-window.__mclBackupManagerV1132=true;
+if(window.__mclBackupManagerV1133)return;
+window.__mclBackupManagerV1133=true;
 
 const FORMAT='music-chat-lab-backup';
 const FORMAT_VERSION=1;
-const APP_VERSION='1.1.32';
+const APP_VERSION='1.1.33';
 const PREFIX='music-chat-lab.';
 const SETTINGS_KEY='music-chat-lab.api-settings.v1';
 const MIDI_DB='music-chat-lab-midi';
 const MIDI_STORE='workspace';
 const MIDI_RECORD='current';
-let protectedSettings=null;
+let backupSettingsSnapshot=null;
+let backupProtectionUntil=0;
+let backupProtectionTimer=null;
 
 function note(text){const el=document.getElementById('composerNote');if(el)el.textContent=text}
 function safeStamp(){return new Date().toISOString().replace(/[:.]/g,'-')}
-function protectSettings(){protectedSettings=null}
-function restoreProtectedSettings(){protectedSettings=null}
+
+function parseSettings(raw){try{return JSON.parse(raw||'{}')||{}}catch{return{}}}
+function protectCurrentSettings(){
+  backupSettingsSnapshot=localStorage.getItem(SETTINGS_KEY);
+  backupProtectionUntil=Date.now()+15000;
+  clearTimeout(backupProtectionTimer);
+  backupProtectionTimer=setTimeout(()=>{backupSettingsSnapshot=null;backupProtectionUntil=0},15000);
+}
+function restoreMissingProtectedKeys(){
+  if(!backupSettingsSnapshot||Date.now()>backupProtectionUntil)return false;
+  const before=parseSettings(backupSettingsSnapshot);
+  const currentRaw=localStorage.getItem(SETTINGS_KEY);
+  const current=parseSettings(currentRaw);
+  let changed=false;
+  for(const key of ['anthropicKey','openaiKey','googleKey']){
+    if(before[key]&&!current[key]){current[key]=before[key];changed=true}
+  }
+  if(changed)localStorage.setItem(SETTINGS_KEY,JSON.stringify(current));
+  return changed;
+}
 function downloadText(text,name){
   const blob=new Blob([text],{type:'application/json'});
   const url=URL.createObjectURL(blob);
@@ -77,15 +97,17 @@ async function writeMidiWorkspace(value){
 }
 
 function apiKeyStatus(local){
-  let s={};
-  try{s=JSON.parse(local[SETTINGS_KEY]||'{}')}catch(_){ }
+  const s=parseSettings(local[SETTINGS_KEY]);
   return {anthropic:!!s.anthropicKey,openai:!!s.openaiKey,google:!!s.googleKey};
 }
 
 async function createBackup(){
   try{
+    protectCurrentSettings();
     const local=collectLocalStorage();
     const keys=apiKeyStatus(local);
+    const midi=await readMidiWorkspace();
+    const repairedBeforeDownload=restoreMissingProtectedKeys();
     const backup={
       format:FORMAT,
       version:FORMAT_VERSION,
@@ -94,11 +116,14 @@ async function createBackup(){
       containsApiKeys:keys.anthropic||keys.openai||keys.google,
       apiKeyStatus:keys,
       localStorage:local,
-      indexedDB:{[MIDI_DB]:{[MIDI_STORE]:await readMidiWorkspace()}}
+      indexedDB:{[MIDI_DB]:{[MIDI_STORE]:midi}}
     };
     downloadText(JSON.stringify(backup,null,2),`Music-Chat-Lab-Backup-${safeStamp()}.mclbackup`);
-    note(`Backup erstellt. API-Schlüssel enthalten: ${backup.containsApiKeys?'ja':'nein'}.`);
+    const repairedAfterDownload=restoreMissingProtectedKeys();
+    const repaired=repairedBeforeDownload||repairedAfterDownload;
+    note(`Backup erstellt. API-Schlüssel enthalten: ${backup.containsApiKeys?'ja':'nein'}.${repaired?' API-Einstellungen wurden geschützt wiederhergestellt.':''}`);
   }catch(e){
+    restoreMissingProtectedKeys();
     note('Backup konnte nicht erstellt werden: '+(e?.message||String(e)));
   }
 }
@@ -120,7 +145,7 @@ async function restoreBackupFile(file){
   const msg=`Dieses Backup ersetzt den aktuellen lokalen Music-Chat-Lab-Zustand.\n\nEnthaltene API-Schlüssel: Anthropic ${keyInfo.anthropic?'ja':'nein'}, OpenAI ${keyInfo.openai?'ja':'nein'}, Google ${keyInfo.google?'ja':'nein'}.\n\nBackup wirklich wiederherstellen?`;
   if(!window.confirm(msg))return;
 
-  protectedSettings=null;
+  backupSettingsSnapshot=null;backupProtectionUntil=0;clearTimeout(backupProtectionTimer);
   const current=[];
   for(let i=0;i<localStorage.length;i++){
     const k=localStorage.key(i);
@@ -148,7 +173,8 @@ function start(){
     try{await restoreBackupFile(f)}
     catch(e){note('Backup konnte nicht wiederhergestellt werden: '+(e?.message||String(e)))}
   });
-
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')restoreMissingProtectedKeys()});
+  window.addEventListener('pageshow',restoreMissingProtectedKeys);
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
