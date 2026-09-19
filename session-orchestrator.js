@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-if(window.__mclSessionOrchestratorV133)return;
-window.__mclSessionOrchestratorV133=true;
+if(window.__mclSessionOrchestratorV134)return;
+window.__mclSessionOrchestratorV134=true;
 
-const VERSION='1.3.3';
+const VERSION='1.3.4';
 const MEMORY_KEY='music-chat-lab.session-memory.v3';
 const ACTIVE_CHAT_KEY='music-chat-lab.active-chat.v1';
 const RECENT_MESSAGES=8;
@@ -184,6 +184,29 @@ function safeIncompleteText(raw,kind){
   return `${prefix}${prefix?'\n\n':''}Die interne ${kind} wurde unvollständig übertragen und deshalb verworfen. Es wurde keine Datei verändert.`;
 }
 
+function explicitConstraints(msgs){
+  const recent=(msgs||[]).slice(-6).map(m=>cleanLegacy(m.text)).join('\n');
+  const bpm=[...recent.matchAll(/(?:^|[^0-9])(\\d{2,3})\\s*BPM\\b/gi)].pop();
+  const bars=[...recent.matchAll(/(?:^|[^0-9])(\\d{1,3})\\s*Takt(?:e|en)?\\b/gi)].pop();
+  const key=[...recent.matchAll(/\\b([A-Ha-h](?:is|es|#|b)?)[- ]?(Dur|Moll)\\b/gi)].pop();
+  return{bpm:bpm?Number(bpm[1]):null,bars:bars?Number(bars[1]):null,key:key?key[0].trim():null};
+}
+function scoreTimeline(score){
+  const ts=score?.ts||{},n=Number(ts.n)||4,d=Number(ts.d)||4,bar=Math.max(.25,n*(4/d)),intervals=[];
+  for(const tr of score?.tr||[])for(const note of tr?.nt||[]){if(!Array.isArray(note))continue;const start=Number(note[0]),dur=Number(note[1]);if(Number.isFinite(start)&&Number.isFinite(dur)&&dur>0)intervals.push([start,start+dur])}
+  intervals.sort((a,b)=>a[0]-b[0]);const merged=[];
+  for(const it of intervals){const last=merged[merged.length-1];if(!last||it[0]>last[1])merged.push(it.slice());else last[1]=Math.max(last[1],it[1])}
+  return{bar,end:merged.reduce((m,x)=>Math.max(m,x[1]),0),merged};
+}
+function scoreIssues(score,constraints={}){
+  if(!isScore(score))return['keine gültige Partiturstruktur'];
+  const issues=[],tl=scoreTimeline(score);
+  for(let i=1;i<tl.merged.length;i++){const gap=tl.merged[i][0]-tl.merged[i-1][1];if(gap>=tl.bar*4)issues.push(`unbegründete globale Leerstelle von ${Number(gap.toFixed(2))} Beats ab Beat ${Number(tl.merged[i-1][1].toFixed(2))}`)}
+  if(constraints.bpm&&Number(score.bpm)!==constraints.bpm)issues.push(`Tempo ${score.bpm??'?'} BPM statt ausdrücklich ${constraints.bpm} BPM`);
+  if(constraints.bars){const actual=Math.ceil(tl.end/tl.bar);if(Math.abs(actual-constraints.bars)>1)issues.push(`Umfang ca. ${actual} Takte statt ausdrücklich ${constraints.bars} Takte`)}
+  if(constraints.key&&String(score.k||'').trim()){const norm=x=>String(x||'').toLowerCase().replace(/\\s+/g,'').replace(/-/g,'');if(norm(score.k)!==norm(constraints.key))issues.push(`Tonart ${score.k} statt ausdrücklich ${constraints.key}`)}
+  return issues;
+}
 function isScore(x){return !!x&&Array.isArray(x.tr)&&x.tr.some(t=>Array.isArray(t?.nt))}
 function validTrack(t){return !!t&&typeof t==='object'&&Array.isArray(t.nt)}
 function trackIndex(score,op){
@@ -313,15 +336,29 @@ window.fetch=async function(input,init={}){
   }
 
   const mem=extractMemory(result.raw);if(mem)saveMemory(mem);
-  const action=parseAction(result.raw),prefix=visibleText(result.raw);
+  let action=parseAction(result.raw),prefix=visibleText(result.raw);
   if(action){
-    const score=materializeAction(action,sources,prefix);
+    let score=materializeAction(action,sources,prefix);
+    const constraints=explicitConstraints(recent);
+    let issues=score?scoreIssues(score,constraints):[];
+    if(score&&issues.length){
+      const repairSystem=system+'\\n\\nTECHNISCHE KORREKTUR: Die eben erzeugte MIDI-Fassung wurde noch nicht übernommen. Korrigiere ausschließlich die folgenden technischen Inkonsistenzen, ohne die musikalische Idee unnötig zu verändern: '+issues.join('; ')+'. Gib die vollständige korrigierte Aktion erneut als genau einen <MCL_ACTION>-Block aus.';
+      const repair=await runProvider(input,init,provider,body,contextual,repairSystem);
+      if(repair.d&&repair.r.ok&&repair.raw){
+        const repairAction=parseAction(repair.raw),repairPrefix=visibleText(repair.raw),repaired=materializeAction(repairAction,sources,repairPrefix);
+        const repairIssues=repaired?scoreIssues(repaired,constraints):['keine gültige korrigierte MIDI-Aktion'];
+        if(repaired&&!repairIssues.length)return jsonResponse(replaceResponseText(provider,repair.d,JSON.stringify(repaired)),repair.r.status,repair.r.headers);
+        issues=repairIssues;
+      }
+      const warning=`${prefix}${prefix?'\\n\\n':''}Die erzeugte MIDI-Fassung wurde wegen technischer Inkonsistenzen nicht übernommen: ${issues.join('; ')}.`;
+      return jsonResponse(replaceResponseText(provider,result.d,warning),result.r.status,result.r.headers);
+    }
     if(score)return jsonResponse(replaceResponseText(provider,result.d,JSON.stringify(score)),result.r.status,result.r.headers);
-    const warning=`${prefix}${prefix?'\n\n':''}Die MIDI-Aktion konnte technisch nicht ausgeführt werden. Es wurde keine Datei verändert.`;
+    const warning=`${prefix}${prefix?'\\n\\n':''}Die MIDI-Aktion konnte technisch nicht ausgeführt werden. Es wurde keine Datei verändert.`;
     return jsonResponse(replaceResponseText(provider,result.d,warning),result.r.status,result.r.headers);
   }
   return jsonResponse(replaceResponseText(provider,result.d,prefix||result.raw),result.r.status,result.r.headers);
 };
 
-window.MCLSessionV133={version:VERSION,getMemory,workspaceSources,materializeAction};
+window.MCLSessionV134={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,explicitConstraints};
 })();
