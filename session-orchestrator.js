@@ -323,7 +323,8 @@ async function runProvider(input,init,provider,body,msgs,system,traceStage,polic
 function musicBlock(text){const m=String(text||'').match(/<MCL_MUSIC>\s*([\s\S]*?)\s*<\/MCL_MUSIC>/i);return m?m[1].trim():''}
 function materializationMessages(user,music,provided){
   const sourceText=provided.length?`\n\nAUSGANGSPARTITUREN:\n${scoreBlocks(provided)}`:'';
-  return[{role:'user',text:`VERBINDLICHER TECHNISCHER MODUS: NEW_SCORE\n\nAUFTRAG DES NUTZERS:\n${cleanLegacy(user)}\n\nFERTIGES MUSIKALISCHES MANUSKRIPT:\n<MCL_MUSIC>\n${music}\n</MCL_MUSIC>${sourceText}`}];
+  const technicalMode=provided.length?'PATCH':'NEW_SCORE';
+  return[{role:'user',text:`VERBINDLICHER TECHNISCHER MODUS: ${technicalMode}\n\nAUFTRAG DES NUTZERS:\n${cleanLegacy(user)}\n\nFERTIGES MUSIKALISCHES MANUSKRIPT:\n<MCL_MUSIC>\n${music}\n</MCL_MUSIC>${sourceText}`}];
 }
 
 window.fetch=async function(input,init={}){
@@ -337,6 +338,7 @@ window.fetch=async function(input,init={}){
   const availableSources=sourceIntent?sources:[];
   const provided=mode==='compose'?availableSources:[];
   const contextual=withScores(recent,user,provided);
+  if(mode==='compose'){const assignment=ideaText();for(let i=contextual.length-1;i>=0;i--){if(contextual[i].role==='user'){contextual[i].text=`${contextual[i].text}\n\nVERBINDLICHER AKTUELLER KOMPOSITIONSAUFTRAG:\n${assignment}`;break}}}
   const system=systemPrompt(memory,legacy,catalogue(availableSources,active),active,provided,mode,availableSources.length>0);
   if(mode!=='compose'){
     const result=await runProvider(input,init,provider,body,contextual,system,'orchestrator_chat','chat');
