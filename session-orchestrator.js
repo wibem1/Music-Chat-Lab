@@ -363,7 +363,6 @@ window.fetch=async function(input,init={}){
   if(!translated.d||!translated.r.ok||!translated.raw)return translated.r;
   let obj;try{obj=extractLooseJson(translated.raw)}catch(_){const warning='Die MIDI-Übersetzung war kein gültiges Partitur-JSON. Es wurde keine Fassung übernommen.';return jsonResponse(replaceResponseText(provider,translated.d,warning),translated.r.status,translated.r.headers)}
   const score=minimalToMclScore(obj,task),issues=score?scoreIssues(score):['keine gültige Partiturstruktur'];
-  if(score)score.sm=draft;
   if(!score||issues.length){const warning=`Die erzeugte MIDI-Fassung wurde wegen technischer Inkonsistenzen nicht übernommen: ${issues.join('; ')}.`;return jsonResponse(replaceResponseText(provider,translated.d,warning),translated.r.status,translated.r.headers)}
   return jsonResponse(replaceResponseText(provider,translated.d,JSON.stringify(score)),translated.r.status,translated.r.headers);
 };
