@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-if(window.__mclSettingsStoreV100)return;
+if(window.__mclSettingsStoreV101)return;
 window.__mclSettingsStoreV100=true;
 const KEY='music-chat-lab.api-settings.v1',DB='music-chat-lab.settings.v1',STORE='settings',ID='api';
 let dbPromise=null;
@@ -33,9 +33,10 @@ async function restore(){
   return local||{};
 }
 window.MCLSettingsStore={
-  version:'1.0.0',
+  version:'1.0.1',
   save:async value=>{try{localStorage.setItem(KEY,JSON.stringify(value||{}))}catch{};return writeVault(value||{})},
   clear:async()=>deleteVault(),
+  persistCurrent:async()=>{const local=parseLocal();return hasKey(local)?writeVault(local):false},
   restore
 };
 restore();
