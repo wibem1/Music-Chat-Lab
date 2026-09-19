@@ -277,3 +277,13 @@ Die Plausibilitätsprüfung wird zugleich auf ihre technische Aufgabe zurückgef
 Die vollständige Diagnose bleibt erhalten. Zusätzlich wurde ihre Position im Fetch-Pfad korrigiert: Der Trace wird nun erst nach Einfügung des Chat-/Komponiermodus und der aktuellen Kompositionsidee unmittelbar vor dem Provider-Aufruf aufgezeichnet. Damit enthält `aiCalls` den tatsächlich gesendeten finalen Request statt einer noch nachgelagert veränderten Vorstufe.
 
 Leitregel: Technische Robustheit darf die musikalische Entscheidung des Modells nicht ersetzen. Musikalische Qualität wird nicht durch nachträgliche starre Tempo-/Tonart-/Taktzahlregeln erzwungen.
+
+
+### v1.4.30 – Chat-Isolation von Kompositionsidee und Diagnose
+Die vollständige Diagnose eines frischen Chats zeigte: Der tatsächlich an Claude gesendete erste Request enthielt weder die im UI noch sichtbare alte Kompositionsidee noch altes Kompaktgedächtnis. Die fast gleiche Nocturne-Idee entstand daher nicht durch eine im protokollierten Request erkennbare Übertragung der alten Idee. Gleichzeitig bewies die Oberfläche aber eine echte Isolationslücke: Das Feld „Kompositionsidee“ zeigte im neuen Chat weiterhin den alten Wert.
+
+Ursache war `composition-idea-field.js`: Wenn für einen neuen Chat noch kein eigener Entwurf gespeichert war, fiel `restoreDraft()` auf ein geladenes CLAB-Konzept oder den aktuell aktiven MIDI-Slot zurück. Ein neuer Chat begann dadurch im UI nicht zuverlässig mit leerer Kompositionsidee. v1.4.30 macht das Ideenfeld strikt chatbezogen: Existiert für die aktuelle Chat-ID kein eigener gespeicherter Wert, wird das Feld leer gesetzt. CLAB-/Slot-Inhalte gelangen weiterhin nur über ihre ausdrücklichen Arbeitswege in die Idee, nicht als impliziter Fallback eines neuen Chats.
+
+Auch die Diagnose wird chat-isoliert: Das lokale Trace-Archiv darf weiterhin die letzten Provider-Aufrufe zur technischen Historie behalten, aber der Diagnoseexport enthält unter `aiCalls` nur Aufrufe, deren `chatId` der aktuell aktiven Chat-ID entspricht. Alte Zwei-Stufen- oder andere Provider-Aufrufe aus vorherigen Chats können damit bei der Analyse eines frischen Chats nicht mehr wie aktuelle Requests erscheinen.
+
+Regressionstest: Eine in Chat A eingetragene Idee muss nach „Neuer Chat“ in Chat B leer sein; der aktuelle Trace-Snapshot darf nur Einträge der aktiven Chat-ID liefern.
