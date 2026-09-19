@@ -100,3 +100,6 @@ Für v1.3.21 wurde erstmals der veröffentlichte GitHub-Pages-Artefaktstand selb
 Die Ursache für wiederkehrende Meldungen wie „API key is invalid.“ lag in der Backup-Verwaltung: Beim Erstellen eines Backups wurde der damalige API-Einstellungsstand in `protectedSettings` festgehalten. Dieser alte Stand blieb im laufenden JavaScript erhalten. Bei späterem `pageshow` bzw. beim Zurückkehren der App in den Vordergrund stellte `restoreProtectedSettings()` diesen alten Stand erneut in Local Storage her. Ein danach neu gespeicherter API-Key konnte dadurch unbemerkt wieder durch den älteren Key ersetzt werden.
 
 Die Korrektur entfernt diese dauerhafte Wiederherstellung. Die Backup-Erstellung liest die API-Einstellungen nur noch für das Backup und verändert sie nicht. `pageshow` und `visibilitychange` schreiben keine API-Einstellungen mehr zurück. Damit bleibt ein in den Einstellungen neu gespeicherter Key maßgeblich.
+
+
+Für den Freigabestand v1.4.7 wurde zusätzlich der Service-Worker-Cache auf `music-chat-lab-v1.4.7` angehoben, damit installierte Clients nicht auf dem v1.4.6-App-Shell einschließlich der alten Backup-Verwaltung verbleiben. Der Versionsguard des Backup-Managers wurde auf v1.1.32 korrigiert.
