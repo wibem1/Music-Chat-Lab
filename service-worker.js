@@ -1,4 +1,4 @@
-const CACHE_NAME = 'music-chat-lab-v1.3.21';
+const CACHE_NAME = 'music-chat-lab-v1.4.2';
 const APP_SHELL = [
   './', './index.html', './styles.css', './app.js', './music-file-processing.js',
   './midi-player.js', './midi-export.js', './midi-context.js', './midi-memory.js',
@@ -10,7 +10,7 @@ const APP_SHELL = [
   './execution-mode.css', './execution-mode.js', './midi-input-sync.js',
   './midi-playback-scheduler.js', './midi-slot-delete.js', './player-variants.js',
   './ui-enhancements.js', './ui-fixes.css', './icon.svg', './manifest.webmanifest',
-  './model-extension.js'
+  './model-extension.js', './composition-two-stage.js', './input-runtime-guard.js'
 ];
 
 self.addEventListener('install', event => {
