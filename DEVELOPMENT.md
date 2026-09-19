@@ -361,3 +361,7 @@ Die separate CLAB-Werkzeugleiste entfällt. **CLAB speichern** sitzt nun als Exp
 Der Stand enthält zugleich den Token-Fix aus v1.4.36: Claude behält adaptives High-Effort-Thinking im Chat, nicht aber im strukturierten Komponiermodus; dort gilt `thinking: disabled` und `max_tokens: 12000`.
 
 Regressionstests prüfen Feldhöhe, mobile Breite ohne horizontalen Überlauf, sichtbaren CLAB-Speicherbutton im Player, das Fehlen des alten CLAB-Öffnen-Buttons, CLAB im Slot-Dateifilter sowie die getrennte Claude-Konfiguration für Chat und Komposition.
+
+
+### v1.4.38 – alte CLAB-Recovery-Leiste entfernt
+Der Smoke-Test von v1.4.37 fand korrekt eine doppelte ID `clabSaveBtn`: Obwohl die reguläre CLAB-Werkzeugleiste entfernt worden war, erzeugte `ui-enhancements.js` über den historischen Recovery-Pfad `bindClabToolbar()` weiterhin die alten Buttons **CLAB öffnen / CLAB speichern**. Ursache war damit kein Layout-CSS, sondern eine zweite, veraltete UI-Quelle. v1.4.38 entfernt diese alte Toolbar-Erzeugung aus dem Recovery-Modul; die einzige CLAB-Speicheraktion bleibt der Button im MIDI-Player, und CLAB-Laden bleibt ausschließlich im Slot-Dateidialog. Der Regressionstest verlangt genau einen sichtbaren `clabSaveBtn` und keinen `clabOpenBtn`.
