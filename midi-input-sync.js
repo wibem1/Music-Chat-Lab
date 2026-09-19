@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-const input=document.getElementById('fileInput');
+const input=document.getElementById('fileInput'),slotInput=document.getElementById('midiSlotFileInput');
 if(!input)return;
 const isMidi=f=>!!f&&(/\.midi?$/i.test(f.name)||/midi/i.test(f.type||''));
 const key=f=>`${f.name}|${f.size}|${f.lastModified}`;
@@ -29,6 +29,7 @@ async function loadIntoChosenSlot(file,slotIndex){
   if(pos>=0)items[pos]=item;else items.push(item);
   api.restoreState(items,slot);
 }
+slotInput?.addEventListener('change',async e=>{const file=e.target.files?.[0],slotTarget=Number(window.MCLTargetMidiSlot);window.MCLTargetMidiSlot=null;if(!file||!Number.isInteger(slotTarget)||slotTarget<0||slotTarget>5)return;try{if(/\.clab$/i.test(file.name)){if(!window.MCLCLAB?.openFile)throw new Error('CLAB-Unterstützung ist noch nicht bereit.');await window.MCLCLAB.openFile(file,slotTarget+1)}else if(isMidi(file))await loadIntoChosenSlot(file,slotTarget);else throw new Error('Bitte eine MIDI- oder CLAB-Datei auswählen.')}catch(err){const st=document.getElementById('mainMidiStatus');if(st)st.textContent='Ladefehler: '+(err?.message||err)}finally{e.target.value=''}});
 input.addEventListener('change',e=>{
   const selected=Array.from(e.target.files||[]).filter(isMidi);
   if(!selected.length)return;
