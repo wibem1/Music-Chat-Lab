@@ -1,11 +1,11 @@
 (()=>{
 'use strict';
 if(window.__mclBackupManagerV1131)return;
-window.__mclBackupManagerV1131=true;
+window.__mclBackupManagerV1132=true;
 
 const FORMAT='music-chat-lab-backup';
 const FORMAT_VERSION=1;
-const APP_VERSION='1.1.31';
+const APP_VERSION='1.1.32';
 const PREFIX='music-chat-lab.';
 const SETTINGS_KEY='music-chat-lab.api-settings.v1';
 const MIDI_DB='music-chat-lab-midi';
@@ -15,19 +15,15 @@ let protectedSettings=null;
 
 function note(text){const el=document.getElementById('composerNote');if(el)el.textContent=text}
 function safeStamp(){return new Date().toISOString().replace(/[:.]/g,'-')}
-function protectSettings(){protectedSettings=localStorage.getItem(SETTINGS_KEY)}
-function restoreProtectedSettings(){
-  if(protectedSettings!==null&&localStorage.getItem(SETTINGS_KEY)!==protectedSettings){
-    localStorage.setItem(SETTINGS_KEY,protectedSettings);
-  }
-}
+function protectSettings(){protectedSettings=null}
+function restoreProtectedSettings(){protectedSettings=null}
 function downloadText(text,name){
   const blob=new Blob([text],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url;a.download=name;
   document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>{restoreProtectedSettings();URL.revokeObjectURL(url)},1500);
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
 
 function collectLocalStorage(){
@@ -88,7 +84,6 @@ function apiKeyStatus(local){
 
 async function createBackup(){
   try{
-    protectSettings();
     const local=collectLocalStorage();
     const keys=apiKeyStatus(local);
     const backup={
@@ -104,7 +99,6 @@ async function createBackup(){
     downloadText(JSON.stringify(backup,null,2),`Music-Chat-Lab-Backup-${safeStamp()}.mclbackup`);
     note(`Backup erstellt. API-Schlüssel enthalten: ${backup.containsApiKeys?'ja':'nein'}.`);
   }catch(e){
-    restoreProtectedSettings();
     note('Backup konnte nicht erstellt werden: '+(e?.message||String(e)));
   }
 }
@@ -154,8 +148,7 @@ function start(){
     try{await restoreBackupFile(f)}
     catch(e){note('Backup konnte nicht wiederhergestellt werden: '+(e?.message||String(e)))}
   });
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')restoreProtectedSettings()});
-  window.addEventListener('pageshow',restoreProtectedSettings);
+
 }
 
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
