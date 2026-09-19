@@ -2,12 +2,14 @@ const { test, expect } = require('@playwright/test');
 test('core ui', async ({ page }) => {
   const errors=[]; page.on('pageerror',e=>errors.push(String(e)));
   await page.goto('http://127.0.0.1:4173/index.html');
-  await expect(page.locator('[data-app-version]')).toHaveText('v1.4.29');
+  await expect(page.locator('[data-app-version]')).toHaveText('v1.4.30');
   await page.locator('#topSettingsButton').click();
   await expect(page.locator('#settingsDialog')).toHaveJSProperty('open',true);
   await page.locator('#settingsDialog .dialog-close').click();
+  await page.locator('#compositionIdeaInput').fill('ALTE IDEE DARF NICHT ÜBERTRAGEN WERDEN');
   await page.locator('#newChatButton').click();
   await expect(page.locator('#chatList .chat-item')).toHaveCount(2);
+  await expect(page.locator('#compositionIdeaInput')).toHaveValue('');
   await page.locator('#providerSelect').selectOption('openai');
   await expect(page.locator('#modelSelect option')).not.toHaveCount(0);
   await expect(page.locator('#modelSelect')).toHaveValue(/.+/);
@@ -48,5 +50,11 @@ test('core ui', async ({ page }) => {
   expect(traceSafety.headers['x-api-key']).toBe('[REDACTED]');
   expect(JSON.stringify(traceSafety.body)).toContain('vollständiger Auftrag');
   expect(traceSafety.rawResponse).toContain('vollständige Antwort');
+  const traceIsolation=await page.evaluate(()=>{
+    const current=localStorage.getItem('music-chat-lab.active-chat.v1');
+    const all=window.MCLAiTrace.snapshot();
+    return {current,all:all.length,currentOnly:window.MCLAiTrace.snapshotCurrentChat().every(x=>x.chatId===current)};
+  });
+  expect(traceIsolation.currentOnly).toBeTruthy();
   expect(errors).toEqual([]);
 });
