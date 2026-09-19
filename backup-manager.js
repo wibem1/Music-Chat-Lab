@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-if(window.__mclBackupManagerV1131)return;
+if(window.__mclBackupManagerV1132)return;
 window.__mclBackupManagerV1132=true;
 
 const FORMAT='music-chat-lab-backup';
