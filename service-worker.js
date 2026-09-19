@@ -9,7 +9,7 @@ const APP_SHELL = [
   './composition-idea-field.js', './diagnostic-enhancer.js', './download-compat.js',
   './execution-mode.css', './execution-mode.js', './midi-input-sync.js',
   './midi-playback-scheduler.js', './midi-slot-delete.js', './player-variants.js',
-  './ui-enhancements.js', './ui-fixes.css', './icon.svg', './icon-180.png', './icon-512.png', './manifest.webmanifest',
+  './ui-enhancements.js', './ui-fixes.css', './icon.svg', './manifest.webmanifest',
   './model-extension.js', './composition-two-stage.js', './input-runtime-guard.js'
 ];
 
