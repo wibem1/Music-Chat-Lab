@@ -153,3 +153,13 @@ Für installierte iOS/iPadOS-WebApps ist dagegen dokumentiert, dass ein programm
 Zusätzlich erhält der Chatverlauf mit `state-vault.js` einen unabhängigen IndexedDB-Spiegel. `saveChats()` spiegelt nichtleere Verläufe dorthin. Beim Start sowie nach `pageshow`/Rückkehr in den Vordergrund wird ein fehlender Local-Storage-Verlauf aus dem Spiegel wiederhergestellt. Ein leerer Zustand überschreibt den Spiegel nicht. Die automatische Erzeugung eines neuen Chats wartet beim Start auf diese Wiederherstellungsprüfung, damit ein leer geladener Zustand nicht vorzeitig den Rettungspfad überholt. Der Initialisierungs-Guard von `settings-store.js` wurde außerdem korrigiert.
 
 Wichtig: Diese Architektur kann bereits vor v1.4.13 verlorene Chats nicht rekonstruieren; dafür bleibt ein vorhandenes MusicChatLab-Backup die Wiederherstellungsquelle. Gerätespezifisches Freigabekriterium: vorhandenen Verlauf erzeugen/prüfen → Diagnose über Share-Dialog sichern → zur App zurückkehren → Verlauf und API-Key bleiben vorhanden.
+
+
+### v1.4.14 – Chatbezogener Kompositionsverlauf
+Die sechs MIDI-Speicher bleiben der aktuelle Arbeitstisch und werden nicht als Historie umgedeutet. Zusätzlich erhält jeder Chat einen eigenen, unveränderlichen Kompositionsverlauf. Jede von der KI tatsächlich erzeugte JSON-Partitur wird anhand der Assistant-Nachricht automatisch mit Titel, Zeitpunkt, Provider, Modell, zugehörigem Nutzerauftrag und vollständigem Score in der bestehenden State-Vault-IndexedDB abgelegt. Die Message-ID verhindert Doppelaufnahmen.
+
+Beim Öffnen des Verlaufs werden auch bereits im aktuellen Chat vorhandene Assistant-Nachrichten mit gültiger Partitur nachträglich erfasst. Dadurch beginnt der Verlauf nicht erst mit Installation dieses Builds, soweit die betreffenden Kompositionen noch im Chat gespeichert sind.
+
+„In Slot laden“ kopiert eine historische Fassung auf den Arbeitstisch, ohne den historischen Eintrag zu verändern. Zuerst wird ein freier der sechs Speicher verwendet. Sind alle belegt, muss ein aktiver Speicher markiert sein und dessen Ersetzung wird ausdrücklich bestätigt. Der Kompositionsverlauf ist damit Gedächtnis, die Slots bleiben Arbeitskopien.
+
+Die Backup-Verwaltung exportiert und importiert die chatbezogenen Kompositionsverläufe zusätzlich zum bisherigen Local-Storage- und MIDI-Arbeitstisch-Zustand. Große Scores werden weiterhin nicht in Local Storage gespeichert.
