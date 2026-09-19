@@ -349,7 +349,8 @@ window.fetch=async function(input,init={}){
     if(issues.length&&reason){score.sm=`${score.sm||''}${score.sm?' ':''}Bewusste Abweichung: ${reason}`.trim();issues=issues.filter(x=>x.includes('Leerstelle'));}
     if(score&&issues.length){
       const repairSystem=system+'\\n\\nTECHNISCHE KORREKTUR: Die eben erzeugte MIDI-Fassung wurde noch nicht übernommen. Korrigiere ausschließlich die folgenden technischen Inkonsistenzen, ohne die musikalische Idee unnötig zu verändern: '+issues.join('; ')+'. Gib die vollständige korrigierte Aktion erneut als genau einen <MCL_ACTION>-Block aus.';
-      const repair=await runProvider(input,init,provider,body,contextual,repairSystem);
+      const repairContext=contextual.concat([{role:'assistant',text:result.raw}]);
+      const repair=await runProvider(input,init,provider,body,repairContext,repairSystem);
       if(repair.d&&repair.r.ok&&repair.raw){
         const repairAction=parseAction(repair.raw),repairPrefix=visibleText(repair.raw),repaired=materializeAction(repairAction,sources,repairPrefix);
         const repairReason=deviationNote(repairAction,repaired);
