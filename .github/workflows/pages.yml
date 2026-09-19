@@ -1,5 +1,5 @@
 name: Deploy Music Chat Lab to GitHub Pages
-# deployment trigger: v1.4.15-provenance-fix
+# deployment trigger: v1.4.16-playwright-fix
 
 on:
   workflow_dispatch:
@@ -34,8 +34,10 @@ jobs:
         shell: bash
         run: |
           python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/mcl-http.log 2>&1 &
-          npx -y @playwright/test@1.55.0 install --with-deps chromium
-          npx -y @playwright/test@1.55.0 test .github/smoke.spec.js --reporter=line
+          npm init -y >/dev/null 2>&1
+          npm install --no-save @playwright/test@1.55.0
+          npx playwright install --with-deps chromium
+          npx playwright test .github/smoke.spec.js --reporter=line
 
       - name: Build Pages artifact
         shell: bash
