@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 test('core ui', async ({ page }) => {
   const errors=[]; page.on('pageerror',e=>errors.push(String(e)));
   await page.goto('http://127.0.0.1:4173/index.html');
-  await expect(page.locator('[data-app-version]')).toHaveText('v1.4.31');
+  await expect(page.locator('[data-app-version]')).toHaveText('v1.4.32');
   await page.locator('#topSettingsButton').click();
   await expect(page.locator('#settingsDialog')).toHaveJSProperty('open',true);
   await page.locator('#settingsDialog .dialog-close').click();
@@ -22,9 +22,9 @@ test('core ui', async ({ page }) => {
   await expect(page.locator('#compositionHistoryDialog')).toHaveJSProperty('open',true);
   await expect(page.locator('#compositionHistoryList')).toContainText('noch keine gespeicherte Kompositionsfassung');
   const promptArchitecture = await page.evaluate(() => {
-    const chat=window.MCLExplicitModeV137.directive('chat','')+'\n\n'+window.MCLSessionV140.systemPrompt('','','Keine MIDI-Fassung im Arbeitstisch.',null,[],'chat',false);
-    const composeNew=window.MCLSessionV140.systemPrompt('','','Keine MIDI-Fassung im Arbeitstisch.',null,[],'compose',false);
-    const composeExisting=window.MCLSessionV140.systemPrompt('','', 'Speicher 1: Quelle',1,[],'compose',true);
+    const chat=window.MCLExplicitModeV137.directive('chat','')+'\n\n'+window.MCLSessionV141.systemPrompt('','','Keine MIDI-Fassung im Arbeitstisch.',null,[],'chat',false);
+    const composeNew=window.MCLSessionV141.systemPrompt('','','Keine MIDI-Fassung im Arbeitstisch.',null,[],'compose',false);
+    const composeExisting=window.MCLSessionV141.systemPrompt('','', 'Speicher 1: Quelle',1,[],'compose',true);
     return {chat,composeNew,composeExisting};
   });
   expect(promptArchitecture.chat.length).toBeLessThan(1200);
@@ -38,11 +38,23 @@ test('core ui', async ({ page }) => {
   expect(promptArchitecture.composeExisting).toContain('PATCH');
   expect(promptArchitecture.composeExisting).toContain('MERGE');
   expect(promptArchitecture.composeExisting).toContain('NEW_SCORE');
+  const anthropicThinking = await page.evaluate(() => {
+    const base={model:'claude-sonnet-5',max_tokens:4096,messages:[]};
+    const chat=window.MCLSessionV141.buildProviderBody('anthropic',base,[{role:'user',text:'Komponiere ein Klavierstück.'}],'system','chat');
+    const compose=window.MCLSessionV141.buildProviderBody('anthropic',base,[{role:'user',text:'Komponiere ein Klavierstück.'}],'system','compose');
+    return {chat,compose};
+  });
+  expect(anthropicThinking.chat.thinking).toEqual({type:'adaptive'});
+  expect(anthropicThinking.chat.output_config?.effort).toBe('high');
+  expect(anthropicThinking.chat.max_tokens).toBeGreaterThanOrEqual(12000);
+  expect(anthropicThinking.compose.thinking).toEqual({type:'adaptive'});
+  expect(anthropicThinking.compose.output_config?.effort).toBe('high');
+  expect(anthropicThinking.compose.max_tokens).toBeGreaterThanOrEqual(32768);
   const provenance = await page.evaluate(() => {
     const source={slot:1,name:'Quelle',score:{ti:'Quelle',bpm:90,ts:{n:4,d:4},k:'Am',sm:'ALTE SYNTHESEBEHAUPTUNG',tr:[{nm:'Piano',ch:0,pg:0,nt:[[0,1,60,80,0,1]],ct:[]}]}};
     const fresh={ti:'Neu',bpm:90,ts:{n:4,d:4},k:'Am',sm:'ALTE SYNTHESEBEHAUPTUNG',tr:[{nm:'Piano',ch:0,pg:0,nt:[[0,1,64,80,0,1]],ct:[]}]};
-    const withSummary=window.MCLSessionV140.materializeAction({type:'new_score',summary:'Aktuelle Fassung',score:fresh},[source],'');
-    const withoutSummary=window.MCLSessionV140.materializeAction({type:'new_score',score:fresh},[source],'');
+    const withSummary=window.MCLSessionV141.materializeAction({type:'new_score',summary:'Aktuelle Fassung',score:fresh},[source],'');
+    const withoutSummary=window.MCLSessionV141.materializeAction({type:'new_score',score:fresh},[source],'');
     return {a:withSummary.sm,b:withoutSummary.sm};
   });
   expect(provenance).toEqual({a:'Aktuelle Fassung',b:'Neu komponierte MIDI-Fassung.'});
@@ -51,7 +63,7 @@ test('core ui', async ({ page }) => {
     const different={ti:'Frei',bpm:120,ts:{n:3,d:4},k:'Des-Dur',tr:[{nm:'Piano',nt:[[0,1,61,80,0,1],[1,2,68,90,0,1]]}]};
     const badPitch={ti:'Defekt',bpm:66,ts:{n:4,d:4},tr:[{nm:'Piano',nt:[[0,1,200,80,0,1]]}]};
     const badDuration={ti:'Defekt',bpm:66,ts:{n:4,d:4},tr:[{nm:'Piano',nt:[[0,0,60,80,0,1]]}]};
-    return {good:window.MCLSessionV140.scoreIssues(good),different:window.MCLSessionV140.scoreIssues(different),badPitch:window.MCLSessionV140.scoreIssues(badPitch),badDuration:window.MCLSessionV140.scoreIssues(badDuration)};
+    return {good:window.MCLSessionV141.scoreIssues(good),different:window.MCLSessionV141.scoreIssues(different),badPitch:window.MCLSessionV141.scoreIssues(badPitch),badDuration:window.MCLSessionV141.scoreIssues(badDuration)};
   });
   expect(validation.good).toEqual([]);
   expect(validation.different).toEqual([]);
