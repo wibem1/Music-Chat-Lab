@@ -76,9 +76,9 @@ test('core ui', async ({ page }) => {
   expect(anthropicThinking.chat.thinking).toEqual({type:'adaptive'});
   expect(anthropicThinking.chat.output_config?.effort).toBe('high');
   expect(anthropicThinking.chat.max_tokens).toBeGreaterThanOrEqual(12000);
-  expect(anthropicThinking.compose.thinking).toEqual({type:'disabled'});
-  expect(anthropicThinking.compose.output_config).toBeUndefined();
-  expect(anthropicThinking.compose.max_tokens).toBe(12000);
+  expect(anthropicThinking.compose.thinking).toEqual({type:'adaptive'});
+  expect(anthropicThinking.compose.output_config?.effort).toBe('medium');
+  expect(anthropicThinking.compose.max_tokens).toBeGreaterThanOrEqual(20000);
   const provenance = await page.evaluate(() => {
     const source={slot:1,name:'Quelle',score:{ti:'Quelle',bpm:90,ts:{n:4,d:4},k:'Am',sm:'ALTE SYNTHESEBEHAUPTUNG',tr:[{nm:'Piano',ch:0,pg:0,nt:[[0,1,60,80,0,1]],ct:[]}]}};
     const fresh={ti:'Neu',bpm:90,ts:{n:4,d:4},k:'Am',sm:'ALTE SYNTHESEBEHAUPTUNG',tr:[{nm:'Piano',ch:0,pg:0,nt:[[0,1,64,80,0,1]],ct:[]}]};
