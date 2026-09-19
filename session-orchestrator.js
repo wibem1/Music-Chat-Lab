@@ -294,11 +294,8 @@ function materializeAction(action,sources,prefix){
 
 async function runProvider(input,init,provider,body,msgs,system,stage='orchestrator'){
   const requestBody=buildProviderBody(provider,body,msgs,system);
-  const url=typeof input==='string'?input:input?.url||'';
-  const traceId=window.MCLAiTrace?.request?.(stage,url,init,requestBody);
-  const r=await innerFetch(input,{...init,body:JSON.stringify(requestBody)});
+  const r=await innerFetch(input,{...init,__mclTraceStage:stage,body:JSON.stringify(requestBody)});
   const rawTransport=await r.clone().text().catch(()=>'');
-  window.MCLAiTrace?.response?.(traceId,r,rawTransport);
   let d=null;try{d=rawTransport?JSON.parse(rawTransport):null}catch{}
   return{r,d,raw:d&&r.ok?responseText(provider,d):''};
 }
