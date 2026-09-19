@@ -1,5 +1,5 @@
 name: Deploy Music Chat Lab to GitHub Pages
-# deployment trigger: v1.4.23-authoritative-idea
+# deployment trigger: v1.4.24-constraint-regex-fix
 
 on:
   workflow_dispatch:
