@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 test('core ui', async ({ page }) => {
   const errors=[]; page.on('pageerror',e=>errors.push(String(e)));
   await page.goto('http://127.0.0.1:4173/index.html');
-  await expect(page.locator('[data-app-version]')).toHaveText('v1.4.36');
+  await expect(page.locator('[data-app-version]')).toHaveText('v1.4.37');
   await page.locator('#topSettingsButton').click();
   await expect(page.locator('#settingsDialog')).toHaveJSProperty('open',true);
   await page.locator('#settingsDialog .dialog-close').click();
@@ -14,6 +14,11 @@ test('core ui', async ({ page }) => {
   await expect(page.locator('#modelSelect option')).not.toHaveCount(0);
   await expect(page.locator('#modelSelect')).toHaveValue(/.+/);
   await expect(page.locator('#adoptIdeaButton')).toBeDisabled();
+  const assignmentBox=page.locator('#compositionIdeaInput');
+  expect(await assignmentBox.evaluate(e=>e.getBoundingClientRect().height)).toBeGreaterThanOrEqual(100);
+  await expect(page.locator('#clabSaveBtn')).toBeVisible();
+  await expect(page.locator('#clabOpenBtn')).toHaveCount(0);
+  await expect(page.locator('#midiSlotFileInput')).toHaveAttribute('accept',/\.clab/);
   await page.locator('#composeButton').click();
   await expect(page.locator('#composerNote')).toHaveText('Bitte Kompositionsauftrag eintragen.');
   await expect(page.locator('#messageInput')).toHaveValue('');
@@ -71,9 +76,9 @@ test('core ui', async ({ page }) => {
   expect(anthropicThinking.chat.thinking).toEqual({type:'adaptive'});
   expect(anthropicThinking.chat.output_config?.effort).toBe('high');
   expect(anthropicThinking.chat.max_tokens).toBeGreaterThanOrEqual(12000);
-  expect(anthropicThinking.compose.thinking).toEqual({type:'adaptive'});
-  expect(anthropicThinking.compose.output_config?.effort).toBe('high');
-  expect(anthropicThinking.compose.max_tokens).toBeGreaterThanOrEqual(32768);
+  expect(anthropicThinking.compose.thinking).toEqual({type:'disabled'});
+  expect(anthropicThinking.compose.output_config).toBeUndefined();
+  expect(anthropicThinking.compose.max_tokens).toBe(12000);
   const provenance = await page.evaluate(() => {
     const source={slot:1,name:'Quelle',score:{ti:'Quelle',bpm:90,ts:{n:4,d:4},k:'Am',sm:'ALTE SYNTHESEBEHAUPTUNG',tr:[{nm:'Piano',ch:0,pg:0,nt:[[0,1,60,80,0,1]],ct:[]}]}};
     const fresh={ti:'Neu',bpm:90,ts:{n:4,d:4},k:'Am',sm:'ALTE SYNTHESEBEHAUPTUNG',tr:[{nm:'Piano',ch:0,pg:0,nt:[[0,1,64,80,0,1]],ct:[]}]};
@@ -109,5 +114,8 @@ test('core ui', async ({ page }) => {
     return {current,all:all.length,currentOnly:window.MCLAiTrace.snapshotCurrentChat().every(x=>x.chatId===current)};
   });
   expect(traceIsolation.currentOnly).toBeTruthy();
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth)).toBeTruthy();
+  expect(await assignmentBox.evaluate(e=>e.getBoundingClientRect().height)).toBeGreaterThanOrEqual(100);
   expect(errors).toEqual([]);
 });
