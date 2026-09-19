@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-if(window.__mclSessionOrchestratorV137)return;
-window.__mclSessionOrchestratorV137=true;
+if(window.__mclSessionOrchestratorV138)return;
+window.__mclSessionOrchestratorV138=true;
 
-const VERSION='1.3.7';
+const VERSION='1.3.8';
 const MEMORY_KEY='music-chat-lab.session-memory.v3';
 const ACTIVE_CHAT_KEY='music-chat-lab.active-chat.v1';
 const RECENT_MESSAGES=8;
@@ -294,10 +294,14 @@ function materializeAction(action,sources,prefix){
   return score;
 }
 
-async function runProvider(input,init,provider,body,msgs,system){
+async function runProvider(input,init,provider,body,msgs,system,stage='orchestrator'){
   const requestBody=buildProviderBody(provider,body,msgs,system);
+  const url=typeof input==='string'?input:input?.url||'';
+  const traceId=window.MCLAiTrace?.request?.(stage,url,init,requestBody);
   const r=await innerFetch(input,{...init,body:JSON.stringify(requestBody)});
-  const d=await r.clone().json().catch(()=>null);
+  const rawTransport=await r.clone().text().catch(()=>'');
+  window.MCLAiTrace?.response?.(traceId,r,rawTransport);
+  let d=null;try{d=rawTransport?JSON.parse(rawTransport):null}catch{}
   return{r,d,raw:d&&r.ok?responseText(provider,d):''};
 }
 
@@ -311,7 +315,7 @@ window.fetch=async function(input,init={}){
   let provided=[];
   let contextual=withScores(recent,user,provided);
   let system=systemPrompt(memory,legacy,catalogue(sources,active),active,provided);
-  let first=await runProvider(input,init,provider,body,contextual,system);
+  let first=await runProvider(input,init,provider,body,contextual,system,'orchestrator_initial');
   if(!first.d||!first.r.ok)return first.r;
   if(!first.raw)return first.r;
 
@@ -328,7 +332,7 @@ window.fetch=async function(input,init={}){
     }
     contextual=withScores(recent,user,provided);
     system=systemPrompt(memory,legacy,catalogue(sources,active),active,provided);
-    result=await runProvider(input,init,provider,body,contextual,system);
+    result=await runProvider(input,init,provider,body,contextual,system,'orchestrator_with_scores');
     if(!result.d||!result.r.ok)return result.r;
     if(!result.raw)return result.r;
     const secondIncomplete=incompleteInternal(result.raw);
@@ -350,7 +354,7 @@ window.fetch=async function(input,init={}){
     if(score&&issues.length){
       const repairSystem=system+'\\n\\nTECHNISCHE KORREKTUR: Die eben erzeugte MIDI-Fassung wurde noch nicht übernommen. Korrigiere ausschließlich die folgenden technischen Inkonsistenzen, ohne die musikalische Idee unnötig zu verändern: '+issues.join('; ')+'. Gib die vollständige korrigierte Aktion erneut als genau einen <MCL_ACTION>-Block aus.';
       const repairContext=contextual.concat([{role:'assistant',text:result.raw}]);
-      const repair=await runProvider(input,init,provider,body,repairContext,repairSystem);
+      const repair=await runProvider(input,init,provider,body,repairContext,repairSystem,'orchestrator_repair');
       if(repair.d&&repair.r.ok&&repair.raw){
         const repairAction=parseAction(repair.raw),repairPrefix=visibleText(repair.raw),repaired=materializeAction(repairAction,sources,repairPrefix);
         const repairReason=deviationNote(repairAction,repaired);
@@ -369,5 +373,5 @@ window.fetch=async function(input,init={}){
   return jsonResponse(replaceResponseText(provider,result.d,prefix||result.raw),result.r.status,result.r.headers);
 };
 
-window.MCLSessionV137={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,explicitConstraints,explicitConstraintsFromText,deviationNote};
+window.MCLSessionV138={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,explicitConstraints,explicitConstraintsFromText,deviationNote};
 })();
