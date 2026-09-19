@@ -240,3 +240,7 @@ v1.4.24 korrigiert die RegExp-Literale im zuständigen Orchestrator. Der Test f�
 - Diagnoseformat 5 trennt den aktuellen Snapshot von älteren Routing-Diagnosedaten, damit historische Fehler nicht mehr wie aktuelle Zustände erscheinen.
 - Regressionstest ergänzt: F major und F-Dur dürfen keinen falschen Tonartfehler erzeugen; die alte pauschale Leerstellentestannahme wurde entfernt.
 - PWA-, Manifest-, Script- und sichtbare Versionsreferenzen auf v1.4.25 synchronisiert.
+
+
+### v1.4.26 – PWA-Referenzen nach v1.4.25 vollständig synchronisiert
+Die zusätzliche Freigabeprüfung von v1.4.25 fand trotz grünem Workflow noch veraltete Query-Versionen für Manifest und Service-Worker-Registrierung in index.html. Nach der verbindlichen Buildregel wird der geänderte Stand nicht unter derselben Nummer weitergeführt. v1.4.26 synchronisiert sichtbare Version, Manifest-URL, Icons, Service-Worker-Registrierung, Service-Worker-Cache, Manifest-Icons und Smoke-Test. An der musikalischen Reparatur von v1.4.25 wird dabei nichts weiter verändert.
