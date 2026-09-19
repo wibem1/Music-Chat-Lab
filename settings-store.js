@@ -1,7 +1,7 @@
 (()=>{
 'use strict';
-if(window.__mclSettingsStoreV102)return;
-window.__mclSettingsStoreV102=true;
+if(window.__mclSettingsStoreV103)return;
+window.__mclSettingsStoreV103=true;
 const KEY='music-chat-lab.api-settings.v1',DB='music-chat-lab.settings.v1',STORE='settings',ID='api';
 let dbPromise=null;
 function openDB(){
@@ -33,11 +33,18 @@ async function restore(){
   return local||{};
 }
 window.MCLSettingsStore={
-  version:'1.0.2',
+  version:'1.0.3',
   save:async value=>{try{localStorage.setItem(KEY,JSON.stringify(value||{}))}catch{};return writeVault(value||{})},
   clear:async()=>deleteVault(),
   persistCurrent:async()=>{const local=parseLocal();return hasKey(local)?writeVault(local):false},
-  restore
+  restore,
+  diagnostic:async()=>{
+    const local=parseLocal(),vault=await readVault();
+    const fp=async value=>{const s=String(value||'');if(!s)return {present:false,length:0,fingerprint:null};const bytes=new TextEncoder().encode(s),hash=await crypto.subtle.digest('SHA-256',bytes),hex=Array.from(new Uint8Array(hash)).slice(0,6).map(b=>b.toString(16).padStart(2,'0')).join('');return {present:true,length:s.length,fingerprint:hex}};
+    const providers=['anthropicKey','openaiKey','googleKey'],out={};
+    for(const key of providers)out[key]={local:await fp(local?.[key]),vault:await fp(vault?.[key]),same:String(local?.[key]||'')===String(vault?.[key]||''),runtimeSource:'localStorage'};
+    return out;
+  }
 };
 restore();
 window.addEventListener('pageshow',()=>restore());
