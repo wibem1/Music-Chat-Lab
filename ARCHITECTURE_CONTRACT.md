@@ -17,18 +17,18 @@ In der musikalischen Kompositionsstufe erhält das gewählte Modell seine volle 
 
 Das gilt insbesondere für Claude: Claude wird **beim Komponieren nicht gedrosselt**.
 
-### A3. Keine technische Schemafessel in der kreativen Stufe
-Die kreative Stufe soll musikalische Entscheidungen treffen: Form, Melodik, Rhythmik, Harmonik, Stimmenführung, Instrumentation, Dynamik und konkrete musikalische Ereignisse. Sie darf nicht zu einer bloßen Beschreibung eines später erst zu komponierenden Stücks werden.
+### A3. Referenz-Engine: Minimal Composer
+Die Kompositionsengine von `wibem1/Minimal-Composer` ist der verbindliche Referenzstand für Music Chat Lab. Sie wird ohne kompositorische oder promptseitige Änderungen übernommen; zulässig sind ausschließlich notwendige Anpassungen an die Music-Chat-Umgebung, insbesondere Übergabe des aktuellen Kompositionsauftrags bzw. ausdrücklich referenzierten Ausgangsmaterials und die lokale Konvertierung des unveränderten technischen Partiturformats in das interne Music-Chat-Scoreformat.
 
-Technische MCL-/MIDI-/JSON-Protokolle und deren Validierungsanforderungen gehören nicht in diese kreative Aufgabe, soweit sie die musikalische Erfindung beeinflussen können.
+Die musikalische erste Stufe bleibt frei von MIDI-, JSON-, ABC- oder MCL-Ausgabeformaten und verwendet den Prompt der Referenz-Engine unverändert.
 
 ### A4. Technische Materialisierung danach
 Erst nach der musikalischen Komposition wird das bereits musikalisch bestimmte Ergebnis in das interne Score-/MCL_ACTION-/MIDI-Format übertragen.
 
 In dieser **technischen** Stufe darf die Denk-/Reasoning-Leistung reduziert oder deaktiviert werden, wenn dies für eine vollständige und zuverlässige strukturierte Ausgabe erforderlich ist. Diese Stufe darf keine neue musikalische Komposition erfinden und musikalische Entscheidungen nicht eigenmächtig „verbessern“ oder regularisieren.
 
-### A5. Kein Prosabauplan als Ersatz für Komposition
-Die Trennung darf nicht den Fehler des früheren v1.4.28-Ansatzes wiederholen: Stufe 1 darf nicht lediglich einen Prosabauplan erzeugen, den Stufe 2 erst musikalisch konkretisieren müsste. Vor der technischen Materialisierung müssen die für das Stück maßgeblichen musikalischen Entscheidungen bereits vorliegen.
+### A5. Keine eigenmächtige Optimierung der Referenz-Engine
+Minimal Composer gilt nicht als ideal oder fehlerfrei. Verbesserungen bleiben ausdrücklich möglich, sind aber ein eigener späterer Entwicklungsschritt. Beim jetzigen Transfer nach Music Chat Lab darf die Engine nicht aufgrund theoretischer Architekturüberlegungen umgebaut, ergänzt oder „verbessert“ werden.
 
 ## B. Providerneutralität
 Sol, Claude und Gemini erhalten musikalisch denselben Auftrag und dieselbe Freiheit. Provider-spezifische Unterschiede sind nur dort zulässig, wo die jeweilige API technisch unterschiedliche Mechanismen verlangt.
@@ -67,10 +67,8 @@ CI/Smoke-Tests prüfen kodierte technische Erwartungen. Ein grüner Test beweist
 ### D5. Keine Freigabe ohne Nachweis
 Ein Stand darf erst als Testbuild weitergegeben werden, wenn die automatisierbaren Prüfungen bestanden sind. Nicht automatisierbare Provider-, Musikqualitäts- oder Geräteeigenschaften werden ausdrücklich als noch ungeprüft bezeichnet.
 
-## E. Aktueller Konflikt im Code
-Der stabile Stand v1.4.41 enthält derzeit einen kombinierten direkten Kompositions-/MCL_ACTION-Aufruf. Bei Claude wird in diesem kombinierten Aufruf Thinking deaktiviert. Das widerspricht A1–A4 und ist deshalb als zu korrigierende Architekturabweichung zu behandeln, nicht als neuer Grundsatz.
-
-Der verworfene v1.4.42-Versuch mit `adaptive/medium` und 20.000 Tokens löst diesen Widerspruch nicht, weil Komposition und technische Materialisierung weiterhin im selben Aufruf gekoppelt bleiben. Dieser Ansatz darf nicht als Ausgangspunkt der Korrektur verwendet werden.
+## E. Aktueller Referenzstand
+Der direkte A/B-Test vom 19.09.2026 mit Claude Sonnet 5 und demselben offenen Klavierauftrag zeigte die derzeit deutlich höhere kompositorische Qualität von Minimal Composer gegenüber Music Chat Lab v1.4.43. Deshalb ist die aktuelle Aufgabe ausdrücklich der getreue Transfer der Minimal-Composer-Engine nach Music Chat Lab, nicht die Entwicklung einer neuen Kompositionsarchitektur.
 
 ## F. Änderung dieses Vertrags
 Änderungen an den Abschnitten A–C bedürfen einer ausdrücklichen Architekturentscheidung. Sie dürfen nicht allein aufgrund eines fehlgeschlagenen Builds, einer Diagnose oder einer vermeintlich einfacheren Implementierung vorgenommen werden.

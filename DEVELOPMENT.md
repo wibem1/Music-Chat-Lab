@@ -379,3 +379,9 @@ Der Komponiermodus besteht nun aus zwei klar getrennten Provider-Aufrufen. `musi
 Der frühere v1.4.28-Fehler wird ausdrücklich nicht wiederholt: Damals erzeugte die erste Stufe einen Prosabauplan, aus dem die zweite Instanz konkrete Noten erst ableiten musste. v1.4.43 verlangt dagegen bereits in der musikalischen Stufe konkrete, vollständig notierte Tonhöhen, Rhythmen, Pausen und Stimmen. Die zweite Stufe ist nur Übersetzung.
 
 Zusätzlich wurde die Prompt-Verantwortung konsolidiert: `session-orchestrator.js` ist für Chat-, Kompositions- und Materialisierungsprompts maßgeblich. `execution-mode.js` verändert Provider-Prompts nicht mehr nachträglich; es verwaltet Modus/UI und die Chat-Konzeptmarker-Auswertung.
+
+
+### v1.4.44 – Minimal-Composer-Engine unverändert nach Music Chat übertragen
+Nach dem direkten A/B-Test mit Claude Sonnet 5 wurde Minimal Composer als derzeitige kompositorische Referenz festgelegt. Music Chat übernimmt deshalb die aktive Kompositionspipeline aus `wibem1/Minimal-Composer` v0.4.24 ohne kompositorische Promptänderungen: (1) freier musikalischer Entwurf mit dem identischen `musical_draft`-Prompt, (2) werkgetreue `midi_translation` mit dem identischen technischen Partiturvertrag; bei Claude Sonnet/Opus 5 wird Thinking ausschließlich in der Übersetzungsstufe deaktiviert. Die bisherige ABC-Zwischenstufe aus v1.4.43 ist nicht mehr aktiv.
+
+Notwendige Umgebungsanpassungen sind bewusst auf die Integration begrenzt: Der sichtbare Music-Chat-Kompositionsauftrag wird als Minimal-Composer-Auftrag übergeben; ausdrücklich referenziertes Material aus dem Arbeitstisch wird dem Auftrag beigefügt; das von der unveränderten Minimal-Composer-Übersetzung erzeugte Partitur-JSON wird anschließend lokal und deterministisch in das interne Music-Chat-Scoreformat umbenannt/konvertiert. Diese lokale Konvertierung trifft keine musikalischen Entscheidungen. Minimal Composer selbst bleibt unverändert.
