@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 test('core ui', async ({ page }) => {
   const errors=[]; page.on('pageerror',e=>errors.push(String(e)));
   await page.goto('http://127.0.0.1:4173/index.html');
-  await expect(page.locator('[data-app-version]')).toHaveText('v1.4.33');
+  await expect(page.locator('[data-app-version]')).toHaveText('v1.4.34');
   await page.locator('#topSettingsButton').click();
   await expect(page.locator('#settingsDialog')).toHaveJSProperty('open',true);
   await page.locator('#settingsDialog .dialog-close').click();
@@ -17,6 +17,11 @@ test('core ui', async ({ page }) => {
   await page.locator('#composeButton').click();
   await expect(page.locator('#composerNote')).toHaveText('Bitte Kompositionsidee eintragen.');
   await expect(page.locator('#messageInput')).toHaveValue('');
+  const loadedAssignment=await page.evaluate(()=>{const doc={format:'composition-lab-document',version:1,title:'Geladenes Stück',assignment:'Variiere das Thema frei für Klavier.',concept:'Beschreibung des Ergebnisses',score:{ti:'Geladenes Stück',bpm:80,ts:{n:4,d:4},k:'C major',sm:'Beschreibung des Ergebnisses',tr:[{nm:'Piano',ch:0,pg:0,nt:[[0,1,60,80,0,1]],ct:[]}]}};window.MCLCLAB.applyDocument(doc,'test.clab');return document.getElementById('compositionIdeaInput').value});
+  expect(loadedAssignment).toBe('Variiere das Thema frei für Klavier.');
+  await page.evaluate(()=>window.MCLCompositionIdea.set('Eigener Auftrag',{generated:false,source:'test'}));
+  await page.locator('.mcl-midi-slot').first().click();
+  await expect(page.locator('#compositionIdeaInput')).toHaveValue('Eigener Auftrag');
   await page.evaluate(()=>window.MCLExplicitModeV138.storeProposal('Neue Idee: bewegter Mittelteil, kontrastierende Begleitung.'));
   await expect(page.locator('#adoptIdeaButton')).toBeEnabled();
   await page.locator('#adoptIdeaButton').click();
