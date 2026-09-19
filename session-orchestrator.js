@@ -187,14 +187,14 @@ function safeIncompleteText(raw,kind){
 function ideaText(){return String(window.MCLCompositionIdea?.get?.()||document.getElementById('compositionIdeaInput')?.value||'').trim()}
 function explicitConstraintsFromText(text){
   const src=String(text||'');
-  const bpm=[...src.matchAll(/(?:^|[^0-9])(\\d{2,3})\\s*BPM\\b/gi)].pop();
-  const bars=[...src.matchAll(/(?:^|[^0-9])(\\d{1,3})\\s*Takt(?:e|en)?\\b/gi)].pop();
-  const key=[...src.matchAll(/\\b([A-Ha-h](?:is|es|#|b)?)[- ]?(Dur|Moll)\\b/gi)].pop();
+  const bpm=[...src.matchAll(/(?:^|[^0-9])(\d{2,3})\s*BPM\b/gi)].pop();
+  const bars=[...src.matchAll(/(?:^|[^0-9])(\d{1,3})\s*Takt(?:e|en)?\b/gi)].pop();
+  const key=[...src.matchAll(/\b([A-Ha-h](?:is|es|#|b)?)[- ]?(Dur|Moll)\b/gi)].pop();
   return{bpm:bpm?Number(bpm[1]):null,bars:bars?Number(bars[1]):null,key:key?key[0].trim():null,source:src};
 }
 function explicitConstraints(){return explicitConstraintsFromText(ideaText())}
 function deviationNote(action,score){
-  return String(action?.deviationReason||score?.deviationReason||'').replace(/\\s+/g,' ').trim();
+  return String(action?.deviationReason||score?.deviationReason||'').replace(/\s+/g,' ').trim();
 }
 function scoreTimeline(score){
   const ts=score?.ts||{},n=Number(ts.n)||4,d=Number(ts.d)||4,bar=Math.max(.25,n*(4/d)),intervals=[];
@@ -209,7 +209,7 @@ function scoreIssues(score,constraints={}){
   for(let i=1;i<tl.merged.length;i++){const gap=tl.merged[i][0]-tl.merged[i-1][1];if(gap>=tl.bar*4)issues.push(`unbegründete globale Leerstelle von ${Number(gap.toFixed(2))} Beats ab Beat ${Number(tl.merged[i-1][1].toFixed(2))}`)}
   if(constraints.bpm&&Number(score.bpm)!==constraints.bpm)issues.push(`Tempo ${score.bpm??'?'} BPM statt ausdrücklich ${constraints.bpm} BPM`);
   if(constraints.bars){const actual=Math.ceil(tl.end/tl.bar);if(Math.abs(actual-constraints.bars)>1)issues.push(`Umfang ca. ${actual} Takte statt ausdrücklich ${constraints.bars} Takte`)}
-  if(constraints.key&&String(score.k||'').trim()){const norm=x=>String(x||'').toLowerCase().replace(/\\s+/g,'').replace(/-/g,'');if(norm(score.k)!==norm(constraints.key))issues.push(`Tonart ${score.k} statt ausdrücklich ${constraints.key}`)}
+  if(constraints.key&&String(score.k||'').trim()){const norm=x=>String(x||'').toLowerCase().replace(/\s+/g,'').replace(/-/g,'');if(norm(score.k)!==norm(constraints.key))issues.push(`Tonart ${score.k} statt ausdrücklich ${constraints.key}`)}
   return issues;
 }
 function isScore(x){return !!x&&Array.isArray(x.tr)&&x.tr.some(t=>Array.isArray(t?.nt))}
