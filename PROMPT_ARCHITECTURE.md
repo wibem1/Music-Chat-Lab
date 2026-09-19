@@ -1,6 +1,6 @@
 # MusicChatLab – Prompt-Architektur
 
-Stand: v1.4.31
+Stand: v1.4.35
 
 ## Grundsatz
 Die App organisiert; die KI musiziert. Kontext wird nur dann an ein Modell gesendet, wenn er für den aktuellen Zug tatsächlich gebraucht wird. Technische MIDI-Protokolle dürfen den normalen musikalischen Dialog nicht belasten.
@@ -28,16 +28,18 @@ Nicht enthalten:
 - MIDI-Notenformat,
 - vollständiges MIDI-Aktionsprotokoll.
 
-Wenn ein Arbeitstisch vorhanden ist, wird nur sein knapper Katalog ergänzt. Für eine Analyse, die exakte Noten benötigt, darf die KI mit einem kleinen MCL_NEED-Block gezielt Notendaten anfordern. Erst der Folgeaufruf erhält diese Notendaten.
+Ein vorhandener Arbeitstisch wird nicht automatisch in den Chat eingebracht. Erst wenn der aktuelle Auftrag ausdrücklich den Arbeitstisch, einen Speicher/Slot/Stück-Index oder den Namen eines vorhandenen Stücks referenziert, wird der knappe Katalog ergänzt. Für eine Analyse, die exakte Noten benötigt, darf die KI dann mit einem kleinen MCL_NEED-Block gezielt Notendaten anfordern. Erst der Folgeaufruf erhält diese Notendaten.
 
-Eine konkrete im Chat formulierte Kompositionsidee kann weiterhin als MCL_CONCEPT zur manuellen Übernahme angeboten werden. Der Chat-Prompt schreibt weder Stil, Tonart, Form, Tempo noch eine stereotype Ideenstruktur vor.
+Eine konkrete im Chat formulierte Kompositionsidee wird als MCL_CONCEPT zur Übernahme angeboten. Die KI fragt sichtbar, ob sie übernommen werden soll. Bestätigt der Nutzer den unmittelbar vorherigen Vorschlag, signalisiert MCL_ADOPT_CONCEPT die Übernahme ins Ideenfeld; komponiert wird dadurch noch nicht. Der Chat-Prompt schreibt weder Stil, Tonart, Form, Tempo noch eine stereotype Ideenstruktur vor.
 
 ## KOMPONIERE – neues Stück ohne Quellen
 Zweck: direkte musikalische Erfindung und unmittelbare Ausgabe als MIDI-Partitur.
 
+Voraussetzung: Das Feld „Kompositionsidee“ ist nicht leer. Ein leerer Wert blockiert den Komponiermodus lokal ohne Provider-Aufruf. Eine minimale Idee wie „ein Klavierstück“ ist vollständig zulässig und überlässt alle weiteren Entscheidungen der KI.
+
 Kontext:
-- aktueller Auftrag und relevanter Dialog,
-- bewusst übernommene Kompositionsidee, falls vorhanden,
+- die bewusst eingetragene Kompositionsidee als verbindlicher aktueller Kompositionsauftrag,
+- relevanter Dialog,
 - nur das NEW_SCORE-Übertragungsformat,
 - kompaktes Notenformat.
 

@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-if(window.__mclSessionOrchestratorV141)return;
-window.__mclSessionOrchestratorV141=true;
+if(window.__mclSessionOrchestratorV142)return;
+window.__mclSessionOrchestratorV142=true;
 
-const VERSION='1.4.1';
+const VERSION='1.4.2';
 const MEMORY_KEY='music-chat-lab.session-memory.v3';
 const ACTIVE_CHAT_KEY='music-chat-lab.active-chat.v1';
 const RECENT_MESSAGES=8;
@@ -97,6 +97,12 @@ function catalogue(sources,active){
 }
 function scoreBlocks(selected){
   return selected.map(x=>`<MCL_SCORE slot="${x.slot}" name=${JSON.stringify(x.name)}>\n${JSON.stringify(x.score)}\n</MCL_SCORE>`).join('\n\n');
+}
+function referencesWorkbench(text,sources){
+  const raw=String(text||'').trim();if(!raw||!sources.length)return false;
+  const low=raw.toLocaleLowerCase('de-DE');
+  if(/\b(?:speicher|slot|st[üu]ck|stueck)\s*[1-6]\b/i.test(raw)||/\barbeitstisch\b/i.test(raw))return true;
+  return sources.some(x=>{const name=String(x?.name||x?.score?.ti||'').trim().toLocaleLowerCase('de-DE');return name.length>=4&&low.includes(name)});
 }
 function sourcesForSlots(slots,sources){
   const out=[];
@@ -342,9 +348,12 @@ window.fetch=async function(input,init={}){
   const all=messages(provider,body),user=currentUserText(all);if(!user)return innerFetch(input,init);
 
   const sources=workspaceSources(),active=activeSlot(),memory=getMemory(),legacy=memory?'':compactOld(all),recent=compressMessages(all,memory);
+  const mode=window.MCLRequestMode==='compose'?'compose':'chat';
+  const sourceIntent=referencesWorkbench(`${user}\n${mode==='compose'?ideaText():''}`,sources);
+  const availableSources=sourceIntent?sources:[];
   let provided=[];
   let contextual=withScores(recent,user,provided);
-  let system=systemPrompt(memory,legacy,catalogue(sources,active),active,provided,window.MCLRequestMode==='compose'?'compose':'chat',sources.length>0);
+  let system=systemPrompt(memory,legacy,catalogue(availableSources,active),active,provided,mode,availableSources.length>0);
   let first=await runProvider(input,init,provider,body,contextual,system,'orchestrator_initial');
   if(!first.d||!first.r.ok)return first.r;
   if(!first.raw)return first.r;
@@ -355,13 +364,13 @@ window.fetch=async function(input,init={}){
   const need=parseNeed(first.raw);
   let result=first;
   if(need?.length){
-    provided=sourcesForSlots(need,sources);
+    provided=sourcesForSlots(need,availableSources);
     if(provided.length!==need.length){
       const text='Die angeforderten Notendaten sind im musikalischen Arbeitstisch nicht vollständig verfügbar.';
       return jsonResponse(replaceResponseText(provider,first.d,text),first.r.status,first.r.headers);
     }
     contextual=withScores(recent,user,provided);
-    system=systemPrompt(memory,legacy,catalogue(sources,active),active,provided,window.MCLRequestMode==='compose'?'compose':'chat',sources.length>0);
+    system=systemPrompt(memory,legacy,catalogue(availableSources,active),active,provided,mode,availableSources.length>0);
     result=await runProvider(input,init,provider,body,contextual,system,'orchestrator_with_scores');
     if(!result.d||!result.r.ok)return result.r;
     if(!result.raw)return result.r;
@@ -376,14 +385,14 @@ window.fetch=async function(input,init={}){
   const mem=extractMemory(result.raw);if(mem)saveMemory(mem);
   let action=parseAction(result.raw),prefix=visibleText(result.raw);
   if(action){
-    let score=materializeAction(action,sources,prefix);
+    let score=materializeAction(action,availableSources,prefix);
     let issues=score?scoreIssues(score):[];
     if(score&&issues.length){
       const repairSystem=system+'\\n\\nTECHNISCHE KORREKTUR: Die eben erzeugte MIDI-Fassung wurde noch nicht übernommen. Korrigiere ausschließlich die folgenden technischen Inkonsistenzen, ohne die musikalische Idee unnötig zu verändern: '+issues.join('; ')+'. Gib die vollständige korrigierte Aktion erneut als genau einen <MCL_ACTION>-Block aus.';
       const repairContext=contextual.concat([{role:'assistant',text:result.raw}]);
       const repair=await runProvider(input,init,provider,body,repairContext,repairSystem,'orchestrator_repair');
       if(repair.d&&repair.r.ok&&repair.raw){
-        const repairAction=parseAction(repair.raw),repairPrefix=visibleText(repair.raw),repaired=materializeAction(repairAction,sources,repairPrefix);
+        const repairAction=parseAction(repair.raw),repairPrefix=visibleText(repair.raw),repaired=materializeAction(repairAction,availableSources,repairPrefix);
         let repairIssues=repaired?scoreIssues(repaired):['keine gültige korrigierte MIDI-Aktion'];
         if(repaired&&!repairIssues.length)return jsonResponse(replaceResponseText(provider,repair.d,JSON.stringify(repaired)),repair.r.status,repair.r.headers);
         issues=repairIssues;
@@ -398,5 +407,5 @@ window.fetch=async function(input,init={}){
   return jsonResponse(replaceResponseText(provider,result.d,prefix||result.raw),result.r.status,result.r.headers);
 };
 
-window.MCLSessionV141={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,systemPrompt,buildProviderBody};
+window.MCLSessionV142={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,systemPrompt,buildProviderBody,referencesWorkbench};
 })();

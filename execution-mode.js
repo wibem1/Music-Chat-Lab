@@ -1,12 +1,13 @@
 (()=>{
 'use strict';
-if(window.__mclExplicitModeV137)return;
-window.__mclExplicitModeV137=true;
+if(window.__mclExplicitModeV139)return;
+window.__mclExplicitModeV139=true;
 
-const VERSION='1.4.3';
+const VERSION='1.4.5';
 const PENDING_KEY='music-chat-lab.pending-composition-idea.v1';
 const nativeFetch=window.fetch.bind(window);
 const CONCEPT_RE=/<MCL_CONCEPT>\s*([\s\S]*?)\s*<\/MCL_CONCEPT>/i;
+const ADOPT_RE=/<MCL_ADOPT_CONCEPT\s*\/>/i;
 let forwardingCompose=false;
 window.MCLRequestMode='chat';
 
@@ -39,10 +40,10 @@ function removeDecisionLayer(system){return String(system||'').replace(OLD_HEAD,
 
 function directive(mode,idea){
   if(mode==='compose'){
-    const brief=idea?`\n\nAKTUELLE KOMPOSITIONSIDEE:\n${idea}\nNutze sie als Ausgangspunkt, sofern der aktuelle Nutzerauftrag sie nicht ausdrücklich verändert oder ersetzt.`:'';
+    const brief=idea?`\n\nAKTUELLER KOMPOSITIONSAUFTRAG:\n${idea}\nFühre diesen Auftrag musikalisch aus.`:'';
     return `MODUS: KOMPONIERE. Führe den aktuellen musikalischen Auftrag jetzt als MIDI aus.${brief}`;
   }
-  return `MODUS: CHAT. Antworte als musikalischer Gesprächs- und Kompositionspartner frei und direkt. Erzeuge in diesem Modus keine MIDI-Aktion. Wenn deine Antwort eine konkrete Kompositions- oder Bearbeitungsidee enthält, hänge am Ende zusätzlich <MCL_CONCEPT>kurze Zusammenfassung der Idee</MCL_CONCEPT> an; bei normalem Gespräch, Analyse oder Kritik nicht.`;
+  return `MODUS: CHAT. Antworte als musikalischer Gesprächs- und Kompositionspartner frei und direkt. Erzeuge in diesem Modus keine MIDI-Aktion. Wenn du eine konkrete Kompositions- oder Bearbeitungsidee entwickelst, frage den Nutzer am Ende sichtbar, ob diese Idee als Kompositionsauftrag übernommen werden soll, und hänge zusätzlich <MCL_CONCEPT>kurze Zusammenfassung der Idee</MCL_CONCEPT> an. Wenn der Nutzer einen unmittelbar zuvor angebotenen Kompositionsvorschlag eindeutig bestätigt, antworte knapp und hänge <MCL_ADOPT_CONCEPT/> an. Bei normalem Gespräch, Analyse oder Kritik verwende keinen dieser Marker.`;
 }
 function inject(system,mode,idea){return`${directive(mode,idea)}\n\n${removeDecisionLayer(system)}`}
 function patchBody(provider,body,mode,idea){
@@ -68,28 +69,31 @@ window.fetch=async function(input,init={}){
   const traceRaw=await response.clone().text().catch(()=>'');
   window.MCLAiTrace?.response?.(traceId,response,traceRaw);
   if(mode!=='chat'||!response.ok)return response;
-  const d=await response.clone().json().catch(()=>null);if(!d)return response;const raw=responseText(provider,d),m=raw.match(CONCEPT_RE);if(!m)return response;
-  storeProposal(m[1]);const cleaned=raw.replace(CONCEPT_RE,'').replace(/\n{3,}/g,'\n\n').trim();return jsonResponse(replaceResponseText(provider,d,cleaned),response);
+  const d=await response.clone().json().catch(()=>null);if(!d)return response;const raw=responseText(provider,d),m=raw.match(CONCEPT_RE),adopt=ADOPT_RE.test(raw);
+  if(m)storeProposal(m[1]);
+  if(adopt)transferProposal();
+  if(!m&&!adopt)return response;
+  const cleaned=raw.replace(CONCEPT_RE,'').replace(ADOPT_RE,'').replace(/\n{3,}/g,'\n\n').trim();return jsonResponse(replaceResponseText(provider,d,cleaned),response);
 };
 
 function bindButtons(){
   const chat=document.getElementById('sendButton'),compose=document.getElementById('composeButton'),input=document.getElementById('messageInput'),adopt=document.getElementById('adoptIdeaButton');if(!chat||!compose||!input)return;
-  adopt?.addEventListener('click',()=>{if(transferProposal()){const note=document.getElementById('composerNote');if(note)note.textContent='Vorschlag in die Kompositionsidee übernommen.'}});
+  adopt?.addEventListener('click',()=>{if(transferProposal()){const note=document.getElementById('composerNote');if(note)note.textContent='Idee als Kompositionsauftrag übernommen.'}});
   updateIdeaButton();
   document.addEventListener('click',e=>{if(e.target?.closest?.('.chat-item,#newChatButton'))setTimeout(updateIdeaButton,40)},true);
   chat.addEventListener('click',()=>{if(!forwardingCompose)setMode('chat')},true);
   compose.addEventListener('click',()=>{
     if(chat.disabled)return;
-    if(!input.value.trim()){
-      if(currentIdea())input.value='Komponiere eine neue Fassung auf Grundlage der aktuellen Kompositionsidee.';
-      else if(hasAssistantContext())input.value='Setze den zuletzt im Chat entwickelten Kompositionsvorschlag jetzt als MIDI um.';
-      else{const note=document.getElementById('composerNote');if(note)note.textContent='Bitte zuerst einen Kompositionsauftrag eingeben oder eine Kompositionsidee formulieren.';return}
-      input.dispatchEvent(new Event('input',{bubbles:true}));
+    if(!currentIdea()){
+      const note=document.getElementById('composerNote');if(note)note.textContent='Bitte Kompositionsauftrag eintragen.';
+      return;
     }
+    input.value='Führe den aktuellen Kompositionsauftrag aus.';
+    input.dispatchEvent(new Event('input',{bubbles:true}));
     setMode('compose');forwardingCompose=true;try{chat.click()}finally{forwardingCompose=false}
   });
   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey)setMode('chat')},true);
   const syncDisabled=()=>{compose.disabled=chat.disabled};syncDisabled();new MutationObserver(syncDisabled).observe(chat,{attributes:true,attributeFilter:['disabled']});
 }
-removeLegacyProposalMarkers();bindButtons();window.MCLExplicitModeV137={version:VERSION,getMode:()=>window.MCLRequestMode,setMode,storeProposal,pendingProposal,transferProposal,directive};
+removeLegacyProposalMarkers();bindButtons();window.MCLExplicitModeV139={version:VERSION,getMode:()=>window.MCLRequestMode,setMode,storeProposal,pendingProposal,transferProposal,directive,currentIdea};
 })();

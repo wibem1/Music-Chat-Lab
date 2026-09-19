@@ -309,3 +309,35 @@ Das ist nicht mit dem Minimal-Composer-Fix 0.4.24 zu verwechseln. Dort wurde Thi
 v1.4.32 korrigiert MusicChatLab deshalb gezielt: Für Claude Sonnet 5, Opus 5 und Sonnet 4.6 verwendet der Anthropic-Pfad adaptives Thinking mit `effort:"high"`. Im Chat stehen mindestens 12.000 Output-Tokens zur Verfügung; im Modus KOMPONIERE mindestens 32.768, weil dort Thinking und die vollständige strukturierte Partitur in dasselbe Ausgabelimit fallen. Die schlanke Prompt-Architektur aus v1.4.31 bleibt unverändert; es werden keine neuen musikalischen Stilregeln eingeführt.
 
 Regressionstest: Der Browser-Smoke-Test prüft für Claude Sonnet 5 explizit `thinking.type === "adaptive"`, `output_config.effort === "high"` sowie das größere Kompositionsbudget. Damit darf eine spätere technische Optimierung das musikalische Thinking nicht wieder stillschweigend global abschalten.
+
+
+### v1.4.33 – Kompositionsidee als verbindlicher Ausführungsvertrag
+Der Gerätetest von v1.4.32 zeigte eine semantische Vermischung: Ein neuer Chat mit „Komponiere ein Klavierstück.“ erhielt trotz leerer Kompositionsidee den vorhandenen Arbeitstisch als Orientierung. Claude bezog sich dadurch ungefragt auf „Stilles Wiegen“, stellte eine Rückfrage statt einen eindeutigen neuen Arbeitsstand zu erzeugen, und der Button „Komponiere“ konnte anschließend einen nicht übernommenen Chatvorschlag implizit ausführen.
+
+v1.4.33 zieht deshalb eine klare Grenze. **Komponieren ist nur zulässig, wenn das Feld „Kompositionsidee“ nicht leer ist.** Ist es leer, wird lokal ohne Provider-Aufruf „Bitte Kompositionsidee eintragen.“ angezeigt. Die Idee darf bewusst minimal sein, z. B. „ein Klavierstück“; fehlende musikalische Entscheidungen bleiben dann der KI überlassen. Beim Komponieren ist der Inhalt dieses Felds der verbindliche aktuelle Kompositionsauftrag.
+
+Der Chat bleibt der Ort für Ideenentwicklung. Formuliert die KI eine konkrete Idee, soll sie sichtbar fragen, ob diese als Kompositionsidee übernommen werden soll, und sie weiterhin intern als MCL_CONCEPT markieren. Bestätigt der Nutzer den unmittelbar vorher angebotenen Vorschlag eindeutig, kann die KI MCL_ADOPT_CONCEPT ausgeben; die App übernimmt dann den gespeicherten Vorschlag in das Ideenfeld, entfernt den internen Marker aus der sichtbaren Antwort und wartet weiterhin auf den ausdrücklichen Klick auf „Komponiere“. Der manuelle Button „Idee übernehmen“ bleibt als direkter Weg erhalten.
+
+Der Arbeitstisch ist ab v1.4.33 **kein impliziter musikalischer Auftrag mehr**. Vorhandene oder aktive Slots werden einem normalen neuen Chat-/Kompositionsauftrag nicht allein wegen ihrer Existenz als Kontext angeboten. Quellenprotokoll und Quellenkatalog werden nur aktiviert, wenn der aktuelle Auftrag bzw. die Kompositionsidee ausdrücklich auf den Arbeitstisch, einen Speicher/Slot/Stück-Index oder den Namen eines vorhandenen Stücks Bezug nimmt. Damit darf ein aktiver alter Slot einen offenen Neuauftrag nicht mehr stilistisch kontaminieren.
+
+Regressionstests prüfen: leere Idee blockiert „Komponiere“ ohne Eingabetext zu erzeugen; ein freier Auftrag „Komponiere ein Klavierstück.“ referenziert einen vorhandenen Slot nicht; ausdrückliche Referenzen wie „Stück 1“ oder ein vorhandener Titel aktivieren den Quellenweg; der Chat-Prompt enthält den Übernahme-Dialog und den internen Bestätigungsmarker.
+
+
+### v1.4.34 – Geladener Kompositionsauftrag bleibt Auftrag, nicht Beschreibung
+Die begriffliche Trennung wird auf geladene Stücke ausgedehnt: Das Chat-Eingabefeld dient ausschließlich dem Gespräch und löst niemals selbst eine Komposition aus. Das Feld „Kompositionsidee“ enthält ausschließlich den frei wählbaren **Kompositionsauftrag**, der beim Klick auf „Komponiere“ ausgeführt wird.
+
+Beim Öffnen einer CLAB-Datei wird deshalb deren gespeichertes Feld `assignment` in „Kompositionsidee“ geladen. `concept` bzw. `score.sm` sind Beschreibungen des musikalischen Ergebnisses und werden nicht mehr ersatzweise als Auftrag eingesetzt. Enthält eine ältere CLAB-Datei keinen gespeicherten Auftrag, bleibt das Feld leer; ein Auftrag wird nicht erfunden.
+
+Auch die bloße Auswahl eines MIDI-Slots überschreibt den Kompositionsauftrag nicht mehr mit `score.sm`. Reine MIDI-Dateien besitzen im Dateiformat keinen ursprünglichen natürlichsprachlichen Kompositionsauftrag; deshalb kann MusicChatLab beim MIDI-Import keinen solchen Auftrag zuverlässig rekonstruieren. Für diese Stücke kann ein neuer Auftrag frei eingetragen werden.
+
+Regressionstest: Eine CLAB-Datei mit `assignment` und abweichendem `concept` muss exakt `assignment` in das Ideenfeld laden; anschließendes Anklicken eines Slots darf einen dort bereits eingetragenen Auftrag nicht verändern.
+
+
+### v1.4.35 – Kompositionsauftrag und sichtbare Ergebnisbeschreibung
+Die Begriffe werden in der Oberfläche entsprechend dem Arbeitsablauf präzisiert: Eine **Kompositionsidee** entsteht im Chat. Wird sie bewusst übernommen, steht sie im editierbaren Feld **„Kompositionsauftrag“**. Erst der Klick auf „Komponiere“ führt diesen Auftrag aus. Das Chat-Eingabefeld bleibt reiner Gesprächskanal und löst keine Komposition aus. Ein Kompositionsauftrag darf weiterhin maximal offen sein, etwa „ein Klavierstück“.
+
+Davon getrennt ist die **Kompositionsbeschreibung** des tatsächlich entstandenen Stücks. Sie bleibt im Score als `score.sm` gespeichert und wird nun direkt unter dem Kompositionsauftrag in einem kompakten, standardmäßig eingeklappten Bereich angezeigt. Damit kann der Nutzer Soll (Auftrag) und Ist (Beschreibung) vergleichen, ohne die Oberfläche insbesondere auf Handys im Hochformat dauerhaft zu vergrößern. Beim Wechsel des aktiven Arbeitstisch-Stücks aktualisiert sich die Beschreibung, der Kompositionsauftrag wird durch die bloße Slot-Auswahl weiterhin nicht überschrieben.
+
+Die CLAB-Trennung wurde dabei korrigiert: `assignment` speichert den tatsächlichen Inhalt des Felds „Kompositionsauftrag“, während `concept` und `score.sm` die Ergebnisbeschreibung behalten. Das Speichern einer CLAB-Datei darf `score.sm` nicht mehr mit dem Auftrag überschreiben. Beim Laden erscheint `assignment` im Auftragsfeld und `score.sm` im einklappbaren Beschreibungsbereich.
+
+Regressionstests prüfen die eingeklappte mobile-kompakte Beschreibung, die getrennte CLAB-Speicherung von Auftrag und Beschreibung, das Laden des Auftrags sowie die unveränderte Slot-Auswahl.
