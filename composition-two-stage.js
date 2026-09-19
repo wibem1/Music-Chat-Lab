@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-if(window.__mclTwoStageV140)return;window.__mclTwoStageV140=true;
+if(window.__mclTwoStageV141)return;window.__mclTwoStageV141=true;
 const previousFetch=window.fetch.bind(window);
 const DRAFT_HEAD='Komponiere das verlangte Stück musikalisch frei und eigenständig. Konzentriere dich ausschließlich auf musikalische Gestalt, Verlauf, Stimmen, Rhythmus, Harmonik, Artikulation und Charakter. Denke noch NICHT an MIDI-Codierung, QN-Werte, JSON oder ein technisches Ausgabeformat. Schreibe einen vollständigen, konkret ausnotierbaren musikalischen Entwurf, aus dem anschließend eine andere technische Instanz die MIDI-Daten erzeugen kann. Gib in der ersten Zeile lediglich einen kurzen passenden Werktitel als „Titel: …“ an; dies soll die musikalische Gestaltung nicht einschränken. Mache keine Erläuterung über deine Arbeitsweise.';
 function providerFor(u){u=String(u||'');if(u.includes('api.anthropic.com/v1/messages'))return'anthropic';if(u.includes('api.openai.com/v1/responses'))return'openai';if(u.includes('generativelanguage.googleapis.com/')&&u.includes(':generateContent'))return'google';return null}
@@ -16,12 +16,13 @@ window.fetch=async function(input,init={}){
  const task=lastUser(provider,body);if(!task)return previousFetch(input,init);
  const note=document.getElementById('composerNote');if(note)note.textContent='Komponiere …';
  const prompt=DRAFT_HEAD+'\n\nAUFTRAG:\n'+task;
- const r1=await previousFetch(input,{...init,__mclRawStage:true,body:JSON.stringify(draftBody(provider,body,prompt))});
- const d1=await r1.clone().json().catch(()=>null);if(!r1.ok||!d1)return r1;
+ const draftRequest=draftBody(provider,body,prompt),traceId=window.MCLAiTrace?.request?.('musical_draft',url,{...init,__mclRawStage:true},draftRequest);
+ const r1=await previousFetch(input,{...init,__mclRawStage:true,body:JSON.stringify(draftRequest)});
+ const raw1=await r1.clone().text().catch(()=>''),d1=(()=>{try{return raw1?JSON.parse(raw1):null}catch{return null}})();window.MCLAiTrace?.response?.(traceId,r1,raw1);if(!r1.ok||!d1)return r1;
  const draft=responseText(provider,d1);if(!draft)throw new Error('Der freie musikalische Entwurf blieb leer.');
  window.__mclLastMusicalDraft={at:new Date().toISOString(),provider,model:body.model||'',task,draft};
  if(note)note.textContent='Übertrage musikalischen Entwurf in MIDI …';
  return previousFetch(input,{...init,body:JSON.stringify(addDraft(provider,body,draft))});
 };
-window.MCLTwoStageV140={version:'1.4.0',lastDraft:()=>window.__mclLastMusicalDraft||null};
+window.MCLTwoStageV141={version:'1.4.1',lastDraft:()=>window.__mclLastMusicalDraft||null};
 })();
