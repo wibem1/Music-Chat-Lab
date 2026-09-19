@@ -287,3 +287,15 @@ Ursache war `composition-idea-field.js`: Wenn für einen neuen Chat noch kein ei
 Auch die Diagnose wird chat-isoliert: Das lokale Trace-Archiv darf weiterhin die letzten Provider-Aufrufe zur technischen Historie behalten, aber der Diagnoseexport enthält unter `aiCalls` nur Aufrufe, deren `chatId` der aktuell aktiven Chat-ID entspricht. Alte Zwei-Stufen- oder andere Provider-Aufrufe aus vorherigen Chats können damit bei der Analyse eines frischen Chats nicht mehr wie aktuelle Requests erscheinen.
 
 Regressionstest: Eine in Chat A eingetragene Idee muss nach „Neuer Chat“ in Chat B leer sein; der aktuelle Trace-Snapshot darf nur Einträge der aktiven Chat-ID liefern.
+
+
+### v1.4.31 – Prompt-Architektur: musikalischen Dialog von MIDI-Protokoll getrennt
+Die vollständige Request-Diagnose von v1.4.30 zeigte einen grundlegenden Architekturfehler: Selbst der fünf Wörter lange Chat-Auftrag „Komponiere ein Klavierstück.“ wurde zusammen mit dem vollständigen technischen MusicChatLab-Protokoll an die KI geschickt. Der Request enthielt Arbeitstisch-, MCL_NEED-, PATCH-, MERGE-, NEW_SCORE-, REPLACE_SCORE-, Notenformat- und Gedächtnisregeln und erreichte bei leerem Arbeitstisch 2768 Input-Tokens. Damit konkurrierte technischer Steuerungskontext mit der eigentlichen musikalischen Aufgabe und verletzte den bereits dokumentierten Grundsatz „Musikalische Freiheit erhalten“.
+
+v1.4.31 trennt die Kontexte nach tatsächlichem Bedarf. CHAT erhält standardmäßig nur eine kurze musikalische Rollenbeschreibung, den expliziten Chatmodus und den tatsächlichen Dialog. Bei leerem Arbeitstisch werden keinerlei MIDI-Aktionsformate mehr geladen. Ein vorhandener Arbeitstisch ergänzt nur einen knappen Katalog und die Möglichkeit, für eine konkrete Analyse gezielt Notendaten per MCL_NEED nachzufordern.
+
+KOMPONIERE lädt technische Regeln bedarfsgerecht: Für ein vollständig neues Stück ohne Quellen steht nur NEW_SCORE samt kompaktem Notenformat zur Verfügung. PATCH, MERGE, REPLACE_SCORE, Quellenkatalog und MCL_NEED werden nur ergänzt, wenn tatsächlich musikalische Quellen auf dem Arbeitstisch vorhanden sind. Die bewusst übernommene Kompositionsidee wird weiterhin unmittelbar vor dem Provider-Aufruf ergänzt, ohne daraus zusätzliche Stilregeln abzuleiten.
+
+Die bisherige CHAT-Anweisung, einen offenen Kompositionswunsch zwingend in 2–4 kurze Sätze bzw. ungefähr 350 Zeichen zu pressen und dabei alle musikalischen Entscheidungen vorab festzulegen, wurde entfernt. Im Chat darf das Modell wieder frei musikalisch antworten. MCL_CONCEPT bleibt ausschließlich als knappe verborgene Zusammenfassung einer tatsächlich entstandenen konkreten Idee für „Idee übernehmen“.
+
+Die Architektur ist zusätzlich in PROMPT_ARCHITECTURE.md dokumentiert. Der Browser-Smoke-Test prüft künftig als Invariante: leerer CHAT-Prompt < 700 Zeichen und ohne PATCH/MERGE/NEW_SCORE/MIDI-AKTION; neue Komposition ohne Quellen enthält NEW_SCORE, aber kein PATCH/MERGE; quellenbasierte Komposition enthält die dafür benötigten Protokolle. Damit wird nicht nur die Funktion der Oberfläche, sondern auch der tatsächlich beabsichtigte Kontextumfang als Release-Kriterium überwacht.
