@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-if(window.__mclSessionOrchestratorV144)return;
-window.__mclSessionOrchestratorV144=true;
+if(window.__mclSessionOrchestratorV145)return;
+window.__mclSessionOrchestratorV145=true;
 
-const VERSION='1.4.4';
+const VERSION='1.4.5';
 const MEMORY_KEY='music-chat-lab.session-memory.v3';
 const ACTIVE_CHAT_KEY='music-chat-lab.active-chat.v1';
 const RECENT_MESSAGES=8;
@@ -327,6 +327,14 @@ function materializationMessages(user,music,provided){
   return[{role:'user',text:`VERBINDLICHER TECHNISCHER MODUS: ${technicalMode}\n\nAUFTRAG DES NUTZERS:\n${cleanLegacy(user)}\n\nFERTIGES MUSIKALISCHES MANUSKRIPT:\n<MCL_MUSIC>\n${music}\n</MCL_MUSIC>${sourceText}`}];
 }
 
+const MINIMAL_TECHNICAL_CONTRACT="TECHNISCHE AUSGABEANFORDERUNG – KEINE MUSIKALISCHEN ZUSATZREGELN:\nAntworte ausschließlich mit validem JSON, ohne Markdown und ohne Text außerhalb des JSON.\nDie Partitur steht entweder direkt im Wurzelobjekt oder im Feld \"score\".\nPartiturformat:\n{\n  \"title\": \"optional\",\n  \"bpm\": Zahl,\n  \"timeSignature\": [Zaehler, Nenner],\n  \"tracks\": [\n    {\n      \"name\": \"Instrument\",\n      \"program\": 0-127,\n      \"channel\": 0-15,\n      \"notes\": [[StartBeat, DauerInBeats, MIDIPitch, Velocity], ...]\n    }\n  ]\n}\nWeitere Textfelder, die der Benutzer in seinem Auftrag ausdrücklich verlangt, dürfen zusätzlich im JSON stehen.\nStartBeat und DauerInBeats dürfen Dezimalzahlen sein. MIDI-Pitch 0-127, Velocity 1-127.\nDas technische Format macht keinerlei Vorgaben zu Stil, Harmonik, Melodik, Rhythmik, Form, Artikulation oder musikalischer Qualität.";
+const MINIMAL_DRAFT_HEAD="Komponiere das verlangte Stück musikalisch frei und eigenständig. Konzentriere dich ausschließlich auf musikalische Gestalt, Verlauf, Stimmen, Rhythmus, Harmonik, Artikulation und Charakter. Denke noch NICHT an MIDI-Codierung, QN-Werte, CS-Zeilen oder ein technisches Ausgabeformat. Schreibe einen vollständigen, konkret ausnotierbaren musikalischen Entwurf, aus dem anschließend eine andere technische Instanz die MIDI-Daten erzeugen kann. Gib in der ersten Zeile lediglich einen kurzen passenden Werktitel als „Titel: …“ an; dies soll die musikalische Gestaltung nicht einschränken. Mache keine Erläuterung über deine Arbeitsweise.";
+function minimalStageBody(provider,body,prompt,stage){const b={};if(provider==='anthropic'){b.model=body.model;b.max_tokens=32768;b.messages=[{role:'user',content:prompt}];if(/^claude-(?:sonnet|opus)-5(?:$|-)/i.test(String(b.model||''))&&stage==='midi_translation')b.thinking={type:'disabled'}}else if(provider==='openai'){b.model=body.model;b.input=[{role:'user',content:[{type:'input_text',text:prompt}]}];b.store=false}else{b.contents=[{role:'user',parts:[{text:prompt}]}];if(body.generationConfig)b.generationConfig=clone(body.generationConfig)}return b}
+async function runMinimalStage(input,init,provider,body,prompt,stage){const requestBody=minimalStageBody(provider,body,prompt,stage);const r=await innerFetch(input,{...init,__mclTraceStage:stage,body:JSON.stringify(requestBody)});const rawTransport=await r.clone().text().catch(()=>'');let d=null;try{d=rawTransport?JSON.parse(rawTransport):null}catch{}return{r,d,raw:d&&r.ok?responseText(provider,d):''}}
+function extractLooseJson(text){let x=String(text||'').trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'').trim();try{return JSON.parse(x)}catch(_){const a=x.indexOf('{'),b=x.lastIndexOf('}');if(a>=0&&b>a)return JSON.parse(x.slice(a,b+1));throw _}}
+function minimalScoreObject(obj){return obj&&obj.score&&Array.isArray(obj.score.tracks)?obj.score:obj}
+function minimalToMclScore(obj,assignment){const x=minimalScoreObject(obj);if(!x||!Array.isArray(x.tracks)||!Number.isFinite(Number(x.bpm)))return null;const ts=Array.isArray(x.timeSignature)?x.timeSignature:[4,4];const tr=x.tracks.map((t,i)=>({nm:String(t?.name||`Track ${i+1}`),ch:Math.max(0,Math.min(15,Number.isFinite(Number(t?.channel))?Number(t.channel):i%16)),pg:Math.max(0,Math.min(127,Number(t?.program)||0)),nt:(t?.notes||[]).filter(n=>Array.isArray(n)&&n.length>=4).map(n=>[Number(n[0]),Number(n[1]),Math.round(Number(n[2])),Math.round(Number(n[3])),i,0.9]),ct:[]}));return{ti:String(x.title||obj?.title||'Neue Komposition'),bpm:Number(x.bpm),ts:{n:Number(ts[0])||4,d:Number(ts[1])||4},k:String(x.key||''),sm:String(x.description||x.summary||assignment||'').trim().slice(0,500),tr}}
+function compositionTask(user,provided){const assignment=ideaText()||cleanLegacy(user);if(!provided.length)return assignment;return assignment+'\n\nMUSIKALISCHES AUSGANGSMATERIAL AUS MUSIC CHAT LAB:\n'+scoreBlocks(provided)}
 window.fetch=async function(input,init={}){
   const url=typeof input==='string'?input:input?.url||'',provider=providerFor(url);
   if(!provider||typeof init.body!=='string')return innerFetch(input,init);
@@ -361,29 +369,25 @@ window.fetch=async function(input,init={}){
     return jsonResponse(replaceResponseText(provider,result.d,visibleText(result.raw)||result.raw),result.r.status,result.r.headers);
   }
   const note=document.getElementById('composerNote');if(note)note.textContent='Komponiere …';
-  const creative=await runProvider(input,init,provider,body,contextual,system,'musical_composition','compose');
-  if(!creative.d||!creative.r.ok||!creative.raw)return creative.r;
-  const music=musicBlock(creative.raw);
-  if(!music){const warning='Die musikalische Kompositionsstufe lieferte kein vollständiges Manuskript. Es wurde keine MIDI-Fassung erzeugt.';return jsonResponse(replaceResponseText(provider,creative.d,warning),creative.r.status,creative.r.headers)}
-  window.__mclLastMusicalComposition={at:new Date().toISOString(),provider,model:body.model||'',task:user,music};
-  if(note)note.textContent='Übertrage fertige Komposition in MIDI …';
-  const techSystem=materializationSystemPrompt(availableSources.length>0),techMessages=materializationMessages(user,music,provided);
-  let result=await runProvider(input,init,provider,body,techMessages,techSystem,'midi_materialization','materialize');
-  if(!result.d||!result.r.ok||!result.raw)return result.r;
-  const incomplete=incompleteInternal(result.raw);
-  if(incomplete)return jsonResponse(replaceResponseText(provider,result.d,safeIncompleteText(result.raw,incomplete)),result.r.status,result.r.headers);
-  let action=parseAction(result.raw),score=action?materializeAction(action,availableSources,''):null,issues=score?scoreIssues(score):['keine gültige MIDI-Aktion'];
-  if(score&&issues.length){
-    const repairSystem=techSystem+'\n\nTECHNISCHE KORREKTUR: Korrigiere ausschließlich diese formalen Fehler: '+issues.join('; ')+'. Verändere das musikalische Manuskript nicht.';
-    const repairContext=techMessages.concat([{role:'assistant',text:result.raw}]);
-    const repair=await runProvider(input,init,provider,body,repairContext,repairSystem,'midi_repair','materialize');
-    if(repair.d&&repair.r.ok&&repair.raw){const repaired=materializeAction(parseAction(repair.raw),availableSources,'');const ri=repaired?scoreIssues(repaired):['keine gültige korrigierte MIDI-Aktion'];if(repaired&&!ri.length){score=repaired;issues=[];result=repair}else issues=ri}
-  }
-  if(!score||issues.length){const warning=`Die erzeugte MIDI-Fassung wurde wegen technischer Inkonsistenzen nicht übernommen: ${issues.join('; ')}.`;return jsonResponse(replaceResponseText(provider,result.d,warning),result.r.status,result.r.headers)}
-  return jsonResponse(replaceResponseText(provider,result.d,JSON.stringify(score)),result.r.status,result.r.headers);
+  const task=compositionTask(user,provided);
+  const draftPrompt=MINIMAL_DRAFT_HEAD+'\n\nAUFTRAG:\n'+task;
+  const draftResult=await runMinimalStage(input,init,provider,body,draftPrompt,'musical_draft');
+  if(!draftResult.d||!draftResult.r.ok||!draftResult.raw)return draftResult.r;
+  const draft=draftResult.raw.trim();
+  if(!draft){const warning='Der musikalische Entwurf ist leer. Es wurde keine MIDI-Fassung erzeugt.';return jsonResponse(replaceResponseText(provider,draftResult.d,warning),draftResult.r.status,draftResult.r.headers)}
+  window.__mclLastMusicalComposition={at:new Date().toISOString(),provider,model:body.model||'',task,draft};
+  if(note)note.textContent='Übertrage musikalischen Entwurf in MIDI …';
+  const translationPrompt='Du bist jetzt ausschließlich Notations- und MIDI-Übersetzer. Übertrage den folgenden bereits fertigen musikalischen Entwurf so vollständig und werkgetreu wie möglich in das nachfolgend geforderte technische Partiturformat. Komponiere NICHT neu, vereinfache NICHT, regularisiere NICHT den Rhythmus und ersetze keine ungewöhnlichen musikalischen Entscheidungen durch Standards. Bewahre insbesondere rhythmische Vielfalt, Pausen, Stimmführung und Phrasierung des Entwurfs.\n\nURSPRÜNGLICHER AUFTRAG:\n'+task+'\n\nFERTIGER MUSIKALISCHER ENTWURF:\n'+draft+'\n\n'+MINIMAL_TECHNICAL_CONTRACT;
+  const translated=await runMinimalStage(input,init,provider,body,translationPrompt,'midi_translation');
+  if(!translated.d||!translated.r.ok||!translated.raw)return translated.r;
+  let obj;try{obj=extractLooseJson(translated.raw)}catch(_){const warning='Die MIDI-Übersetzung war kein gültiges Partitur-JSON. Es wurde keine Fassung übernommen.';return jsonResponse(replaceResponseText(provider,translated.d,warning),translated.r.status,translated.r.headers)}
+  const score=minimalToMclScore(obj,task),issues=score?scoreIssues(score):['keine gültige Partiturstruktur'];
+  if(!score||issues.length){const warning=`Die erzeugte MIDI-Fassung wurde wegen technischer Inkonsistenzen nicht übernommen: ${issues.join('; ')}.`;return jsonResponse(replaceResponseText(provider,translated.d,warning),translated.r.status,translated.r.headers)}
+  return jsonResponse(replaceResponseText(provider,translated.d,JSON.stringify(score)),translated.r.status,translated.r.headers);
 };
 
-const api={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,systemPrompt,buildProviderBody,referencesWorkbench,creativeSystemPrompt,materializationSystemPrompt,musicBlock};
+const api={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,systemPrompt,buildProviderBody,referencesWorkbench,MINIMAL_DRAFT_HEAD,MINIMAL_TECHNICAL_CONTRACT,minimalStageBody,minimalToMclScore};
+window.MCLSessionV145=api;
 window.MCLSessionV144=api;
 window.MCLSessionV143=api;
 })();
