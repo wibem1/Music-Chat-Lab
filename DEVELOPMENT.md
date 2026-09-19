@@ -119,3 +119,13 @@ Der iPad-Test von v1.4.8 hat den Fehler weiter eingegrenzt: Nach „Backup erste
 Der Diagnose-Download schützt deshalb analog, aber ausschließlich in `diagnostic-enhancer.js`, für 15 Sekunden den unmittelbar vor dem Download vorhandenen API-Einstellungsstand. Bei `pageshow`/Rückkehr aus dem Hintergrund und unmittelbar nach dem Download werden nur fehlende Key-Felder ergänzt; vorhandene oder neuere Werte werden nicht überschrieben. Die Diagnose-Datei selbst erhält dadurch keine zusätzliche Key-Kopie und der Schutz läuft automatisch aus.
 
 Freigabekriterium: API-Key speichern → Diagnose-Datei speichern → API-Key bleibt vorhanden → Provider-Aufruf weiterhin möglich. Backup und Diagnose sind getrennte Pfade und werden getrennt geprüft.
+
+
+### v1.4.10 – Diagnose-Download auf nativen Browserpfad zurückgeführt
+Die iPad-Prüfung von v1.4.9 zeigte, dass der zusätzliche kurzlebige Key-Schutz den Verlust der API-Einstellungen nach dem Speichern der Diagnosedatei nicht verhindert. Die Schutzschicht war damit nicht die richtige Fehlerbehebung und wurde aus dem Diagnosemodul wieder entfernt.
+
+Die Quellprüfung ergab einen gemeinsamen Sonderpfad für Dateidownloads: `download-compat.js` überschrieb global `HTMLAnchorElement.prototype.click`. Jeder Blob-Download wurde dadurch asynchron erneut per `fetch` gelesen, mit `FileReader` in eine Data-URL umgewandelt und anschließend über einen zweiten künstlichen Anchor ausgelöst. Diagnose-, Backup-, CLAB- und andere Exporte liefen damit nicht über den von ihren Modulen programmierten nativen Downloadpfad.
+
+v1.4.10 entfernt diesen globalen Prototype-Override. Blob-Exporte verwenden wieder den nativen `<a download>`-Mechanismus des Browsers. Der Diagnosecode enthält keine eigene API-Key-Restaurierung mehr. Damit wird die Downloadarchitektur vereinfacht und die Ursache an der gemeinsamen Stelle statt durch weitere Key-Patches behandelt.
+
+Freigabekriterium: Syntax-/Ressourcen-/Initialisierungstest sowie Download-Smoke-Test müssen bestehen. Der iPad-spezifische Test bleibt: API-Key speichern → Diagnose-Datei speichern → Key bleibt vorhanden; zusätzlich muss die Diagnosedatei auf dem iPad weiterhin tatsächlich gespeichert werden können.
