@@ -111,3 +111,11 @@ Auf dem iPad wurde reproduzierbar beobachtet: Ein neu gespeicherter Anthropic-Ke
 v1.4.8 nimmt deshalb unmittelbar beim Start des Backups einen kurzlebigen Snapshot ausschließlich der aktuellen API-Einstellungen. Während eines 15-Sekunden-Fensters werden bei `pageshow` bzw. Rückkehr aus dem Hintergrund nur tatsächlich fehlende API-Key-Felder aus diesem Snapshot ergänzt; vorhandene oder neuere Werte werden nicht überschrieben. Vor und unmittelbar nach dem Download wird dieselbe Invariante geprüft. Der Schutz läuft automatisch aus und wird vor einer absichtlichen Backup-Wiederherstellung deaktiviert. Damit wird die fehlerhafte dauerhafte Rückschreibung aus v1.4.6 nicht wieder eingeführt.
 
 Freigabekriterium für diesen Stand: API-Key speichern → Backup erstellen → API-Key bleibt vorhanden → Provider-Aufruf weiterhin möglich. Der iPad-spezifische Download-/PWA-Lebenszyklus bleibt eine gerätespezifische Restprüfung; er darf erst nach bestandenem automatisierbarem Syntax-/Ressourcen-/Initialisierungs-Smoke-Test dem Anwender zur Prüfung vorgelegt werden.
+
+
+### v1.4.9 – API-Key-Schutz beim Diagnose-Download
+Der iPad-Test von v1.4.8 hat den Fehler weiter eingegrenzt: Nach „Backup erstellen“ blieben die API-Keys erhalten; erst „Diagnose-Datei speichern“ ließ sie verschwinden. Damit ist der Backup-Pfad als unmittelbarer Auslöser ausgeschlossen und der mobile Download-Lebenszyklus des Diagnosepfads als eigener Fehlerweg bestätigt.
+
+Der Diagnose-Download schützt deshalb analog, aber ausschließlich in `diagnostic-enhancer.js`, für 15 Sekunden den unmittelbar vor dem Download vorhandenen API-Einstellungsstand. Bei `pageshow`/Rückkehr aus dem Hintergrund und unmittelbar nach dem Download werden nur fehlende Key-Felder ergänzt; vorhandene oder neuere Werte werden nicht überschrieben. Die Diagnose-Datei selbst erhält dadurch keine zusätzliche Key-Kopie und der Schutz läuft automatisch aus.
+
+Freigabekriterium: API-Key speichern → Diagnose-Datei speichern → API-Key bleibt vorhanden → Provider-Aufruf weiterhin möglich. Backup und Diagnose sind getrennte Pfade und werden getrennt geprüft.
