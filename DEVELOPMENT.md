@@ -223,3 +223,9 @@ v1.4.23 verwendet deshalb für Taktzahl, BPM und Dur/Moll nicht mehr eine Textsu
 Abweichungen von diesen Eckdaten bleiben aus kompositorischen Gründen ausdrücklich erlaubt. Die KI muss eine bewusste Abweichung im strukturierten MCL_ACTION-Feld `deviationReason` knapp musikalisch begründen. Eine so begründete Abweichung wird akzeptiert und als „Bewusste Abweichung“ in der Kompositionsbeschreibung dokumentiert. Unbegründete Abweichungen lösen weiterhin genau einen technischen Korrekturversuch aus. Große globale innere Zeitlöcher gelten weiterhin als technische Auffälligkeit und können nicht allein durch eine Begründung freigegeben werden.
 
 Der Smoke-Test setzt eine aktuelle Idee mit 56 Takten, 88 BPM und a-Moll und prüft, dass genau diese Werte – nicht ältere Chatwerte – von der Validierung verwendet werden.
+
+
+### v1.4.24 – Fehler im neuen Constraint-Test behoben
+Der Release-Check von v1.4.23 scheiterte im Browser-Smoke-Test: Die aktuelle Idee „56 Takte, 88 BPM, a-Moll“ wurde gesetzt, aber `bars` blieb `null`. Ursache waren versehentlich doppelt escapte RegExp-Metazeichen in den neu eingeführten JavaScript-RegExp-Literalen (`\\d`, `\\s`, `\\b`). Dadurch suchte der Parser nach den Zeichenfolgen „\d“ usw. statt nach Ziffern, Leerraum und Wortgrenzen. Die JavaScript-Syntaxprüfung konnte diesen semantischen Fehler naturgemäß nicht erkennen; der neue Browser-Test hat ihn korrekt abgefangen.
+
+v1.4.24 korrigiert die RegExp-Literale im zuständigen Orchestrator. Der Test für die maßgebliche Kompositionsidee bleibt unverändert streng: 56 Takte, 88 BPM und a-Moll müssen tatsächlich aus dem Ideenfeld erkannt werden.
