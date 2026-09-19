@@ -1,11 +1,11 @@
 (()=>{
 'use strict';
-if(window.__mclBackupManagerV1133)return;
-window.__mclBackupManagerV1133=true;
+if(window.__mclBackupManagerV1134)return;
+window.__mclBackupManagerV1134=true;
 
 const FORMAT='music-chat-lab-backup';
 const FORMAT_VERSION=1;
-const APP_VERSION='1.1.33';
+const APP_VERSION='1.1.34';
 const PREFIX='music-chat-lab.';
 const SETTINGS_KEY='music-chat-lab.api-settings.v1';
 const MIDI_DB='music-chat-lab-midi';
@@ -107,6 +107,7 @@ async function createBackup(){
     const local=collectLocalStorage();
     const keys=apiKeyStatus(local);
     const midi=await readMidiWorkspace();
+    const compositionHistories=await window.MCLStateVault?.exportCompositionHistories?.()||{};
     const repairedBeforeDownload=restoreMissingProtectedKeys();
     const backup={
       format:FORMAT,
@@ -116,7 +117,7 @@ async function createBackup(){
       containsApiKeys:keys.anthropic||keys.openai||keys.google,
       apiKeyStatus:keys,
       localStorage:local,
-      indexedDB:{[MIDI_DB]:{[MIDI_STORE]:midi}}
+      indexedDB:{[MIDI_DB]:{[MIDI_STORE]:midi}},compositionHistories
     };
     downloadText(JSON.stringify(backup,null,2),`Music-Chat-Lab-Backup-${safeStamp()}.mclbackup`);
     const repairedAfterDownload=restoreMissingProtectedKeys();
@@ -157,6 +158,7 @@ async function restoreBackupFile(file){
   }
   const midi=data.indexedDB?.[MIDI_DB]?.[MIDI_STORE];
   if(midi!=null)await writeMidiWorkspace(midi);
+  if(data.compositionHistories)await window.MCLStateVault?.importCompositionHistories?.(data.compositionHistories);
   note('Backup wiederhergestellt. Music Chat Lab wird neu geladen.');
   setTimeout(()=>location.reload(),250);
 }
