@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-if(window.__mclSessionOrchestratorV135)return;
-window.__mclSessionOrchestratorV135=true;
+if(window.__mclSessionOrchestratorV136)return;
+window.__mclSessionOrchestratorV136=true;
 
-const VERSION='1.3.5';
+const VERSION='1.3.6';
 const MEMORY_KEY='music-chat-lab.session-memory.v3';
 const ACTIVE_CHAT_KEY='music-chat-lab.active-chat.v1';
 const RECENT_MESSAGES=8;
@@ -369,5 +369,5 @@ window.fetch=async function(input,init={}){
   return jsonResponse(replaceResponseText(provider,result.d,prefix||result.raw),result.r.status,result.r.headers);
 };
 
-window.MCLSessionV135={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,explicitConstraints,explicitConstraintsFromText,deviationNote};
+window.MCLSessionV136={version:VERSION,getMemory,workspaceSources,materializeAction,scoreIssues,explicitConstraints,explicitConstraintsFromText,deviationNote};
 })();
