@@ -1,6 +1,6 @@
 (()=>{
 'use strict';
-if(window.__mclAiTraceV100)return;window.__mclAiTraceV100=true;
+if(window.__mclAiTraceV101)return;window.__mclAiTraceV100=true;
 const KEY='music-chat-lab.ai-trace.v1',MAX=40,clone=x=>x==null?x:JSON.parse(JSON.stringify(x));
 function read(){try{const x=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(x)?x:[]}catch{return[]}}
 function write(x){try{localStorage.setItem(KEY,JSON.stringify(x.slice(-MAX)))}catch(_){}}
@@ -12,5 +12,5 @@ function add(e){const a=read();a.push(e);write(a);return e.id}
 function update(id,patch){const a=read(),i=a.findIndex(x=>x.id===id);if(i<0)return;a[i]={...a[i],...patch};write(a)}
 function request(stage,url,init,body){const id='call-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);add({id,chatId:chatId(),stage:String(stage||'provider_call'),requestedAt:new Date().toISOString(),provider:provider(url),url:safeUrl(url),method:String(init?.method||'POST'),headers:safeHeaders(init?.headers),body:clone(body)});return id}
 function response(id,res,raw){update(id,{receivedAt:new Date().toISOString(),status:res?.status??null,statusText:res?.statusText??'',responseHeaders:safeHeaders(res?.headers),rawResponse:String(raw??'')})}
-window.MCLAiTrace={version:'1.0.0',request,response,snapshot:()=>clone(read()),clear:()=>write([])};
+window.MCLAiTrace={version:'1.0.1',request,response,snapshot:()=>clone(read()),snapshotCurrentChat:()=>{const id=chatId();return clone(read().filter(x=>x?.chatId===id))},clear:()=>write([])};
 })();
