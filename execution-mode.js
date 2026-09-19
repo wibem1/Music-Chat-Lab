@@ -3,7 +3,7 @@
 if(window.__mclExplicitModeV139)return;
 window.__mclExplicitModeV139=true;
 
-const VERSION='1.4.6';
+const VERSION='1.4.7';
 const PENDING_KEY='music-chat-lab.pending-composition-idea.v1';
 const nativeFetch=window.fetch.bind(window);
 const CONCEPT_RE=/<MCL_CONCEPT>\s*([\s\S]*?)\s*<\/MCL_CONCEPT>/i;
@@ -70,7 +70,7 @@ window.fetch=async function(input,init={}){
   window.MCLAiTrace?.response?.(traceId,response,traceRaw);
   if(mode!=='chat'||!response.ok)return response;
   const d=await response.clone().json().catch(()=>null);if(!d)return response;const raw=responseText(provider,d),m=raw.match(CONCEPT_RE),adopt=ADOPT_RE.test(raw);
-  if(m){storeProposal(m[1]);setIdea(m[1]);}
+  if(m)storeProposal(m[1]);
   if(adopt)transferProposal();
   if(!m&&!adopt)return response;
   const cleaned=raw.replace(CONCEPT_RE,'').replace(ADOPT_RE,'').replace(/\n{3,}/g,'\n\n').trim();return jsonResponse(replaceResponseText(provider,d,cleaned),response);
