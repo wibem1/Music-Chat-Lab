@@ -22,12 +22,12 @@ test('core ui', async ({ page }) => {
   await expect(page.locator('#compositionHistoryDialog')).toHaveJSProperty('open',true);
   await expect(page.locator('#compositionHistoryList')).toContainText('noch keine gespeicherte Kompositionsfassung');
   const promptArchitecture = await page.evaluate(() => {
-    const chat=window.MCLSessionV140.systemPrompt('','','Keine MIDI-Fassung im Arbeitstisch.',null,[],'chat',false);
+    const chat=window.MCLExplicitModeV137.directive('chat','')+'\n\n'+window.MCLSessionV140.systemPrompt('','','Keine MIDI-Fassung im Arbeitstisch.',null,[],'chat',false);
     const composeNew=window.MCLSessionV140.systemPrompt('','','Keine MIDI-Fassung im Arbeitstisch.',null,[],'compose',false);
     const composeExisting=window.MCLSessionV140.systemPrompt('','', 'Speicher 1: Quelle',1,[],'compose',true);
     return {chat,composeNew,composeExisting};
   });
-  expect(promptArchitecture.chat.length).toBeLessThan(700);
+  expect(promptArchitecture.chat.length).toBeLessThan(1200);
   expect(promptArchitecture.chat).not.toContain('PATCH');
   expect(promptArchitecture.chat).not.toContain('MERGE');
   expect(promptArchitecture.chat).not.toContain('NEW_SCORE');
