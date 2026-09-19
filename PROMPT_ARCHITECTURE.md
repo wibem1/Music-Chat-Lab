@@ -1,6 +1,6 @@
 # MusicChatLab – Prompt-Architektur
 
-Stand: v1.4.33
+Stand: v1.4.34
 
 ## Grundsatz
 Die App organisiert; die KI musiziert. Kontext wird nur dann an ein Modell gesendet, wenn er für den aktuellen Zug tatsächlich gebraucht wird. Technische MIDI-Protokolle dürfen den normalen musikalischen Dialog nicht belasten.
