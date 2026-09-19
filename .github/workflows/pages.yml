@@ -1,5 +1,5 @@
 name: Deploy Music Chat Lab to GitHub Pages
-# deployment trigger: v1.4.20-settings-diagnostic-export
+# deployment trigger: v1.4.21-single-sw-registration
 
 on:
   workflow_dispatch:
