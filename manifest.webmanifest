@@ -9,13 +9,13 @@
   "theme_color": "#f5f5f5",
   "icons": [
     {
-      "src": "musicchat-icon-192.png?v=1.4.20",
+      "src": "musicchat-icon-192.png?v=1.4.21",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "musicchat-icon-512.png?v=1.4.20",
+      "src": "musicchat-icon-512.png?v=1.4.21",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
