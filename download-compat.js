@@ -1,32 +1,12 @@
-(() => {
-  const nativeClick = HTMLAnchorElement.prototype.click;
+(()=>{
+'use strict';
+if(window.__mclDownloadCompatV1021)return;
+window.__mclDownloadCompatV1021=true;
 
-  HTMLAnchorElement.prototype.click = function() {
-    const href = this.href || "";
-    const filename = this.getAttribute("download") || "";
-
-    if (!filename || !href.startsWith("blob:")) {
-      return nativeClick.call(this);
-    }
-
-    fetch(href)
-      .then(response => response.blob())
-      .then(blob => new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      }))
-      .then(dataUrl => {
-        const a = document.createElement("a");
-        a.href = dataUrl;
-        a.download = filename;
-        a.setAttribute("download", filename);
-        a.style.display = "none";
-        document.body.appendChild(a);
-        nativeClick.call(a);
-        a.remove();
-      })
-      .catch(() => nativeClick.call(this));
-  };
+// Blob-Downloads werden absichtlich nicht mehr global abgefangen.
+// Der frühere Override von HTMLAnchorElement.prototype.click wandelte jeden
+// Blob asynchron in eine Data-URL um. Auf iPad/PWA führte dieser künstliche
+// zweite Downloadpfad zu einem abweichenden Seiten-/Speicher-Lebenszyklus.
+// Alle Exporte benutzen wieder den nativen <a download>-Pfad des Browsers.
+window.MCLDownloadCompat={version:'1.0.21',mode:'native'};
 })();
