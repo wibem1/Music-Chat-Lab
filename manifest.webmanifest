@@ -9,9 +9,9 @@
   "theme_color": "#f5f5f5",
   "icons": [
     {
-      "src": "icon.svg?v=1.4.4",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "musicchat-icon-512.png?v=1.4.5",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
