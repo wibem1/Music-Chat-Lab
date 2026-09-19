@@ -129,3 +129,11 @@ Die Quellprüfung ergab einen gemeinsamen Sonderpfad für Dateidownloads: `downl
 v1.4.10 entfernt diesen globalen Prototype-Override. Blob-Exporte verwenden wieder den nativen `<a download>`-Mechanismus des Browsers. Der Diagnosecode enthält keine eigene API-Key-Restaurierung mehr. Damit wird die Downloadarchitektur vereinfacht und die Ursache an der gemeinsamen Stelle statt durch weitere Key-Patches behandelt.
 
 Freigabekriterium: Syntax-/Ressourcen-/Initialisierungstest sowie Download-Smoke-Test müssen bestehen. Der iPad-spezifische Test bleibt: API-Key speichern → Diagnose-Datei speichern → Key bleibt vorhanden; zusätzlich muss die Diagnosedatei auf dem iPad weiterhin tatsächlich gespeichert werden können.
+
+
+### v1.4.11 – API-Einstellungen mit persistentem IndexedDB-Spiegel
+Der iPad-Test von v1.4.10 zeigte: Auch nach Entfernung des globalen Download-Overrides verschwanden die API-Einstellungen nach dem Speichern der Diagnosedatei. Damit ist der frühere Blob-/Data-URL-Sonderpfad als Ursache widerlegt. Der gerätespezifische Download-/PWA-Lebenszyklus kann den Local-Storage-Eintrag weiterhin verlieren.
+
+v1.4.11 behandelt die API-Einstellungen deshalb nicht mehr als ausschließliches Local-Storage-Datum. `settings-store.js` spiegelt den gespeicherten Einstellungsstand zusätzlich in einer eigenen IndexedDB. Beim Start, bei `pageshow` und bei Rückkehr in den Vordergrund wird ein fehlender Local-Storage-Eintrag aus diesem persistenten Spiegel wiederhergestellt. Ein vorhandener aktueller Local-Storage-Stand bleibt maßgeblich und aktualisiert den Spiegel. „Schlüssel löschen“ löscht bewusst beide Speicherorte. Es werden keine Schlüssel in Diagnose, Backup-Code oder GitHub übertragen.
+
+Freigabekriterium: Syntax-/Ressourcen-/Initialisierungstest; Speichern und bewusstes Löschen müssen beide Speicherpfade konsistent behandeln. Gerätespezifischer iPad-Test: Key einmal neu speichern → Diagnose-Datei speichern → Einstellungen erneut öffnen → Key vorhanden → Provider-Aufruf funktioniert.
