@@ -199,3 +199,9 @@ v1.4.19 ändert diese Speichersemantik bewusst noch nicht. Stattdessen erhält d
 Der Gerätetest von v1.4.19 zeigte, dass die neue `MCLSettingsStore.diagnostic()`-Funktion zwar vorhanden war, vom bestehenden Diagnoseexport aber nicht aufgerufen wurde. Die gespeicherte Diagnosedatei konnte deshalb noch keinen Vergleich zwischen Local Storage und IndexedDB liefern.
 
 v1.4.20 bindet diese bereits vorhandene, rein lesende Diagnose in `diagnostic-enhancer.js` ein und erhöht das Diagnoseformat auf 4. Der Export wartet auf die Diagnose und schreibt sie als `settingsStorage` in die JSON-Datei. Rohwerte der API-Keys werden weiterhin nicht exportiert; enthalten sind ausschließlich Vorhandensein, Länge, gekürzter Fingerabdruck, Gleichheit der beiden Speicherstände und die Laufzeitquelle. Die Persistenz- und Wiederherstellungslogik selbst bleibt unverändert.
+
+
+### v1.4.21 – PWA-Updatepfad auf eine Registrierung konsolidiert
+Der iPad-Test zeigte, dass die installierte PWA trotz veröffentlichtem v1.4.20 nach vollständigem Beenden auf v1.4.19 blieb. Die Quellprüfung fand zwei konkrete Ursachen im aktuellen Stand: `app.js` registrierte weiterhin zusätzlich einen unversionierten Service Worker, während `index.html` einen zweiten Registrierungsweg enthielt; außerdem waren Manifest-, Icon- und versionierte Service-Worker-URLs in `index.html` noch auf v1.4.18 festgeschrieben. Damit war die in v1.4.18 beabsichtigte Synchronisierung in späteren Builds nicht dauerhaft erhalten geblieben.
+
+v1.4.21 entfernt die Service-Worker-Registrierung aus `app.js`. Maßgeblich ist nur noch der eine Registrierungsweg in `index.html`, mit `updateViaCache: "none"` und explizitem `registration.update()`. Alle PWA-Ressourcenkennungen, sichtbare Version, Manifest-Icons und Service-Worker-Cache sind auf v1.4.21 synchronisiert. Der Service Worker verwendet weiterhin `skipWaiting()` und `clients.claim()`; Local Storage und IndexedDB werden nicht verändert.
