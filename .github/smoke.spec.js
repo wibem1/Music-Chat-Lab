@@ -40,7 +40,7 @@ test('core ui', async ({ page }) => {
   await expect(page.locator('#compositionHistoryDialog')).toHaveJSProperty('open',true);
   await expect(page.locator('#compositionHistoryList')).toContainText('noch keine gespeicherte Kompositionsfassung');
   const promptArchitecture = await page.evaluate(() => {
-    const chat=window.MCLExplicitModeV139.directive('chat','')+'\n\n'+window.MCLSessionV143.systemPrompt('','','Keine MIDI-Fassung im Arbeitstisch.',null,[],'chat',false);
+    const chat=window.MCLSessionV144.systemPrompt('','','Keine MIDI-Fassung im Arbeitstisch.',null,[],'chat',false);
     const composeNew=window.MCLSessionV144.systemPrompt('','','Keine MIDI-Fassung im Arbeitstisch.',null,[],'compose',false);
     const composeExisting=window.MCLSessionV144.systemPrompt('','', 'Speicher 1: Quelle',1,[],'compose',true);
     const materialize=window.MCLSessionV144.materializationSystemPrompt(false);
