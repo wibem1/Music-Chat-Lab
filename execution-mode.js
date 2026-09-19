@@ -3,7 +3,7 @@
 if(window.__mclExplicitModeV134)return;
 window.__mclExplicitModeV134=true;
 
-const VERSION='1.3.12';
+const VERSION='1.4.0';
 const nativeFetch=window.fetch.bind(window);
 const CONCEPT_RE=/<MCL_CONCEPT>\s*([\s\S]*?)\s*<\/MCL_CONCEPT>/i;
 let forwardingCompose=false;
@@ -49,6 +49,7 @@ function replaceResponseText(provider,d,text){const x=JSON.parse(JSON.stringify(
 function jsonResponse(data,r){const h=new Headers(r.headers||{});h.set('content-type','application/json');return new Response(JSON.stringify(data),{status:r.status,statusText:r.statusText,headers:h})}
 
 window.fetch=async function(input,init={}){
+  if(init&&init.__mclRawStage){const clean={...init};delete clean.__mclRawStage;return nativeFetch(input,clean)}
   const url=typeof input==='string'?input:input?.url||'',provider=providerFor(url);if(!provider||typeof init.body!=='string')return nativeFetch(input,init);
   let body;try{body=JSON.parse(init.body)}catch{return nativeFetch(input,init)}
   const mode=window.MCLRequestMode==='compose'?'compose':'chat',idea=currentIdea();
