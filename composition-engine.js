@@ -1,5 +1,8 @@
 (()=>{'use strict';
 
+const ENGINE_NAME='Composition Engine';
+const ENGINE_VERSION='1.0.0';
+
 const TECHNICAL_CONTRACT=`TECHNISCHE AUSGABEANFORDERUNG – KEINE MUSIKALISCHEN ZUSATZREGELN:\nAntworte ausschließlich mit validem JSON, ohne Markdown und ohne Text außerhalb des JSON.\nDie Partitur steht entweder direkt im Wurzelobjekt oder im Feld "score".\nPartiturformat:\n{\n  "title": "optional",\n  "bpm": Zahl,\n  "timeSignature": [Zaehler, Nenner],\n  "tracks": [\n    {\n      "name": "Instrument",\n      "program": 0-127,\n      "channel": 0-15,\n      "notes": [[StartBeat, DauerInBeats, MIDIPitch, Velocity], ...]\n    }\n  ]\n}\nWeitere Textfelder, die der Benutzer in seinem Auftrag ausdrücklich verlangt, dürfen zusätzlich im JSON stehen.\nStartBeat und DauerInBeats dürfen Dezimalzahlen sein. MIDI-Pitch 0-127, Velocity 1-127.\nDas technische Format macht keinerlei Vorgaben zu Stil, Harmonik, Melodik, Rhythmik, Form, Artikulation oder musikalischer Qualität.`;
 function createPrompts(snapshot,draft='',translated=''){
  return{
@@ -33,5 +36,5 @@ async function compose({snapshot,key,repeatOf=null,seriesId=null,runId,now,reque
  return{run,midiBytes};
 }
 
-window.CompositionEngine=Object.freeze({compose,TECHNICAL_CONTRACT,createPrompts,duplicateTitlePrompt,makeRequest,actualRequest,extractText,extractJson,findScore,findIdea,sha256Text,sha256Buffer,buildMidi});
+window.CompositionEngine=Object.freeze({name:ENGINE_NAME,version:ENGINE_VERSION,compose,TECHNICAL_CONTRACT,createPrompts,duplicateTitlePrompt,makeRequest,actualRequest,extractText,extractJson,findScore,findIdea,sha256Text,sha256Buffer,buildMidi});
 })();
