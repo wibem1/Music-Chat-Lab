@@ -22,7 +22,7 @@ async function recordGeneratedResult(rec){
   if(added)window.dispatchEvent(new CustomEvent('mcl-composition-history-changed',{detail:{chatId:chat.id}}));
   return !!added;
 }
-function syncGeneratedResult(rec){const api=window.MCLMidiSlots;if(!api?.all||!api?.restoreState||!rec?.score)return;const score=clone(rec.score),title=ensureTitle(score,rec.message),core=coreSignature(score),items=api.all().map(x=>clone(x));let hit=items.find(x=>coreSignature(x.score)===core);if(hit){hit.score=score;hit.name=title;hit.kind='KI';api.restoreState(items,hit.slot);return}const used=new Set(items.map(x=>Number(x.slot))),free=[1,2,3,4,5,6].find(n=>!used.has(n));if(free){items.push({slot:free,name:title,kind:'KI',score});api.restoreState(items,free)}}
+function syncGeneratedResult(rec){const api=window.MCLMidiSlots;if(!api?.all||!api?.restoreState||!rec?.score)return;const score=clone(rec.score),title=ensureTitle(score,rec.message),core=coreSignature(score),items=api.all().map(x=>clone(x));let hit=items.find(x=>coreSignature(x.score)===core);if(hit){hit.score=score;hit.name=title;hit.kind='KI';hit.provider=rec.message?.provider||null;hit.model=rec.message?.model||null;api.restoreState(items,hit.slot);return}const used=new Set(items.map(x=>Number(x.slot))),free=[1,2,3,4,5,6].find(n=>!used.has(n));if(free){items.push({slot:free,name:title,kind:'KI',provider:rec.message?.provider||null,model:rec.message?.model||null,score});api.restoreState(items,free)}}
 let lastGeneratedId=latestGenerated()?.message?.id||null,syncTimer=null;
 function scheduleGeneratedSync(){clearTimeout(syncTimer);syncTimer=setTimeout(()=>{const r=latestGenerated(),id=r?.message?.id||null;if(!id||id===lastGeneratedId)return;lastGeneratedId=id;setTimeout(()=>{recordGeneratedResult(r);syncGeneratedResult(r)},160)},60)}
 function scoreMeasures(score){let end=0;for(const tr of score?.tr||[])for(const n of tr.nt||[])if(Array.isArray(n))end=Math.max(end,(Number(n[0])||0)+(Number(n[1])||0));const ts=score?.ts||{n:4,d:4},beats=(Number(ts.n)||4)*(4/(Number(ts.d)||4));return String(Math.max(1,Math.ceil(end/Math.max(.25,beats))))}
@@ -61,7 +61,7 @@ function loadHistoryItem(item){
   const items=api.all().map(x=>clone(x)),used=new Set(items.map(x=>Number(x.slot))),free=[1,2,3,4,5,6].find(n=>!used.has(n));
   let target=free;
   if(!target){target=activeSlotNumber();if(!target){setNote('Alle sechs Speicher sind belegt. Markiere zuerst den Speicher, den du ersetzen möchtest.');return}if(!window.confirm('Alle sechs Speicher sind belegt. Die markierte Arbeitskopie in Speicher '+target+' durch diese historische Fassung ersetzen?'))return;const ix=items.findIndex(x=>Number(x.slot)===target);if(ix>=0)items.splice(ix,1)}
-  items.push({slot:target,name:item.title||item.score.ti||'Historische Fassung',kind:'Verlauf',score:clone(item.score)});
+  items.push({slot:target,name:item.title||item.score.ti||'Historische Fassung',kind:'Verlauf',provider:item.provider||null,model:item.model||null,score:clone(item.score)});
   api.restoreState(items,target);setNote('Historische Fassung in Speicher '+target+' geladen. Der Verlauf selbst bleibt unverändert.');historyDialog()?.close();
 }
 async function backfillCompositionHistory(){const chat=currentChat();if(!chat?.id)return;for(const m of chat.messages||[]){if(m.role!=='assistant'||m.isError||m.thinking)continue;const score=parseScore(m.text);if(score)await recordGeneratedResult({message:m,score})}}
