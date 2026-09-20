@@ -1,4 +1,4 @@
-const CACHE_NAME = 'music-chat-lab-v1.4.48';
+const CACHE_NAME = 'music-chat-lab-v1.4.49';
 const APP_SHELL = [
   './', './index.html', './styles.css', './app.js', './ai-call-trace.js', './settings-store.js', './state-vault.js', './music-file-processing.js',
   './midi-player.js', './midi-export.js', './midi-context.js', './midi-memory.js',
@@ -9,7 +9,7 @@ const APP_SHELL = [
   './composition-idea-field.js', './diagnostic-enhancer.js', './download-compat.js',
   './execution-mode.css', './execution-mode.js', './midi-input-sync.js',
   './midi-playback-scheduler.js', './midi-slot-delete.js', './player-variants.js',
-  './ui-enhancements.js', './ui-fixes.css', './icon.svg', './musicchat-icon-180.png', './musicchat-icon-192.png', './musicchat-icon-512.png', './manifest.webmanifest',
+  './ui-enhancements.js', './ui-fixes.css', './ui-layout-1.4.49.css', './icon.svg', './musicchat-icon-180.png', './musicchat-icon-192.png', './musicchat-icon-512.png', './manifest.webmanifest',
   './model-extension.js', './input-runtime-guard.js'
 ];
 
