@@ -6,6 +6,12 @@
 
 > **VERBINDLICHE FREIGABEREGEL:** Jeder neue Teststand erhält eine neue, eindeutig sichtbare Buildnummer. Kein Build darf dem Anwender zur Abnahme oder zum Funktionstest herausgegeben werden, bevor er selbst technisch geprüft wurde. Ein erfolgreicher Commit oder GitHub-Pages-Deploy ist ausdrücklich **kein** Funktionstest. Vor Freigabe sind mindestens das Laden aller lokalen JavaScript-/CSS-Ressourcen, JavaScript-Syntax, App-Initialisierung, zentrale Button-/Event-Handler, Chat-/Komponier-Eingabe, Dialoge sowie der grundlegende PWA-Startpfad zu prüfen. Nur ein bestandener technischer Teststand darf als Testbuild bezeichnet und zur Abnahme freigegeben werden. Nicht automatisierbare geräte- oder iPad-spezifische Aspekte müssen ausdrücklich als solche benannt werden und dürfen nicht als selbst getestet ausgegeben werden.
 
+## 2026-09-20 – v1.6.5 / Composition Engine v1.1.0
+- Gemeinsame Composition Engine v1.1.0 übernommen.
+- Sichtbare App-Version, Engine-Cachekennung, Service-Worker-Cache und Smoke-Test konsistent aktualisiert.
+- Einheitliches Kompositionsprofil wird nun von der Engine definiert; keine MusicChat-Sonderdefinition der Beschreibung.
+- Praktischer Provider-/iPad-Test bleibt nach bestandenem CI zusätzlich erforderlich.
+
 Diese Datei ist das fortlaufende technische Entwicklungsprotokoll der MusicChatLab-App. Sie soll nicht nur neue Funktionen festhalten, sondern insbesondere Fehlerursachen, Architekturentscheidungen und daraus abgeleitete Regeln dokumentieren. Sie ist bei wesentlichen Änderungen künftig mitzuführen.
 
 ## Verbindlicher Arbeitsablauf
