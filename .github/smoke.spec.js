@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 test('core ui', async ({ page }) => {
   const errors=[]; page.on('pageerror',e=>errors.push(String(e)));
   await page.goto('http://127.0.0.1:4173/index.html');
-  await expect(page.locator('[data-app-version]')).toHaveText('v1.5.1');
+  await expect(page.locator('[data-app-version]')).toHaveText('v1.5.2');
   await page.locator('#topSettingsButton').click();
   await expect(page.locator('#settingsDialog')).toHaveJSProperty('open',true);
   await page.locator('#settingsDialog .dialog-close').click();
@@ -118,5 +118,7 @@ test('core ui', async ({ page }) => {
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth)).toBeTruthy();
   expect(await assignmentBox.evaluate(e=>e.getBoundingClientRect().height)).toBeGreaterThanOrEqual(100);
+  const uiSizing=await page.evaluate(()=>({chat:parseFloat(getComputedStyle(document.querySelector('.mcl-chat-section h2')).fontSize),assignment:parseFloat(getComputedStyle(document.querySelector('.composition-idea-header label')).fontSize),description:parseFloat(getComputedStyle(document.querySelector('.composition-description summary')).fontSize),desk:parseFloat(getComputedStyle(document.querySelector('.composition-workbar strong')).fontSize),playerButton:document.querySelector('#mainMidiPlay').getBoundingClientRect().height}));
+  expect(uiSizing.assignment).toBe(uiSizing.chat); expect(uiSizing.description).toBe(uiSizing.chat); expect(uiSizing.desk).toBe(uiSizing.chat); expect(uiSizing.playerButton).toBeLessThanOrEqual(34);
   expect(errors).toEqual([]);
 });
