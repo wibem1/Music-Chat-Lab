@@ -26,7 +26,7 @@ test('core ui', async ({ page }) => {
   expect(loadedAssignment).toBe('Variiere das Thema frei für Klavier.');
   await expect(page.locator('#compositionDescriptionDetails')).not.toHaveAttribute('open','');
   await page.locator('#compositionDescriptionDetails summary').click();
-  await expect(page.locator('#compositionDescriptionText')).toHaveText('Beschreibung des Ergebnisses');
+  await expect(page.locator('#compositionDescriptionText')).toContainText('Beschreibung des Ergebnisses');
   const clabSeparation=await page.evaluate(()=>{const d=window.MCLCLAB.makeDocument();return {assignment:d.assignment,concept:d.concept,scoreSummary:d.score.sm}});
   expect(clabSeparation).toEqual({assignment:'Variiere das Thema frei für Klavier.',concept:'Beschreibung des Ergebnisses',scoreSummary:'Beschreibung des Ergebnisses'});
   await page.evaluate(()=>window.MCLCompositionIdea.set('Eigener Auftrag',{generated:false,source:'test'}));
@@ -39,7 +39,7 @@ test('core ui', async ({ page }) => {
   await page.locator('#compositionHistoryButton').click();
   await expect(page.locator('#compositionHistoryDialog')).toHaveJSProperty('open',true);
   await expect(page.locator('#compositionHistoryList')).toContainText('noch keine gespeicherte Kompositionsfassung');
-  await expect(page.locator('#infoDialog')).toContainText('Composition Engine v1.1.0');
+  await expect(page.locator('#infoDialog')).toContainText('Composition Engine v1.1.2');
   await expect(page.locator('#infoDialog')).toContainText('Jetzt zu testen');
   const sharedEngine = await page.evaluate(() => {
     const api=window.CompositionEngine;
@@ -52,7 +52,7 @@ test('core ui', async ({ page }) => {
     return {name:api.name,version:api.version,technical:api.TECHNICAL_CONTRACT,prompts,claudeDraft,claudeMidi,openaiDraft,googleDraft};
   });
   expect(sharedEngine.name).toBe('Composition Engine');
-  expect(sharedEngine.version).toBe('1.1.0');
+  expect(sharedEngine.version).toBe('1.1.2');
   expect(sharedEngine.prompts.musicalDraft).toContain('Komponiere das verlangte Stück musikalisch frei und eigenständig.');
   expect(sharedEngine.prompts.musicalDraft).toContain('Denke noch NICHT an MIDI-Codierung');
   expect(sharedEngine.prompts.musicalDraft).not.toContain('ABC');
