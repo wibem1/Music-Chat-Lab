@@ -1,7 +1,7 @@
 (()=>{'use strict';
 
 const ENGINE_NAME='Composition Engine';
-const ENGINE_VERSION='1.1.1';
+const ENGINE_VERSION='1.1.2';
 
 const TECHNICAL_CONTRACT=`TECHNISCHE AUSGABEANFORDERUNG – KEINE MUSIKALISCHEN ZUSATZREGELN:\nAntworte ausschließlich mit validem JSON, ohne Markdown und ohne Text außerhalb des JSON.\nDie Partitur steht entweder direkt im Wurzelobjekt oder im Feld "score".\nPartiturformat:\n{\n  "title": "optional",\n  "bpm": Zahl,\n  "timeSignature": [Zaehler, Nenner],\n  "tracks": [\n    {\n      "name": "Instrument",\n      "program": 0-127,\n      "channel": 0-15,\n      "notes": [[StartBeat, DauerInBeats, MIDIPitch, Velocity], ...]\n    }\n  ]\n}\nWeitere Textfelder, die der Benutzer in seinem Auftrag ausdrücklich verlangt, dürfen zusätzlich im JSON stehen.\nStartBeat und DauerInBeats dürfen Dezimalzahlen sein. MIDI-Pitch 0-127, Velocity 1-127.\nDas technische Format macht keinerlei Vorgaben zu Stil, Harmonik, Melodik, Rhythmik, Form, Artikulation oder musikalischer Qualität.`;
 function createPrompts(snapshot,draft='',translated=''){
@@ -36,7 +36,7 @@ async function compose({snapshot,key,repeatOf=null,seriesId=null,runId,now,reque
  const translated=await call(createPrompts(snapshot,draft).midiTranslation,'midi_translation');const obj=extractJson(translated);run.parsedModelJson=obj;ev('model_json_parsed',{stage:'midi_translation',changed:false,note:'Nur JSON geparst; keine musikalische Korrektur.'});const score=findScore(obj);run.score=score;
  const title=String(score?.title||'').trim(),allTitles=usedTitles.filter(Boolean);if(title&&allTitles.some(t=>String(t).toLocaleLowerCase('de-DE')===title.toLocaleLowerCase('de-DE'))){let nt=(await call(duplicateTitlePrompt(title,allTitles,draft),'title_renaming')).trim().replace(/^Titel:\s*/i,'').replace(/^['“”"]|['“”"]$/g,'').trim();if(!nt||allTitles.some(t=>String(t).toLocaleLowerCase('de-DE')===nt.toLocaleLowerCase('de-DE')))nt=title+' '+new Date().toLocaleDateString('de-DE');score.title=nt;ev('duplicate_title_replaced',{oldTitle:title,newTitle:nt})}
  const midiBytes=buildMidi(score),buf=midiBytes.buffer.slice(midiBytes.byteOffset,midiBytes.byteOffset+midiBytes.byteLength),midiHash=await sha256Buffer(buf);run.midi={bytes:midiBytes.byteLength,sha256:midiHash,note:'Deterministisch lokal aus den unveränderten Partiturwerten erzeugt; keine musikalische Nachbearbeitung.'};ev('midi_generated',{bytes:midiBytes.byteLength,sha256:midiHash});
- const idea=await call(createPrompts(snapshot,draft,translated).compositionIdea,'composition_idea_afterwards');run.idea=idea.trim();run.completedAt=now();run.status='ok';
+ const idea=await call(createPrompts(snapshot,draft,translated).compositionIdea,'composition_idea_afterwards');run.idea=idea.trim();run.profile=compositionProfile(snapshot,score,draft,run.idea);ev('composition_profile_created',{bpm:run.profile.bpm,tempo:run.profile.tempo,key:run.profile.key,barCount:run.profile.barCount,provider:run.profile.provider,model:run.profile.model});run.completedAt=now();run.status='ok';
  return{run,midiBytes};
 }
 
