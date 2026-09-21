@@ -90,7 +90,9 @@ function bindButtons(){
     }
     input.value='Führe den aktuellen Kompositionsauftrag aus.';
     input.dispatchEvent(new Event('input',{bubbles:true}));
-    setMode('compose');forwardingCompose=true;try{chat.click()}finally{forwardingCompose=false}
+    setMode('compose');
+    if(typeof window.MCLSendMessage==='function')window.MCLSendMessage();
+    else{const note=document.getElementById('composerNote');if(note)note.textContent='Komponieren konnte nicht gestartet werden.';setMode('chat')}
   });
   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey)setMode('chat')},true);
   const syncDisabled=()=>{compose.disabled=chat.disabled};syncDisabled();new MutationObserver(syncDisabled).observe(chat,{attributes:true,attributeFilter:['disabled']});
