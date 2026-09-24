@@ -23,6 +23,10 @@ jobs:
           ! grep -q 'previousSend=XMLHttpRequest.prototype.send' composition-state.js
           ! grep -q 'vermeide mechanische' composition-engine22.js
           ! grep -q 'Gestik, Spannung, Bewegung, Dichte' composition-engine22.js
+          test ! -e composition-engine.js
+          test ! -e composition-engine14.js
+          test ! -e composition-engine-v1.2-experimental.js
+          test ! -e composition-two-stage.js
       - name: Required app shell files
         run: |
           python3 - <<'PY'
