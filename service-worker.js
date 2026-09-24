@@ -1,8 +1,8 @@
-const CACHE_NAME = 'music-chat-lab-v1.8.1';
+const CACHE_NAME = 'music-chat-lab-v1.8.2';
 const APP_SHELL = [
   './', './index.html', './styles.css', './app.js', './ai-call-trace.js', './settings-store.js', './state-vault.js', './music-file-processing.js',
   './midi-player.js', './midi-export.js', './midi-context.js', './midi-memory.js',
-  './composition-engine22.js', './composition-state.js', './session-orchestrator.js',
+  './composition-state.js', './session-orchestrator.js',
   './request-control.js', './runtime-compat.js',
   './api-usage.js', './usage-costs.js', './backup-manager.js', './chat-delete.js',
   './chat-titles.js', './clab-document-v1.js', './composition-idea-field.css',
