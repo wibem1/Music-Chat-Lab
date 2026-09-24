@@ -1,0 +1,38 @@
+name: MusicChat 1.8 Clean Engine Check
+on:
+  push:
+    branches: [v1.8-clean-engine22]
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax
+        run: |
+          for f in *.js; do node --check "$f"; done
+      - name: Engine invariants
+        run: |
+          grep -q "const ENGINE_VERSION='2.2.0'" composition-engine22.js
+          grep -q "Du bist ein eigenständiger Komponist." composition-engine22.js
+          grep -q "Composition Engine 2.2" index.html
+          grep -q 'purpose:String(stage' ai-call-trace.js
+          ! grep -q 'composition-engine14.js' index.html
+          ! grep -q 'engine-catalog.js' index.html
+          ! grep -q 'composition-engine.js?v=' index.html
+          ! grep -q 'previousSend=XMLHttpRequest.prototype.send' composition-state.js
+          ! grep -q 'vermeide mechanische' composition-engine22.js
+          ! grep -q 'Gestik, Spannung, Bewegung, Dichte' composition-engine22.js
+      - name: Required app shell files
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path("service-worker.js").read_text()
+          for f in re.findall(r"'\./([^']+)'",s):
+              if not Path(f).exists(): raise SystemExit("missing: "+f)
+          PY
+      - name: Version
+        run: |
+          grep -q 'v1.8.0' index.html
+          grep -q 'music-chat-lab-v1.8.0' service-worker.js
