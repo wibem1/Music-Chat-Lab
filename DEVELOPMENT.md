@@ -409,3 +409,15 @@ Die nachträgliche Kompositionsbeschreibung erhält die technische Partitur als 
 Der neue Browser-Smoke-Test von v1.5.2 maß die tatsächlich berechnete Darstellung und fand für „Kompositionsauftrag“ 12 px statt der 20 px der Bereichsüberschrift. Ursache war keine fehlende App-Aktualisierung, sondern doppelte CSS-Verantwortung: Das später geladene `composition-idea-field.css` setzte für `.composition-idea-box label` und `.composition-description summary` eigene 12-px-Typografie und überstimmte damit die gleich spezifische Layoutregel. Die in v1.5.1 angehängte Override-Schicht wurde nicht fortgeführt.
 
 v1.5.3 konsolidiert die Zuständigkeit: `composition-idea-field.css` behält Struktur und Abstände dieser Komponenten, definiert aber deren Bereichsüberschriftentypografie nicht mehr. Schriftgröße, Gewicht und Farbe der Bereichsüberschriften werden ausschließlich von der vorhandenen Layoutregel gesteuert. Der Smoke-Test vergleicht weiterhin die tatsächlich berechneten Schriftgrößen von Chat, Kompositionsauftrag, Kompositionsbeschreibung und Arbeitstisch sowie die kompakte Player-Geometrie. Engine- und Provider-Code bleiben unverändert.
+
+## 2026-09-24 – v1.8.0 / Composition Engine 2.2 – Kommunikationsbereinigung
+- Die bereinigte Composition Engine 2.2 aus Minimal Composer wird als alleiniger kompositorischer Kern verwendet.
+- Der frühere Engine-Katalog und parallele Engine-Auswahlpfade werden im Laufzeitpfad nicht mehr geladen.
+- Die musikalische Engine folgt: freie musikalische Vorstellung → eigenständige Komposition → technische Kodierung.
+- System-Prompt der Kompositionsengine: „Du bist ein eigenständiger Komponist.“
+- Die technische Ausgabe enthält keine kompositorischen Lehrmeister-Regeln.
+- Der alte XHR-Prompt-Mutator in composition-state.js wurde entfernt.
+- Das Kommunikationsprotokoll kennzeichnet jeden KI-Aufruf zusätzlich mit purpose/stage.
+- Chat und Komposition bleiben getrennt; vorhandenes Slot-Material wird der Komposition nur bei ausdrücklicher Referenz übergeben.
+- Historische Engine-Dateien können vorerst als Archiv im Repository verbleiben, werden aber von v1.8.0 nicht geladen. Eine physische Archiv-/Löschbereinigung erfolgt erst nach bestandenem Teststand.
+- Freigabe erst nach Syntax-, Ressourcen- und Browser-Smoke-Test; Provider-/Musikqualität bleibt gesondert zu prüfen.
