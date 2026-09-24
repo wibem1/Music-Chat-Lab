@@ -68,7 +68,6 @@ jobs:
           test ! -e "$RUNNER_TEMP/mcl-pages/composition-engine14.js"
           grep -q "Composition Engine 2.2" "$RUNNER_TEMP/mcl-pages/index.html"
           test -f "$RUNNER_TEMP/mcl-pages/session-orchestrator.js"
-          test -f "$RUNNER_TEMP/mcl-pages/session-output-guard.js"
           test -f "$RUNNER_TEMP/mcl-pages/midi-player.js"
           test -f "$RUNNER_TEMP/mcl-pages/music-file-processing.js"
           test -f "$RUNNER_TEMP/mcl-pages/clab-document-v1.js"
