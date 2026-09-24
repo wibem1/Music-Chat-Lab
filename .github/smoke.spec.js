@@ -39,31 +39,29 @@ test('core ui', async ({ page }) => {
   await page.locator('#compositionHistoryButton').click();
   await expect(page.locator('#compositionHistoryDialog')).toHaveJSProperty('open',true);
   await expect(page.locator('#compositionHistoryList')).toContainText('noch keine gespeicherte Kompositionsfassung');
-  await expect(page.locator('#infoDialog')).toContainText('Composition Engine v1.1.2');
+  await expect(page.locator('#infoDialog')).toContainText('Composition Engine 2.2');
   await expect(page.locator('#infoDialog')).toContainText('Jetzt zu testen');
   const sharedEngine = await page.evaluate(() => {
     const api=window.CompositionEngine;
     const snap={visibleTask:'Komponiere ein Klavierstück.',provider:'anthropic',model:'claude-sonnet-5'};
-    const prompts=api.createPrompts(snap,'ENTWURF','PARTITUR');
-    const claudeDraft=api.makeRequest('anthropic','claude-sonnet-5',prompts.musicalDraft,'musical_draft');
-    const claudeMidi=api.makeRequest('anthropic','claude-sonnet-5',prompts.midiTranslation,'midi_translation');
-    const openaiDraft=api.makeRequest('openai','gpt-5.6',prompts.musicalDraft,'musical_draft');
-    const googleDraft=api.makeRequest('google','gemini-3.1-pro-preview',prompts.musicalDraft,'musical_draft');
-    return {name:api.name,version:api.version,technical:api.TECHNICAL_CONTRACT,prompts,claudeDraft,claudeMidi,openaiDraft,googleDraft};
+    const prompts=api.createPrompts(snap,'ENTWURF');
+    const claudeDraft=api.makeRequest('anthropic','claude-sonnet-5',prompts.musicalDraft,'composition.imagination');
+    const claudeScore=api.makeRequest('anthropic','claude-sonnet-5',prompts.midiTranslation,'composition.score');
+    const openaiDraft=api.makeRequest('openai','gpt-5.6',prompts.musicalDraft,'composition.imagination');
+    const googleDraft=api.makeRequest('google','gemini-3.1-pro-preview',prompts.musicalDraft,'composition.imagination');
+    return {name:api.name,version:api.version,technical:api.TECHNICAL_CONTRACT,prompts,claudeDraft,claudeScore,openaiDraft,googleDraft};
   });
   expect(sharedEngine.name).toBe('Composition Engine');
-  expect(sharedEngine.version).toBe('1.1.2');
-  expect(sharedEngine.prompts.musicalDraft).toContain('Komponiere das verlangte Stück musikalisch frei und eigenständig.');
-  expect(sharedEngine.prompts.musicalDraft).toContain('Denke noch NICHT an MIDI-Codierung');
-  expect(sharedEngine.prompts.musicalDraft).not.toContain('ABC');
-  expect(sharedEngine.technical).toContain('Antworte ausschließlich mit validem JSON');
-  expect(sharedEngine.technical).toContain('"notes": [[StartBeat, DauerInBeats, MIDIPitch, Velocity], ...]');
+  expect(sharedEngine.version).toBe('2.2.0');
+  expect(sharedEngine.prompts.musicalDraft).toContain('Entwickle zunächst deine eigene musikalische Vorstellung');
+  expect(sharedEngine.prompts.musicalDraft).toContain('noch keine technische Ausgabe');
+  expect(sharedEngine.technical).toContain('Nur valides JSON');
+  expect(sharedEngine.technical).toContain('Pitch ist MIDI 0–127');
   expect(sharedEngine.claudeDraft.body.max_tokens).toBe(32768);
-  expect(sharedEngine.claudeDraft.body.thinking).toBeUndefined();
-  expect(sharedEngine.claudeMidi.body.thinking).toEqual({type:'disabled'});
+  expect(sharedEngine.claudeDraft.body.system).toBe('Du bist ein eigenständiger Komponist.');
+  expect(sharedEngine.claudeScore.body.system).toBe('Du bist ein eigenständiger Komponist.');
   expect(sharedEngine.openaiDraft.body.store).toBe(false);
-  expect(sharedEngine.googleDraft.body.contents[0].parts[0].text).toContain('Komponiere das verlangte Stück');
-  expect(sharedEngine.prompts.compositionIdea).toContain('Analysiere die soeben entstandene Komposition');
+  expect(sharedEngine.googleDraft.body.systemInstruction.parts[0].text).toBe('Du bist ein eigenständiger Komponist.');
   const ideaContract=await page.evaluate(()=>({
     chatDirective:window.MCLExplicitModeV139.directive('chat',''),
     noRef:window.MCLSessionV143.referencesWorkbench('Komponiere ein Klavierstück.',[{slot:1,name:'Stilles Wiegen',score:{ti:'Stilles Wiegen'}}]),
