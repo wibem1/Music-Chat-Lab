@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 test('core ui', async ({ page }) => {
   const errors=[]; page.on('pageerror',e=>errors.push(String(e)));
   await page.goto('http://127.0.0.1:4173/index.html');
-  await expect(page.locator('[data-app-version]')).toHaveText('v1.8.8');
+  await expect(page.locator('[data-app-version]')).toHaveText('v1.9.0');
   await page.locator('#topSettingsButton').click();
   await expect(page.locator('#settingsDialog')).toHaveJSProperty('open',true);
   await page.locator('#settingsDialog .dialog-close').click();
@@ -117,3 +117,5 @@ test('core ui', async ({ page }) => {
   expect(uiSizing.assignment).toBe(uiSizing.chat); expect(uiSizing.description).toBe(uiSizing.chat); expect(uiSizing.desk).toBe(uiSizing.chat); expect(uiSizing.playerButton).toBeGreaterThanOrEqual(46);
   expect(errors).toEqual([]);
 });
+
+test('central composition architecture guard',async({page})=>{await page.goto('http://127.0.0.1:4173/index.html');const engine=await page.evaluate(()=>({version:window.CompositionEngine?.version,compose:typeof window.CompositionEngine?.compose,request:typeof window.CompositionEngine?.makeRequest}));expect(engine.compose).toBe('function');expect(engine.request).toBe('function');expect(engine.version).toBeTruthy();});
