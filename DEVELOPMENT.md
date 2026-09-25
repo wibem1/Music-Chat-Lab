@@ -410,8 +410,8 @@ Der neue Browser-Smoke-Test von v1.5.2 maß die tatsächlich berechnete Darstell
 
 v1.5.3 konsolidiert die Zuständigkeit: `composition-idea-field.css` behält Struktur und Abstände dieser Komponenten, definiert aber deren Bereichsüberschriftentypografie nicht mehr. Schriftgröße, Gewicht und Farbe der Bereichsüberschriften werden ausschließlich von der vorhandenen Layoutregel gesteuert. Der Smoke-Test vergleicht weiterhin die tatsächlich berechneten Schriftgrößen von Chat, Kompositionsauftrag, Kompositionsbeschreibung und Arbeitstisch sowie die kompakte Player-Geometrie. Engine- und Provider-Code bleiben unverändert.
 
-## 2026-09-24 – v1.8.0 / Composition Engine 2.2 – Kommunikationsbereinigung
-- Die bereinigte Composition Engine 2.2 aus Minimal Composer wird als alleiniger kompositorischer Kern verwendet.
+## 2026-09-24 – v1.8.0 / zentrale Composition Engine – Kommunikationsbereinigung
+- KORREKTUR 25.09.2026: Die damalige Bezeichnung „Composition Engine 2.2“ war sachlich falsch. Es gab zu diesem Zeitpunkt keine freigegebene zentrale Engine 2.2. Verbindlich ist ausschließlich der jeweils über `composition-engine.js` zentral freigegebene Engine-Stand; die App verdrahtet keine Engine-Version.
 - Der frühere Engine-Katalog und parallele Engine-Auswahlpfade werden im Laufzeitpfad nicht mehr geladen.
 - Die musikalische Engine folgt: freie musikalische Vorstellung → eigenständige Komposition → technische Kodierung.
 - System-Prompt der Kompositionsengine: „Du bist ein eigenständiger Komponist.“
@@ -437,3 +437,10 @@ v1.5.3 konsolidiert die Zuständigkeit: `composition-idea-field.css` behält Str
 - CLAB-Speichern trennt Kompositionsauftrag und erzeugte Kompositionsbeschreibung; der Auftrag überschreibt `score.sm` nicht mehr.
 - App-, Asset- und Service-Worker-Versionen vereinheitlicht; Orchestrator intern auf 1.5.0.
 - Architekturvertrag und Smoke-Test auf Composition Engine 2.1 aktualisiert.
+
+
+## 2026-09-25 – Architekturkorrektur zentrale Engine
+- MusicChat lädt `https://wibem1.github.io/Composition-Engine/composition-engine.js` ohne Versions-Pinning.
+- CI/Smoke-Test dürfen keine konkrete Engine-Version voraussetzen; geprüft wird der zentrale Entry-Point und die vom Modul selbst gemeldete Version.
+- Der fehlerhafte Recovery-PR #29 mit `?v=2.1.0` wurde geschlossen und nicht gemergt.
+- Engine-Wechsel erfolgen ausschließlich im zentralen Composition-Engine-Repository; MusicChat benötigt dafür keine neue App-Version.
