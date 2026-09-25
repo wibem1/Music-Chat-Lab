@@ -430,3 +430,10 @@ v1.5.3 konsolidiert die Zuständigkeit: `composition-idea-field.css` behält Str
 - Playback-Zustand und Fehler werden über `MCLPlaybackDiagnostic` erfasst und von `diagnostic-enhancer.js` in die Diagnosedatei übernommen (Phase, Fehlertyp, Meldung, Stack, AudioContext-Zustand, Stück-/Notenzahl).
 - Service-Worker-Cache und sichtbare App-Version werden auf v1.8.8 angehoben.
 - Freigabe erst nach Syntax-/Ressourcen-/Browser-Smoke-Test einschließlich Player-Start. Reale Audioausgabe auf dem Zielgerät bleibt eine gerätespezifische Restprüfung.
+
+## 2026-09-25 — v1.9.0 — Stabilisierung
+- Orchestrator erzeugt keine eigenen Kompositions-Systemprompts/Provider-Bodies mehr, sondern verwendet den Provider-Adapter der zentralen Composition Engine.
+- Doppelte app-lokale JSON-Fortsetzungslogik entfernt; technische Fortsetzung liegt zentral in der Engine.
+- CLAB-Speichern trennt Kompositionsauftrag und erzeugte Kompositionsbeschreibung; der Auftrag überschreibt `score.sm` nicht mehr.
+- App-, Asset- und Service-Worker-Versionen vereinheitlicht; Orchestrator intern auf 1.5.0.
+- Architekturvertrag und Smoke-Test auf Composition Engine 2.1 aktualisiert.

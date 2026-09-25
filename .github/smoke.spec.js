@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 test('core ui', async ({ page }) => {
   const errors=[]; page.on('pageerror',e=>errors.push(String(e)));
   await page.goto('http://127.0.0.1:4173/index.html');
-  await expect(page.locator('[data-app-version]')).toHaveText('v1.8.8');
+  await expect(page.locator('[data-app-version]')).toHaveText('v1.9.0');
   await page.locator('#topSettingsButton').click();
   await expect(page.locator('#settingsDialog')).toHaveJSProperty('open',true);
   await page.locator('#settingsDialog .dialog-close').click();
@@ -39,7 +39,7 @@ test('core ui', async ({ page }) => {
   await page.locator('#compositionHistoryButton').click();
   await expect(page.locator('#compositionHistoryDialog')).toHaveJSProperty('open',true);
   await expect(page.locator('#compositionHistoryList')).toContainText('noch keine gespeicherte Kompositionsfassung');
-  await expect(page.locator('#infoDialog')).toContainText('Composition Engine 1.3');
+  await expect(page.locator('#infoDialog')).toContainText('Composition Engine 2.1');
   await expect(page.locator('#infoDialog')).toContainText('Jetzt zu testen');
   const sharedEngine = await page.evaluate(() => {
     const api=window.CompositionEngine;
@@ -52,8 +52,8 @@ test('core ui', async ({ page }) => {
     return {name:api.name,version:api.version,technical:api.TECHNICAL_CONTRACT,prompts,claudeDraft,claudeScore,openaiDraft,googleDraft};
   });
   expect(sharedEngine.name).toBe('Composition Engine');
-  expect(sharedEngine.version).toBe('1.3.0');
-  expect(await page.evaluate(() => window.MCLSessionV145.version)).toBe('1.4.5');
+  expect(sharedEngine.version).toBe('2.1.0');
+  expect(await page.evaluate(() => window.MCLSessionV145.version)).toBe('1.5.0');
   expect(sharedEngine.prompts.musicalDraft).toContain('Komponiere das verlangte Stück musikalisch frei und eigenständig');
   expect(sharedEngine.prompts.musicalDraft).toContain('Denke noch NICHT an MIDI-Codierung');
   expect(sharedEngine.technical).toContain('Nur valides JSON');
@@ -117,3 +117,5 @@ test('core ui', async ({ page }) => {
   expect(uiSizing.assignment).toBe(uiSizing.chat); expect(uiSizing.description).toBe(uiSizing.chat); expect(uiSizing.desk).toBe(uiSizing.chat); expect(uiSizing.playerButton).toBeGreaterThanOrEqual(46);
   expect(errors).toEqual([]);
 });
+
+test('central composition architecture guard',async({page})=>{await page.goto('http://127.0.0.1:4173/index.html');const engine=await page.evaluate(()=>({version:window.CompositionEngine?.version,compose:typeof window.CompositionEngine?.compose,request:typeof window.CompositionEngine?.makeRequest}));expect(engine.compose).toBe('function');expect(engine.request).toBe('function');expect(engine.version).toBeTruthy();});

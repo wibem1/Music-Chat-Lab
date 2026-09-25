@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-if(window.__mclSessionOrchestratorV145)return;
-window.__mclSessionOrchestratorV145=true;
+if(window.__mclSessionOrchestratorV150)return;
+window.__mclSessionOrchestratorV150=true;
 
-const VERSION='1.4.5';
+const VERSION='1.5.0';
 const MEMORY_KEY='music-chat-lab.session-memory.v3';
 const ACTIVE_CHAT_KEY='music-chat-lab.active-chat.v1';
 const RECENT_MESSAGES=8;
@@ -312,43 +312,15 @@ function compositionTask(user,provided){const assignment=ideaText()||cleanLegacy
 function sharedEngine(){const engine=window.CompositionEngine;if(!engine?.compose||!engine.version)throw new Error('Zentrale Composition Engine ist nicht geladen.');return engine}
 function sharedToMclScore(score,idea,assignment){if(!score||!Array.isArray(score.tracks)||!Number.isFinite(Number(score.bpm)))return null;const ts=Array.isArray(score.timeSignature)?score.timeSignature:[4,4];const tr=score.tracks.map((t,i)=>({nm:String(t?.name||`Track ${i+1}`),ch:Math.max(0,Math.min(15,Number.isFinite(Number(t?.channel))?Number(t.channel):i%16)),pg:Math.max(0,Math.min(127,Number(t?.program)||0)),nt:(t?.notes||[]).filter(n=>Array.isArray(n)&&n.length>=4).map(n=>[Number(n[0]),Number(n[1]),Math.round(Number(n[2])),Math.round(Number(n[3])),i,0.9]),ct:[]}));return{ti:String(score.title||'Neue Komposition'),bpm:Number(score.bpm),ts:{n:Number(ts[0])||4,d:Number(ts[1])||4},k:String(score.key||''),sm:String(idea||score.description||score.summary||assignment||'').trim().slice(0,4000),tr}}
 function usedCompositionTitles(){return workspaceSources().map(x=>String(x?.score?.ti||x?.name||'').trim()).filter(Boolean)}
-function sharedStageBody(provider,model,prompt,stage){const system='Du bist ein eigenständiger Komponist.';if(provider==='anthropic')return{model,max_tokens:32768,system,messages:[{role:'user',content:prompt}]};if(provider==='openai')return{model,input:[{role:'system',content:[{type:'input_text',text:system}]},{role:'user',content:[{type:'input_text',text:prompt}]}],store:false};return{systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:prompt}]}]}}
+function sharedStageBody(provider,model,prompt,stage){const engine=sharedEngine(),spec=engine.makeRequest?.(provider,model,prompt,stage);if(!spec?.body)throw new Error('Composition Engine liefert keinen gültigen Provider-Request für '+stage+'.');return spec.body}
 async function runSharedStage(input,init,provider,body,prompt,stage){const requestBody=sharedStageBody(provider,body.model,prompt,stage);const r=await innerFetch(input,{...init,__mclTraceStage:stage,body:JSON.stringify(requestBody)});const rawTransport=await r.clone().text().catch(()=>'');let d=null;try{d=rawTransport?JSON.parse(rawTransport):null}catch{}return{r,d,raw:d&&r.ok?responseText(provider,d):''}}
 async function sharedCompose(input,init,provider,body,task){
   const engine=sharedEngine(),snapshot={visibleTask:task,provider,model:String(body.model||''),engine:'central-current'},key='';
   const requestModel=async({promptText,stage})=>{
-    const first=await runSharedStage(input,init,provider,body,promptText,stage);
-    if(!first.r.ok)throw new Error('KI-Anfrage '+stage+': HTTP '+first.r.status+(first.d?.error?.message?': '+first.d.error.message:''));
-    if(!first.raw)throw new Error('Die KI hat in '+stage+' keine Textantwort geliefert.');
-    if(stage!=='midi_translation')return first.raw;
-    let combined=first.raw;
-    // Repair only a missing outer array closer, never synthesize or alter note events.
-    const closeOuterArray=(s)=>{
-      const t=s.trim();
-      if(!t.startsWith('{')||!t.endsWith('}')||!t.includes('"v"'))return null;
-      const candidate=t.slice(0,-1)+']}';
-      try{
-        const obj=window.CompositionEngine.extractJson(candidate);
-        if(!Array.isArray(obj.v)||!obj.v.length||!obj.v.every(v=>Array.isArray(v)&&Array.isArray(v[3])))return null;
-        return candidate;
-      }catch{return null}
-    };
-    const structurallyClosed=closeOuterArray(combined);
-    if(structurallyClosed)return structurallyClosed;
-    for(let attempt=0;attempt<2;attempt++){
-      try{window.CompositionEngine.extractJson(combined);return combined}catch{}
-      const tail=combined.slice(-2400);
-      const continuation='Die technische JSON-Partitur wurde bei der Ausgabe abgeschnitten. Setze exakt an der Abbruchstelle fort. Keine Wiederholung, keine Einleitung, keine neuen Noten oder Änderungen. Antworte ausschließlich mit dem unmittelbar anschließenden JSON-Text bis zum Abschluss. Letzte Zeichen der bisherigen Ausgabe:\\n'+tail;
-      const next=await runSharedStage(input,init,provider,body,continuation,'midi_translation_continuation_'+(attempt+1));
-      if(!next.r.ok)throw new Error('MIDI-Fortsetzung: HTTP '+next.r.status+(next.d?.error?.message?': '+next.d.error.message:''));
-      if(!next.raw)throw new Error('Die KI lieferte keine MIDI-Fortsetzung.');
-      let addition=next.raw.trim().replace(/^\`\`\`(?:json)?\\s*/i,'').replace(/\\s*\`\`\`$/,'');
-      const overlap=Math.min(combined.length,addition.length,1200);
-      let matched=0;for(let n=overlap;n>0;n--)if(combined.endsWith(addition.slice(0,n))){matched=n;break}
-      combined+=addition.slice(matched);
-    }
-    try{window.CompositionEngine.extractJson(combined)}catch{throw new Error('MIDI-Übersetzung auch nach zwei Fortsetzungen unvollständig. Der musikalische Entwurf wurde nicht verändert.')}
-    return combined;
+    const result=await runSharedStage(input,init,provider,body,promptText,stage);
+    if(!result.r.ok)throw new Error('KI-Anfrage '+stage+': HTTP '+result.r.status+(result.d?.error?.message?': '+result.d.error.message:''));
+    if(!result.raw)throw new Error('Die KI hat in '+stage+' keine Textantwort geliefert.');
+    return result.raw;
   };
   const result=await engine.compose({snapshot,key,seriesId:null,runId:'MCL-'+Date.now().toString(36),now:()=>new Date().toISOString(),requestModel,usedTitles:usedCompositionTitles()});result.run.selectedEngine={choice:'central-current',name:engine.name,version:engine.version};return result;
 }
