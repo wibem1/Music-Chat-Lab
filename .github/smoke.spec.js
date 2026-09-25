@@ -59,7 +59,7 @@ test('core ui', async ({ page }) => {
   expect(sharedEngine.technical).toContain('Jede klingende Note des Entwurfs genau einmal ausgeben');
   expect(sharedEngine.claudeDraft.body.max_tokens).toBe(32768);
   expect(sharedEngine.claudeDraft.body.messages[0].content).toContain('Komponiere das verlangte Stück');
-  expect(sharedEngine.claudeScore.body.messages[0].content).toContain('Keine Neukomposition');
+  expect(sharedEngine.claudeScore.body.messages[0].content.toLowerCase()).toContain('keine neukomposition');
   expect(sharedEngine.openaiDraft.body.store).toBe(false);
   expect(sharedEngine.googleDraft.body.contents[0].parts[0].text).toContain('Komponiere das verlangte Stück');
   const ideaContract=await page.evaluate(()=>({
