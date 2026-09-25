@@ -437,3 +437,11 @@ v1.5.3 konsolidiert die Zuständigkeit: `composition-idea-field.css` behält Str
 - CLAB-Speichern trennt Kompositionsauftrag und erzeugte Kompositionsbeschreibung; der Auftrag überschreibt `score.sm` nicht mehr.
 - App-, Asset- und Service-Worker-Versionen vereinheitlicht; Orchestrator intern auf 1.5.0.
 - Architekturvertrag und Smoke-Test auf Composition Engine 2.1 aktualisiert.
+
+
+## 2026-09-25 – v1.9.1 – Runtime-Recovery und Versionsbereinigung
+- Korrektur zu v1.8.0: Die damalige Bezeichnung „Composition Engine 2.2“ war eine falsche Dokumentationsbezeichnung. Im zentralen Repository existiert keine implementierte/freigegebene Engine 2.2; der freigegebene Stand ist Composition Engine 2.1.0.
+- Der Pages-Workflow enthielt noch Guards für „Composition Engine 1.3“ und `composition-engine.js?v=1.3.0`, obwohl `main` bereits 2.1.0 verwendete. Dadurch konnte der aktuelle Stand nicht regulär deployt werden.
+- MusicChat bindet den zentralen Entry-Point nun explizit als `composition-engine.js?v=2.1.0`.
+- Fehler vor einem Provider-Aufruf werden als Engine-/Kompositionsfehler mit Runtime-Diagnose gespeichert; kein pauschales synthetisches HTTP 500 mehr.
+- Version und Service-Worker-Cache auf v1.9.1 angehoben. Freigabe nur nach erfolgreichem GitHub-Actions-Syntax-/Browser-Smoke-Test.
