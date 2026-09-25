@@ -421,3 +421,12 @@ v1.5.3 konsolidiert die Zuständigkeit: `composition-idea-field.css` behält Str
 - Chat und Komposition bleiben getrennt; vorhandenes Slot-Material wird der Komposition nur bei ausdrücklicher Referenz übergeben.
 - Historische Engine-Dateien können vorerst als Archiv im Repository verbleiben, werden aber von v1.8.0 nicht geladen. Eine physische Archiv-/Löschbereinigung erfolgt erst nach bestandenem Teststand.
 - Freigabe erst nach Syntax-, Ressourcen- und Browser-Smoke-Test; Provider-/Musikqualität bleibt gesondert zu prüfen.
+
+
+## 2026-09-25 – v1.8.8 / Playback-Scheduler und Playback-Diagnose
+- Gerätediagnose aus v1.8.7 zeigte eine vollständig erzeugte und gespeicherte Partitur, aber keinen eigenen Playback-Fehlerdatensatz. Die Kompositionsengine wird deshalb nicht verändert.
+- Im Repository war bereits `midi-playback-scheduler.js` mit begrenztem Look-ahead-Scheduling vorhanden, wurde von `index.html` jedoch nicht geladen. Der aktive `midi-player.js` plante dagegen beim Start sämtliche noch folgenden Noten unmittelbar als Web-Audio-Quellen ein.
+- v1.8.8 bindet den vorhandenen Scheduler in den regulären Playerpfad ein. Er plant nur ein kurzes Zeitfenster voraus und begrenzt die pro Durchlauf erzeugten Events. Damit bleibt die Änderung im Playback-Bereich und greift nicht in Komposition oder technische Partiturmaterialisierung ein.
+- Playback-Zustand und Fehler werden über `MCLPlaybackDiagnostic` erfasst und von `diagnostic-enhancer.js` in die Diagnosedatei übernommen (Phase, Fehlertyp, Meldung, Stack, AudioContext-Zustand, Stück-/Notenzahl).
+- Service-Worker-Cache und sichtbare App-Version werden auf v1.8.8 angehoben.
+- Freigabe erst nach Syntax-/Ressourcen-/Browser-Smoke-Test einschließlich Player-Start. Reale Audioausgabe auf dem Zielgerät bleibt eine gerätespezifische Restprüfung.
