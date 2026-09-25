@@ -309,7 +309,7 @@ async function runProvider(input,init,provider,body,msgs,system,traceStage,polic
   return{r,d,raw:d&&r.ok?responseText(provider,d):''};
 }
 function compositionTask(user,provided){const assignment=ideaText()||cleanLegacy(user);if(!provided.length)return assignment;return assignment+'\n\nMUSIKALISCHES AUSGANGSMATERIAL AUS MUSIC CHAT LAB:\n'+scoreBlocks(provided)}
-function sharedEngine(){const engine=window.CompositionEngine;if(!engine?.compose||!engine.version)throw new Error('Zentrale Composition Engine ist nicht geladen.');return engine}
+function sharedEngine(){const engine=window.CompositionEngine;if(!engine?.compose||!engine.version){const detail={at:new Date().toISOString(),kind:'composition-engine-runtime',message:'Zentrale Composition Engine ist nicht geladen.',enginePresent:!!engine,engineVersion:engine?.version||null,composeType:typeof engine?.compose};try{localStorage.setItem('music-chat-lab.last-diagnostic.v1',JSON.stringify(detail))}catch{}throw new Error('Composition Engine nicht geladen (erwartet: 2.1.0). Bitte App neu laden; Diagnose enthält den Runtime-Zustand.')}return engine}
 function sharedToMclScore(score,idea,assignment){if(!score||!Array.isArray(score.tracks)||!Number.isFinite(Number(score.bpm)))return null;const ts=Array.isArray(score.timeSignature)?score.timeSignature:[4,4];const tr=score.tracks.map((t,i)=>({nm:String(t?.name||`Track ${i+1}`),ch:Math.max(0,Math.min(15,Number.isFinite(Number(t?.channel))?Number(t.channel):i%16)),pg:Math.max(0,Math.min(127,Number(t?.program)||0)),nt:(t?.notes||[]).filter(n=>Array.isArray(n)&&n.length>=4).map(n=>[Number(n[0]),Number(n[1]),Math.round(Number(n[2])),Math.round(Number(n[3])),i,0.9]),ct:[]}));return{ti:String(score.title||'Neue Komposition'),bpm:Number(score.bpm),ts:{n:Number(ts[0])||4,d:Number(ts[1])||4},k:String(score.key||''),sm:String(idea||score.description||score.summary||assignment||'').trim().slice(0,4000),tr}}
 function usedCompositionTitles(){return workspaceSources().map(x=>String(x?.score?.ti||x?.name||'').trim()).filter(Boolean)}
 function sharedStageBody(provider,model,prompt,stage){const engine=sharedEngine(),spec=engine.makeRequest?.(provider,model,prompt,stage);if(!spec?.body)throw new Error('Composition Engine liefert keinen gültigen Provider-Request für '+stage+'.');return spec.body}
@@ -368,8 +368,11 @@ window.fetch=async function(input,init={}){
     const shell=provider==='anthropic'?{content:[{type:'text',text:''}]}:provider==='openai'?{output_text:'',output:[]}:{candidates:[{content:{role:'model',parts:[{text:''}]}}]};
     return jsonResponse(replaceResponseText(provider,shell,JSON.stringify(score)),200,new Headers({'content-type':'application/json'}));
   }catch(e){
-    const warning=e?.message||String(e),shell=provider==='anthropic'?{content:[{type:'text',text:''}]}:provider==='openai'?{output_text:'',output:[]}:{candidates:[{content:{role:'model',parts:[{text:''}]}}]};
-    return jsonResponse(replaceResponseText(provider,shell,warning),500,new Headers({'content-type':'application/json'}));
+    const warning=e?.message||String(e),detail={at:new Date().toISOString(),kind:'composition-failure',provider,model:body.model||'',engineVersion:window.CompositionEngine?.version||null,message:warning,stack:e?.stack||null};
+    try{localStorage.setItem('music-chat-lab.last-diagnostic.v1',JSON.stringify(detail))}catch{}
+    if(note)note.textContent='Komposition fehlgeschlagen: '+warning;
+    const shell=provider==='anthropic'?{content:[{type:'text',text:''}]}:provider==='openai'?{output_text:'',output:[]}:{candidates:[{content:{role:'model',parts:[{text:''}]}}]};
+    return jsonResponse(replaceResponseText(provider,shell,'Komposition fehlgeschlagen: '+warning),422,new Headers({'content-type':'application/json'}));
   }
 };
 
