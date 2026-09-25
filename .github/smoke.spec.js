@@ -56,7 +56,7 @@ test('core ui', async ({ page }) => {
   expect(sharedEngine.prompts.musicalDraft).toContain('Komponiere das verlangte Stück musikalisch frei und eigenständig');
   expect(sharedEngine.prompts.musicalDraft).toContain('Denke noch NICHT an MIDI-Codierung');
   expect(sharedEngine.technical).toContain('Nur valides JSON');
-  expect(sharedEngine.technical).toContain('Pitch ist MIDI 0–127');
+  expect(sharedEngine.technical).toContain('Jede klingende Note des Entwurfs genau einmal ausgeben');
   expect(sharedEngine.claudeDraft.body.max_tokens).toBe(32768);
   expect(sharedEngine.claudeDraft.body.messages[0].content).toContain('Komponiere das verlangte Stück');
   expect(sharedEngine.claudeScore.body.messages[0].content).toContain('Keine Neukomposition');
