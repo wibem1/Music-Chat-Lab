@@ -316,7 +316,27 @@ function sharedStageBody(provider,model,prompt,stage){const system='Du bist ein 
 async function runSharedStage(input,init,provider,body,prompt,stage){const requestBody=sharedStageBody(provider,body.model,prompt,stage);const r=await innerFetch(input,{...init,__mclTraceStage:stage,body:JSON.stringify(requestBody)});const rawTransport=await r.clone().text().catch(()=>'');let d=null;try{d=rawTransport?JSON.parse(rawTransport):null}catch{}return{r,d,raw:d&&r.ok?responseText(provider,d):''}}
 async function sharedCompose(input,init,provider,body,task){
   const engine=sharedEngine(),snapshot={visibleTask:task,provider,model:String(body.model||''),engine:'reference-1.3.0'},key='';
-  const requestModel=async({promptText,stage})=>{const result=await runSharedStage(input,init,provider,body,promptText,stage);if(!result.r.ok)throw new Error('API-Fehler '+result.r.status);if(!result.raw)throw new Error('Die KI hat in '+stage+' keine Textantwort geliefert.');return result.raw};
+  const requestModel=async({promptText,stage})=>{
+    const first=await runSharedStage(input,init,provider,body,promptText,stage);
+    if(!first.r.ok)throw new Error('KI-Anfrage '+stage+': HTTP '+first.r.status+(first.d?.error?.message?': '+first.d.error.message:''));
+    if(!first.raw)throw new Error('Die KI hat in '+stage+' keine Textantwort geliefert.');
+    if(stage!=='midi_translation')return first.raw;
+    let combined=first.raw;
+    for(let attempt=0;attempt<2;attempt++){
+      try{window.CompositionEngine.extractJson(combined);return combined}catch{}
+      const tail=combined.slice(-2400);
+      const continuation='Die technische JSON-Partitur wurde bei der Ausgabe abgeschnitten. Setze exakt an der Abbruchstelle fort. Keine Wiederholung, keine Einleitung, keine neuen Noten oder Änderungen. Antworte ausschließlich mit dem unmittelbar anschließenden JSON-Text bis zum Abschluss. Letzte Zeichen der bisherigen Ausgabe:\\n'+tail;
+      const next=await runSharedStage(input,init,provider,body,continuation,'midi_translation_continuation_'+(attempt+1));
+      if(!next.r.ok)throw new Error('MIDI-Fortsetzung: HTTP '+next.r.status+(next.d?.error?.message?': '+next.d.error.message:''));
+      if(!next.raw)throw new Error('Die KI lieferte keine MIDI-Fortsetzung.');
+      let addition=next.raw.trim().replace(/^\`\`\`(?:json)?\\s*/i,'').replace(/\\s*\`\`\`$/,'');
+      const overlap=Math.min(combined.length,addition.length,1200);
+      let matched=0;for(let n=overlap;n>0;n--)if(combined.endsWith(addition.slice(0,n))){matched=n;break}
+      combined+=addition.slice(matched);
+    }
+    try{window.CompositionEngine.extractJson(combined)}catch{throw new Error('MIDI-Übersetzung auch nach zwei Fortsetzungen unvollständig. Der musikalische Entwurf wurde nicht verändert.')}
+    return combined;
+  };
   const result=await engine.compose({snapshot,key,seriesId:null,runId:'MCL-'+Date.now().toString(36),now:()=>new Date().toISOString(),requestModel,usedTitles:usedCompositionTitles()});result.run.selectedEngine={choice:'reference-1.3.0',name:engine.name,version:engine.version};return result;
 }
 window.fetch=async function(input,init={}){
