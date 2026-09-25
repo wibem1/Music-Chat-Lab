@@ -39,7 +39,7 @@ test('core ui', async ({ page }) => {
   await page.locator('#compositionHistoryButton').click();
   await expect(page.locator('#compositionHistoryDialog')).toHaveJSProperty('open',true);
   await expect(page.locator('#compositionHistoryList')).toContainText('noch keine gespeicherte Kompositionsfassung');
-  await expect(page.locator('#infoDialog')).toContainText('Composition Engine 1.3');
+  await expect(page.locator('#infoDialog')).toContainText('Composition Engine 2.1');
   await expect(page.locator('#infoDialog')).toContainText('Jetzt zu testen');
   const sharedEngine = await page.evaluate(() => {
     const api=window.CompositionEngine;
@@ -52,8 +52,8 @@ test('core ui', async ({ page }) => {
     return {name:api.name,version:api.version,technical:api.TECHNICAL_CONTRACT,prompts,claudeDraft,claudeScore,openaiDraft,googleDraft};
   });
   expect(sharedEngine.name).toBe('Composition Engine');
-  expect(sharedEngine.version).toBe('1.3.0');
-  expect(await page.evaluate(() => window.MCLSessionV145.version)).toBe('1.4.5');
+  expect(sharedEngine.version).toBe('2.1.0');
+  expect(await page.evaluate(() => window.MCLSessionV145.version)).toBe('1.5.0');
   expect(sharedEngine.prompts.musicalDraft).toContain('Komponiere das verlangte Stück musikalisch frei und eigenständig');
   expect(sharedEngine.prompts.musicalDraft).toContain('Denke noch NICHT an MIDI-Codierung');
   expect(sharedEngine.technical).toContain('Nur valides JSON');
