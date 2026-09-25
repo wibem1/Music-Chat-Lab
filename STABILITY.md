@@ -1,20 +1,17 @@
-# MusicChat Lab v1.4.0 development baseline
+# Music Chat Lab – Stabilitätsstand
 
-Runtime-stable recovery point: branch `stable-runtime-v1.3.21`.
+## Aktueller Stand: v1.9.0
 
-v1.4.0 is rebuilt directly from that runtime-confirmed baseline. Failed 2.x experiments are not a code base for this release.
+Der freigegebene Kompositionspfad verwendet den zentralen Composition-Engine-Entry-Point und darf keine eigene musikalische Prompt- oder Reparaturpipeline daneben führen.
 
-## Composition rule
+Verbindlicher Ablauf:
+1. Kompositionsauftrag des Nutzers, gegebenenfalls ausdrücklich referenziertes Material.
+2. Freie vollständige Komposition ohne vorgeschalteten Klang-/Formplan.
+3. Werkgetreue technische Übersetzung durch die zentrale Engine.
+4. Beschreibung erst nach der fertigen Komposition.
 
-For an explicit **Komponiere** turn the new composition path is:
+Kompositionsauftrag und Kompositionsbeschreibung bleiben im CLAB-Dokument getrennte Felder. Der Auftrag darf `score.sm` nicht überschreiben.
 
-1. free musical draft — musical decisions only, no MIDI/JSON;
-2. faithful technical translation into MusicChat's existing MIDI action contract.
+Der Look-ahead-Player ist der aktive Playback-Scheduler. Browser-/Geräteaudio bleibt ein manueller Runtime-Test und darf nicht allein aus statischen Tests als behoben bezeichnet werden.
 
-The second stage must not recompose, simplify, or regularize the musical draft.
-
-Chat mode remains the existing MusicChat conversation workflow.
-
-## Stability rule
-
-The branch `stable-runtime-v1.3.21` remains untouched. v1.4.0 is a development candidate until runtime-tested by the user. Static/syntax checks do not establish runtime stability.
+Historische Recovery-Branches bleiben Referenzen, bestimmen aber nicht die aktuelle Runtime-Architektur.
