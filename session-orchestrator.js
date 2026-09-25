@@ -322,6 +322,19 @@ async function sharedCompose(input,init,provider,body,task){
     if(!first.raw)throw new Error('Die KI hat in '+stage+' keine Textantwort geliefert.');
     if(stage!=='midi_translation')return first.raw;
     let combined=first.raw;
+    // Repair only a missing outer array closer, never synthesize or alter note events.
+    const closeOuterArray=(s)=>{
+      const t=s.trim();
+      if(!t.startsWith('{')||!t.endsWith('}')||!t.includes('"v"'))return null;
+      const candidate=t.slice(0,-1)+']}';
+      try{
+        const obj=window.CompositionEngine.extractJson(candidate);
+        if(!Array.isArray(obj.v)||!obj.v.length||!obj.v.every(v=>Array.isArray(v)&&Array.isArray(v[3])))return null;
+        return candidate;
+      }catch{return null}
+    };
+    const structurallyClosed=closeOuterArray(combined);
+    if(structurallyClosed)return structurallyClosed;
     for(let attempt=0;attempt<2;attempt++){
       try{window.CompositionEngine.extractJson(combined);return combined}catch{}
       const tail=combined.slice(-2400);
