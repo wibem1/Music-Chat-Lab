@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 test('core ui', async ({ page }) => {
   const errors=[]; page.on('pageerror',e=>errors.push(String(e)));
   await page.goto('http://127.0.0.1:4173/index.html');
-  await expect(page.locator('[data-app-version]')).toHaveText('v1.8.4');
+  await expect(page.locator('[data-app-version]')).toHaveText('v1.8.5');
   await page.locator('#topSettingsButton').click();
   await expect(page.locator('#settingsDialog')).toHaveJSProperty('open',true);
   await page.locator('#settingsDialog .dialog-close').click();
@@ -53,6 +53,7 @@ test('core ui', async ({ page }) => {
   });
   expect(sharedEngine.name).toBe('Composition Engine');
   expect(sharedEngine.version).toBe('1.3.0');
+  expect(await page.evaluate(() => window.MCLSessionV145.version)).toBe('1.4.5');
   expect(sharedEngine.prompts.musicalDraft).toContain('Komponiere das verlangte Stück musikalisch frei und eigenständig');
   expect(sharedEngine.prompts.musicalDraft).toContain('Denke noch NICHT an MIDI-Codierung');
   expect(sharedEngine.technical).toContain('Nur valides JSON');
