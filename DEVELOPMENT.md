@@ -444,3 +444,7 @@ v1.5.3 konsolidiert die Zuständigkeit: `composition-idea-field.css` behält Str
 - CI/Smoke-Test dürfen keine konkrete Engine-Version voraussetzen; geprüft wird der zentrale Entry-Point und die vom Modul selbst gemeldete Version.
 - Der fehlerhafte Recovery-PR #29 mit `?v=2.1.0` wurde geschlossen und nicht gemergt.
 - Engine-Wechsel erfolgen ausschließlich im zentralen Composition-Engine-Repository; MusicChat benötigt dafür keine neue App-Version.
+
+
+## 2026-09-26 – v1.9.1: OpenAI-MIDI-Fortsetzung und irreführender HTTP-500-Status
+Die Diagnose vom 26.09.2026 zeigt drei HTTP-200-Antworten: musikalischer Entwurf erfolgreich, technische JSON-Übertragung abgeschnitten, Fortsetzung ohne sichtbaren Text (84 Ausgabetokens, davon 78 Reasoning-Tokens). Die zentrale Composition Engine 2.2.1 setzt für OpenAI ausschließlich bei technischen MIDI-Aufrufen niedriges Reasoning und ein explizites Ausgabelimit von 16000 Tokens. Der musikalische Entwurf bleibt unverändert. MusicChat erzeugt bei einem lokalen Engine-/Formatfehler keinen künstlichen HTTP-500-Status mehr, sondern zeigt den tatsächlichen technischen Fehlertext und übernimmt keine unvollständige Partitur. Version, Service-Worker-Cache und Engine-Script-URL wurden angehoben. Quelltext-Invarianten geprüft; GitHub-Pages-/Browser- und realer Provider-Test bleiben separate Freigabeschritte. Keine neue Branch- oder Patch-Datei.
