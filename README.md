@@ -6,10 +6,11 @@ Music Chat Lab ist die aktive Web-Anwendung für den dialogorientierten Komposit
 
 Dieses Repository ist die **einzige aktive Entwicklungsquelle** von Music Chat Lab und zugleich die Basis für das GitHub-Pages-Deployment.
 
-Aktueller freigegebener Stand:
+Aktueller Repository-Stand:
 
-- Music Chat Lab **v1.3.14**
-- Kompositionskern: **Engine Build 14**
+- Music Chat Lab **v1.9.4**
+- Kompositionskern: **zentraler stabiler Composition-Engine-Entry-Point (aktuell 2.3.1)**
+- Status: **CURRENT CODE**; praktischer Runtime-Test von v1.9.4 ist noch nicht als SAFE dokumentiert
 - gemeinsames Projektformat: **CLAB v1**
 
 ## Schwerpunkte
