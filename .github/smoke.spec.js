@@ -43,6 +43,11 @@ test('core ui', async ({ page }) => {
   await expect(page.locator('#infoDialog')).toContainText('Jetzt zu testen');
   const parserRegression=await page.evaluate(()=>{const p=window.CompositionEngine.extractJson;const good='{"t":"Test","b":90,"m":[4,4],"v":[["Piano",0,0,[[1,0,0.5,60,90,"C4"]]]]}';const shorthand=good.replace('0.5,60',' .5,60');const missingOuter=good.slice(0,-2)+'}';const partial=good.slice(0,-19);let rejectsPartial=false;try{p(partial)}catch(_){rejectsPartial=true}return{valid:p(good).v[0][3].length,shorthand:p(shorthand).v[0][3][0][2],closed:p(missingOuter).v[0][3].length,rejectsPartial,guard:window.__mclSessionOrchestratorV151===true}});
   expect(parserRegression).toEqual({valid:1,shorthand:0.5,closed:1,rejectsPartial:true,guard:true});
+  const compositionRegression=await page.evaluate(async()=>{const engine=window.CompositionEngine;const calls=[];const score='{"t":"Probe","b":90,"m":[4,4],"v":[["Piano",0,0,[[1,0,.5,60,90,"C4"]]]}';const result=await engine.compose({snapshot:{visibleTask:'Ein Takt Klavier',provider:'openai',model:'test'},key:'',runId:'regression',now:()=>new Date().toISOString(),requestModel:async({stage})=>{calls.push(stage);return stage==='musical_draft'?'Titel: Probe\\nEin Takt mit C4':stage==='midi_translation'?score:'Ein Takt für Klavier.'},usedTitles:[]});return{status:result.run.status,notes:result.run.score.tracks[0].notes.length,bytes:result.midiBytes.length,calls}});
+  expect(compositionRegression.status).toBe('ok');
+  expect(compositionRegression.notes).toBe(1);
+  expect(compositionRegression.bytes).toBeGreaterThan(0);
+  expect(compositionRegression.calls).toEqual(['musical_draft','midi_translation','composition_analysis_afterwards']);
   const sharedEngine = await page.evaluate(() => {
     const api=window.CompositionEngine;
     const snap={visibleTask:'Komponiere ein Klavierstück.',provider:'anthropic',model:'claude-sonnet-5'};
