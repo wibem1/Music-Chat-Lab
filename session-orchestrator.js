@@ -1,9 +1,9 @@
 (()=>{
 'use strict';
-if(window.__mclSessionOrchestratorV150)return;
+if(window.__mclSessionOrchestratorV151)return;
 window.__mclSessionOrchestratorV150=true;
 
-const VERSION='1.5.0';
+const VERSION='1.5.1';
 const MEMORY_KEY='music-chat-lab.session-memory.v3';
 const ACTIVE_CHAT_KEY='music-chat-lab.active-chat.v1';
 const RECENT_MESSAGES=8;
@@ -369,7 +369,8 @@ window.fetch=async function(input,init={}){
     return jsonResponse(replaceResponseText(provider,shell,JSON.stringify(score)),200,new Headers({'content-type':'application/json'}));
   }catch(e){
     const warning=e?.message||String(e),shell=provider==='anthropic'?{content:[{type:'text',text:''}]}:provider==='openai'?{output_text:'',output:[]}:{candidates:[{content:{role:'model',parts:[{text:''}]}}]};
-    return jsonResponse(replaceResponseText(provider,shell,warning),500,new Headers({'content-type':'application/json'}));
+    if(note)note.textContent='Technische Übersetzung fehlgeschlagen; keine Partitur übernommen.';
+    return jsonResponse(replaceResponseText(provider,shell,'Komposition nicht übernommen: '+warning),200,new Headers({'content-type':'application/json'}));
   }
 };
 
