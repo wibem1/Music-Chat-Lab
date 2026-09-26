@@ -53,7 +53,7 @@ test('core ui', async ({ page }) => {
   });
   expect(sharedEngine.name).toBe('Composition Engine');
   expect(sharedEngine.version).toBeTruthy();
-  expect(await page.evaluate(() => window.MCLSessionV145.version)).toBe('1.5.0');
+  expect(await page.evaluate(() => window.MCLSessionV145.version)).toBe('1.5.1');
   expect(sharedEngine.prompts.musicalDraft).toContain('Komponiere das verlangte Stück musikalisch frei und eigenständig');
   expect(sharedEngine.prompts.musicalDraft).toContain('Denke noch NICHT an MIDI-Codierung');
   expect(sharedEngine.technical).toContain('Nur valides JSON');
