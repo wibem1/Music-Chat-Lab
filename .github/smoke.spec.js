@@ -47,7 +47,7 @@ test('core ui', async ({ page }) => {
   expect(compositionRegression.status).toBe('ok');
   expect(compositionRegression.notes).toBe(1);
   expect(compositionRegression.bytes).toBeGreaterThan(0);
-  expect(compositionRegression.calls).toEqual(['musical_draft','midi_translation','composition_analysis_afterwards']);
+  expect(compositionRegression.calls).toEqual(['composition','midi_translation','composition_analysis_afterwards']);
   const sharedEngine = await page.evaluate(() => {
     const api=window.CompositionEngine;
     const snap={visibleTask:'Komponiere ein Klavierstück.',provider:'anthropic',model:'claude-sonnet-5'};
