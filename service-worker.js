@@ -1,4 +1,4 @@
-const CACHE_NAME = 'music-chat-lab-v1.9.1';
+const CACHE_NAME = 'music-chat-lab-v1.9.2';
 const APP_SHELL = [
   './', './index.html', './styles.css', './app.js', './ai-call-trace.js', './settings-store.js', './state-vault.js', './music-file-processing.js',
   './midi-player.js', './midi-playback-scheduler.js', './midi-export.js', './midi-context.js', './midi-memory.js',
@@ -27,6 +27,7 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+  if (new URL(event.request.url).origin !== self.location.origin) return;
   event.respondWith(
     fetch(event.request).then(response => {
       const copy = response.clone();
