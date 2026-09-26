@@ -318,7 +318,7 @@ async function sharedCompose(input,init,provider,body,task){
   const engine=sharedEngine(),snapshot={visibleTask:task,provider,model:String(body.model||''),engine:'central-current'},key='';
   const requestModel=async({promptText,stage})=>{
     const result=await runSharedStage(input,init,provider,body,promptText,stage);
-    if(!result.r.ok)throw new Error('KI-Anfrage '+stage+': HTTP '+result.r.status+(result.d?.error?.message?': '+result.d.error.message:''));
+    if(!result.r.ok){const error=new Error('KI-Anfrage '+stage+': HTTP '+result.r.status+(result.d?.error?.message?': '+result.d.error.message:''));error.providerStatus=result.r.status;throw error;}
     if(!result.raw)throw new Error('Die KI hat in '+stage+' keine Textantwort geliefert.');
     return result.raw;
   };
@@ -370,7 +370,7 @@ window.fetch=async function(input,init={}){
   }catch(e){
     const warning=e?.message||String(e),shell=provider==='anthropic'?{content:[{type:'text',text:''}]}:provider==='openai'?{output_text:'',output:[]}:{candidates:[{content:{role:'model',parts:[{text:''}]}}]};
     if(note)note.textContent='Technische Übersetzung fehlgeschlagen; keine Partitur übernommen.';
-    return jsonResponse(replaceResponseText(provider,shell,'Komposition nicht übernommen: '+warning),200,new Headers({'content-type':'application/json'}));
+    return jsonResponse(replaceResponseText(provider,shell,'Komposition nicht übernommen: '+warning),Number.isInteger(e?.providerStatus)?e.providerStatus:200,new Headers({'content-type':'application/json'}));
   }
 };
 
