@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 test('core ui', async ({ page }) => {
   const errors=[]; page.on('pageerror',e=>errors.push(String(e)));
   await page.goto('http://127.0.0.1:4173/index.html');
-  await expect(page.locator('[data-app-version]')).toHaveText('v1.9.2');
+  await expect(page.locator('[data-app-version]')).toHaveText('v1.9.3');
   await page.locator('#topSettingsButton').click();
   await expect(page.locator('#settingsDialog')).toHaveJSProperty('open',true);
   await page.locator('#settingsDialog .dialog-close').click();
@@ -41,6 +41,8 @@ test('core ui', async ({ page }) => {
   await expect(page.locator('#compositionHistoryList')).toContainText('noch keine gespeicherte Kompositionsfassung');
   await expect(page.locator('#infoDialog')).toContainText('Composition Engine');
   await expect(page.locator('#infoDialog')).toContainText('Jetzt zu testen');
+  const parserRegression=await page.evaluate(()=>{const p=window.CompositionEngine.extractJson;const good='{"t":"Test","b":90,"m":[4,4],"v":[["Piano",0,0,[[1,0,0.5,60,90,"C4"]]]]}';const shorthand=good.replace('0.5,60',' .5,60');const missingOuter=good.slice(0,-2)+'}';const partial=good.slice(0,-19);let rejectsPartial=false;try{p(partial)}catch(_){rejectsPartial=true}return{valid:p(good).v[0][3].length,shorthand:p(shorthand).v[0][3][0][2],closed:p(missingOuter).v[0][3].length,rejectsPartial,guard:window.__mclSessionOrchestratorV151===true}});
+  expect(parserRegression).toEqual({valid:1,shorthand:0.5,closed:1,rejectsPartial:true,guard:true});
   const sharedEngine = await page.evaluate(() => {
     const api=window.CompositionEngine;
     const snap={visibleTask:'Komponiere ein Klavierstück.',provider:'anthropic',model:'claude-sonnet-5'};
