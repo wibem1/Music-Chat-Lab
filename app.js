@@ -3,6 +3,56 @@ const ACTIVE_KEY = "music-chat-lab.active-chat.v1";
 const SETTINGS_KEY = "music-chat-lab.api-settings.v1";
 const COST_KEY = "music-chat-lab.cost-control.v1";
 const providerModels = {anthropic:[{id:"claude-sonnet-5",label:"Claude Sonnet 5"},{id:"claude-opus-5",label:"Claude Opus 5"},{id:"claude-sonnet-4-6",label:"Claude Sonnet 4.6"}],openai:[{id:"gpt-5.6-sol",label:"GPT-5.6 Sol"},{id:"gpt-5.6-terra",label:"GPT-5.6 Terra"},{id:"gpt-5.6-luna",label:"GPT-5.6 Luna"}],google:[{id:"gemini-3.8-flash",label:"Gemini 3.8 Flash"},{id:"gemini-3.7-flash",label:"Gemini 3.7 Flash"},{id:"gemini-3.1-pro-preview",label:"Gemini 3.1 Pro Preview"}]};
+const MODEL_CACHE_KEY = "music-chat-lab.models.v1";
+function readModelCache(){try{return JSON.parse(localStorage.getItem(MODEL_CACHE_KEY))||{}}catch{return {}}}
+const cachedModels=readModelCache();
+for(const provider of ["anthropic","openai","google"]){
+  if(Array.isArray(cachedModels[provider]) && cachedModels[provider].length) providerModels[provider]=cachedModels[provider];
+}
+async function loadProviderModels(provider){
+  const key=apiKeyFor(provider);
+  if(!key)return false;
+  const headers={};
+  let url;
+  if(provider==="openai"){url="https://api.openai.com/v1/models";headers.Authorization="Bearer "+key}
+  else if(provider==="google"){url="https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000";headers["x-goog-api-key"]=key}
+  else if(provider==="anthropic"){url="https://api.anthropic.com/v1/models?limit=100";headers["x-api-key"]=key;headers["anthropic-version"]="2023-06-01";headers["anthropic-dangerous-direct-browser-access"]="true"}
+  else return false;
+  let models=[],nextUrl=url;
+  for(let page=0;page<10&&nextUrl;page++){
+    const response=await fetch(nextUrl,{headers,signal:AbortSignal.timeout(15000)});
+    if(!response.ok)throw Error(provider+": Modellabfrage HTTP "+response.status);
+    const data=await response.json();
+    const entries=data.data||data.models||[];
+    for(const item of entries){
+      const id=String(item.id||item.name||"").replace(/^models\//,"");
+      if(!id)continue;
+      if(provider==="google" && !(item.supportedGenerationMethods||[]).includes("generateContent"))continue;
+      if(provider==="openai" && !/^(gpt-|o[1-9]|chatgpt-)/i.test(id))continue;
+      models.push({id,label:item.displayName||item.display_name||item.name?.replace(/^models\//,"")||id});
+    }
+    const next=data.next_page||data.nextPageToken;
+    if(!next)break;
+    const u=new URL(url);
+    u.searchParams.set(provider==="google"?"pageToken":"after",next);
+    nextUrl=u.toString();
+  }
+  models=[...new Map(models.map(m=>[m.id,m])).values()].sort((a,b)=>a.label.localeCompare(b.label));
+  if(!models.length)throw Error(provider+": Keine verwendbaren Chatmodelle gefunden");
+  providerModels[provider]=models;
+  cachedModels[provider]=models;
+  try{localStorage.setItem(MODEL_CACHE_KEY,JSON.stringify(cachedModels))}catch{}
+  if(providerSelect.value===provider)updateModels(modelSelect.value);
+  return true;
+}
+async function refreshAllModels(){
+  const providers=["openai","google","anthropic"].filter(apiKeyFor);
+  const results=await Promise.allSettled(providers.map(loadProviderModels));
+  const failed=results.filter(r=>r.status==="rejected");
+  composerNote.textContent=failed.length
+    ? "Modelle teilweise geladen; gespeicherte Liste bleibt erhalten. "+failed.map(r=>r.reason?.message||r.reason).join("; ")
+    : "Modelllisten aktualisiert ("+providers.join(", ")+").";
+}
 let chats=loadChats(),activeChatId=localStorage.getItem(ACTIVE_KEY)||null,pendingFiles=[],sending=false;window.pendingFiles=pendingFiles;
 const sidebar=document.getElementById("sidebar"),chatList=document.getElementById("chatList"),messages=document.getElementById("messages"),welcome=document.getElementById("welcome"),currentChatTitle=document.getElementById("currentChatTitle"),providerSelect=document.getElementById("providerSelect"),modelSelect=document.getElementById("modelSelect"),newChatButton=document.getElementById("newChatButton"),menuButton=document.getElementById("menuButton"),messageInput=document.getElementById("messageInput"),sendButton=document.getElementById("sendButton"),fileInput=document.getElementById("fileInput"),attachments=document.getElementById("attachments"),composerNote=document.getElementById("composerNote"),settingsButton=document.getElementById("settingsButton"),topSettingsButton=document.getElementById("topSettingsButton"),settingsDialog=document.getElementById("settingsDialog"),settingsForm=document.getElementById("settingsForm"),anthropicKeyInput=document.getElementById("anthropicKey"),openaiKeyInput=document.getElementById("openaiKey"),googleKeyInput=document.getElementById("googleKey"),clearKeysButton=document.getElementById("clearKeysButton");
 function loadChats(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[]}catch{return[]}} function loadSettings(){try{return JSON.parse(localStorage.getItem(SETTINGS_KEY))||{}}catch{return{}}} function saveChats(){localStorage.setItem(STORAGE_KEY,JSON.stringify(chats));window.MCLStateVault?.mirrorChats?.(chats,activeChatId)} function saveSettings(s){localStorage.setItem(SETTINGS_KEY,JSON.stringify(s));window.MCLSettingsStore?.save?.(s)} function makeId(){return crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random()}`} function currentChat(){return chats.find(c=>c.id===activeChatId)||null}
@@ -32,4 +82,4 @@ async function callGoogle(c,key){const contents=requestMessages(c).map(m=>({role
 function apiErrorMessage(d,s){return d?.error?.message||d?.message||`API-Fehler ${s}`} async function requestAssistant(c){const k=apiKeyFor(c.provider);if(!k)throw new Error(`Für ${providerLabel(c.provider)} ist noch kein API-Schlüssel eingetragen.`);if(c.provider==="anthropic")return callAnthropic(c,k);if(c.provider==="openai")return callOpenAI(c,k);if(c.provider==="google")return callGoogle(c,k);throw new Error("Unbekannter KI-Anbieter.")}
 async function sendMessage(){if(sending)return;const text=messageInput.value.trim();if(!text&&!pendingFiles.length)return;const p=providerSelect.value;if(!apiKeyFor(p)){composerNote.textContent=`Bitte zuerst den API-Schlüssel für ${providerLabel(p)} eintragen.`;openSettings();return}if(!currentChat())createChat();const c=currentChat();c.provider=providerSelect.value;c.model=modelSelect.value;sending=true;sendButton.disabled=true;composerNote.textContent=pendingFiles.length?"Dateien werden lokal analysiert …":`${providerLabel(c.provider)} · ${modelLabel(c.provider,c.model)}`;const prepared=await prepareAttachments(pendingFiles);const context=isProposalConfirmation(text,c)?'':workspaceContext();const persistentAttachment=prepared.metadata.some(f=>f.kind&&f.kind!=='midi')?prepared.modelText:'';const modelText=text.trim();c.messages.push({id:makeId(),role:"user",text:modelText,displayText:text,files:prepared.metadata,attachmentContext:persistentAttachment||undefined,createdAt:Date.now()});if(c.title==="Neuer Chat")c.title=text?text.slice(0,48):pendingFiles[0]?.name||"Datei-Chat";c.updatedAt=Date.now();saveChats();c.__apiExtra=`${context}${prepared.modelText}`;window.MCLUsageStartTurn?.({provider:c.provider,model:c.model});messageInput.value="";autoResize();pendingFiles=[];window.pendingFiles=pendingFiles;const thinking={id:makeId(),role:"assistant",provider:c.provider,model:c.model,text:`${providerLabel(c.provider)} antwortet …`,thinking:true,createdAt:Date.now()};c.messages.push(thinking);renderAll();try{c.messages=c.messages.filter(m=>m.id!==thinking.id);const answer=await requestAssistant(c);const usage=window.MCLUsageFinishTurn?.()||null;c.messages.push({id:makeId(),role:"assistant",provider:c.provider,model:c.model,text:answer,usage,createdAt:Date.now()})}catch(e){const usage=window.MCLUsageFinishTurn?.()||null;c.messages=c.messages.filter(m=>m.id!==thinking.id);c.messages.push({id:makeId(),role:"assistant",text:e?.message||String(e),usage,isError:true,createdAt:Date.now()})}finally{delete c.__apiExtra;sending=false;c.updatedAt=Date.now();saveChats();renderAll()}}
 function autoResize(){messageInput.style.height="auto";messageInput.style.height=`${Math.min(messageInput.scrollHeight,180)}px`}
-providerSelect.addEventListener("change",()=>{updateModels();const c=currentChat();if(c){c.provider=providerSelect.value;c.model=modelSelect.value;c.updatedAt=Date.now();saveChats();renderChatList()}});modelSelect.addEventListener("change",()=>{const c=currentChat();if(c){c.model=modelSelect.value;c.updatedAt=Date.now();saveChats()}});fileInput.addEventListener("change",e=>{pendingFiles.push(...Array.from(e.target.files));window.pendingFiles=pendingFiles;fileInput.value="";renderPendingFiles()});settingsForm.addEventListener("submit",async e=>{e.preventDefault();const s={anthropicKey:anthropicKeyInput.value.trim(),openaiKey:openaiKeyInput.value.trim(),googleKey:googleKeyInput.value.trim()};localStorage.setItem(SETTINGS_KEY,JSON.stringify(s));const durable=await window.MCLSettingsStore?.save?.(s);composerNote.textContent=durable===false?"API-Einstellungen lokal gespeichert; dauerhafte Sicherung fehlgeschlagen.":"API-Einstellungen gespeichert.";settingsDialog.close()});clearKeysButton.addEventListener("click",()=>{localStorage.removeItem(SETTINGS_KEY);window.MCLSettingsStore?.clear?.();anthropicKeyInput.value="";openaiKeyInput.value="";googleKeyInput.value=""});settingsButton.addEventListener("click",openSettings);topSettingsButton.addEventListener("click",openSettings);newChatButton.addEventListener("click",createChat);menuButton.addEventListener("click",()=>sidebar.classList.toggle("open"));window.MCLSendMessage=sendMessage;sendButton.addEventListener("click",sendMessage);messageInput.addEventListener("input",autoResize);messageInput.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}});renderAll();
+providerSelect.addEventListener("change",()=>{updateModels();const c=currentChat();if(c){c.provider=providerSelect.value;c.model=modelSelect.value;c.updatedAt=Date.now();saveChats();renderChatList()}});modelSelect.addEventListener("change",()=>{const c=currentChat();if(c){c.model=modelSelect.value;c.updatedAt=Date.now();saveChats()}});fileInput.addEventListener("change",e=>{pendingFiles.push(...Array.from(e.target.files));window.pendingFiles=pendingFiles;fileInput.value="";renderPendingFiles()});settingsForm.addEventListener("submit",async e=>{e.preventDefault();const s={anthropicKey:anthropicKeyInput.value.trim(),openaiKey:openaiKeyInput.value.trim(),googleKey:googleKeyInput.value.trim()};localStorage.setItem(SETTINGS_KEY,JSON.stringify(s));const durable=await window.MCLSettingsStore?.save?.(s);composerNote.textContent=durable===false?"API-Einstellungen lokal gespeichert; dauerhafte Sicherung fehlgeschlagen.":"API-Einstellungen gespeichert.";settingsDialog.close();refreshAllModels().catch(e=>{composerNote.textContent="Modellabfrage: "+e.message})});clearKeysButton.addEventListener("click",()=>{localStorage.removeItem(SETTINGS_KEY);window.MCLSettingsStore?.clear?.();anthropicKeyInput.value="";openaiKeyInput.value="";googleKeyInput.value=""});settingsButton.addEventListener("click",openSettings);topSettingsButton.addEventListener("click",openSettings);newChatButton.addEventListener("click",createChat);menuButton.addEventListener("click",()=>sidebar.classList.toggle("open"));window.MCLSendMessage=sendMessage;sendButton.addEventListener("click",sendMessage);messageInput.addEventListener("input",autoResize);messageInput.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}});renderAll();\nrefreshAllModels().catch(e=>{composerNote.textContent="Modellabfrage: "+e.message});\n
