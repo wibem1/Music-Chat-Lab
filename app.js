@@ -31,7 +31,7 @@ async function loadProviderModels(provider){
       if(provider==="openai" && !/^(gpt-|o[1-9]|chatgpt-)/i.test(id))continue;
       models.push({id,label:item.displayName||item.display_name||item.name?.replace(/^models\//,"")||id});
     }
-    const next=data.next_page||data.nextPageToken;
+    const next=data.next_page||data.nextPageToken||(provider==="anthropic"&&data.has_more?data.last_id:null);
     if(!next)break;
     const u=new URL(url);
     u.searchParams.set(provider==="google"?"pageToken":"after",next);
@@ -42,7 +42,7 @@ async function loadProviderModels(provider){
   providerModels[provider]=models;
   cachedModels[provider]=models;
   try{localStorage.setItem(MODEL_CACHE_KEY,JSON.stringify(cachedModels))}catch{}
-  if(providerSelect.value===provider)updateModels(modelSelect.value);
+  if(providerSelect.value===provider)updateModels(currentChat()?.model||modelSelect.value);
   return true;
 }
 async function refreshAllModels(){
@@ -57,7 +57,7 @@ let chats=loadChats(),activeChatId=localStorage.getItem(ACTIVE_KEY)||null,pendin
 const sidebar=document.getElementById("sidebar"),chatList=document.getElementById("chatList"),messages=document.getElementById("messages"),welcome=document.getElementById("welcome"),currentChatTitle=document.getElementById("currentChatTitle"),providerSelect=document.getElementById("providerSelect"),modelSelect=document.getElementById("modelSelect"),newChatButton=document.getElementById("newChatButton"),menuButton=document.getElementById("menuButton"),messageInput=document.getElementById("messageInput"),sendButton=document.getElementById("sendButton"),fileInput=document.getElementById("fileInput"),attachments=document.getElementById("attachments"),composerNote=document.getElementById("composerNote"),settingsButton=document.getElementById("settingsButton"),topSettingsButton=document.getElementById("topSettingsButton"),settingsDialog=document.getElementById("settingsDialog"),settingsForm=document.getElementById("settingsForm"),anthropicKeyInput=document.getElementById("anthropicKey"),openaiKeyInput=document.getElementById("openaiKey"),googleKeyInput=document.getElementById("googleKey"),clearKeysButton=document.getElementById("clearKeysButton");
 function loadChats(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[]}catch{return[]}} function loadSettings(){try{return JSON.parse(localStorage.getItem(SETTINGS_KEY))||{}}catch{return{}}} function saveChats(){localStorage.setItem(STORAGE_KEY,JSON.stringify(chats));window.MCLStateVault?.mirrorChats?.(chats,activeChatId)} function saveSettings(s){localStorage.setItem(SETTINGS_KEY,JSON.stringify(s));window.MCLSettingsStore?.save?.(s)} function makeId(){return crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random()}`} function currentChat(){return chats.find(c=>c.id===activeChatId)||null}
 function createChat(){const c={id:makeId(),title:"Neuer Chat",createdAt:Date.now(),updatedAt:Date.now(),provider:providerSelect.value,model:modelSelect.value,messages:[]};chats.unshift(c);activeChatId=c.id;localStorage.setItem(ACTIVE_KEY,activeChatId);saveChats();pendingFiles=[];window.pendingFiles=pendingFiles;renderAll();messageInput.focus()}
-function updateModels(preferredModel=null){const ms=providerModels[providerSelect.value]||[];modelSelect.innerHTML="";ms.forEach(m=>{const o=document.createElement("option");o.value=m.id;o.textContent=m.label;modelSelect.appendChild(o)});if(preferredModel&&ms.some(m=>m.id===preferredModel))modelSelect.value=preferredModel}
+function updateModels(preferredModel=null){const ms=[...(providerModels[providerSelect.value]||[])];if(preferredModel&&!ms.some(m=>m.id===preferredModel))ms.unshift({id:preferredModel,label:preferredModel+" (gespeicherte Auswahl)"});modelSelect.innerHTML="";ms.forEach(m=>{const o=document.createElement("option");o.value=m.id;o.textContent=m.label;modelSelect.appendChild(o)});if(preferredModel&&ms.some(m=>m.id===preferredModel))modelSelect.value=preferredModel}
 function providerLabel(p){return {anthropic:"Claude",openai:"OpenAI",google:"Gemini"}[p]||p} function modelLabel(p,m){return providerModels[p]?.find(x=>x.id===m)?.label||m}
 function renderChatList(){chatList.innerHTML="";[...chats].sort((a,b)=>b.updatedAt-a.updatedAt).forEach(c=>{const b=document.createElement("button");b.className=`chat-item${c.id===activeChatId?" active":""}`;const d=new Date(c.updatedAt).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});b.innerHTML='<div class="chat-item-title"></div><div class="chat-item-meta"></div>';b.querySelector(".chat-item-title").textContent=c.title;b.querySelector(".chat-item-meta").textContent=`${providerLabel(c.provider)} · ${d}`;b.addEventListener("click",()=>{activeChatId=c.id;localStorage.setItem(ACTIVE_KEY,activeChatId);pendingFiles=[];window.pendingFiles=pendingFiles;sidebar.classList.remove("open");renderAll()});chatList.appendChild(b)})}
 function visibleText(t){return String(t||'').replace(/\n*\[MCL-(?:VORSCHLAG|QUELLEN):[^\]]*\]\s*/gi,'').trim()}
